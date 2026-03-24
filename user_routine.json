@@ -1,0 +1,79 @@
+{
+  "weekStart": "2026-03-23T00:00:00Z",
+  "days": [
+    {
+      "dayOfWeek": "Monday",
+      "type": "Gym + Cycling",
+      "exercises": [
+        { "name": "Press de Banca con Barra", "targetSets": 4, "targetReps": "8" },
+        { "name": "Press Inclinado (Mancuernas)", "targetSets": 3, "targetReps": "10" },
+        { "name": "Press Militar (Barra/Manc.)", "targetSets": 4, "targetReps": "8" },
+        { "name": "Vuelos Laterales", "targetSets": 4, "targetReps": "12" },
+        { "name": "Aperturas (Máquina/Polea)", "targetSets": 3, "targetReps": "12" },
+        { "name": "Extensión Tríceps Polea", "targetSets": 4, "targetReps": "12" }
+      ],
+      "targetDuration": 20,
+      "targetIntensity": "Z2 Endurance (Recovery)"
+    },
+    {
+      "dayOfWeek": "Tuesday",
+      "type": "Gym + Cycling",
+      "exercises": [
+        { "name": "Jalón al Pecho", "targetSets": 4, "targetReps": "10" },
+        { "name": "Remo con Barra o Máquina", "targetSets": 4, "targetReps": "8" },
+        { "name": "Remo Serrucho", "targetSets": 3, "targetReps": "10" },
+        { "name": "Face Pull", "targetSets": 4, "targetReps": "15" },
+        { "name": "Curl de Bíceps Barra Z", "targetSets": 3, "targetReps": "10" },
+        { "name": "Curl Martillo", "targetSets": 3, "targetReps": "12" }
+      ],
+      "targetDuration": 20,
+      "targetIntensity": "Z2 Endurance (Recovery)"
+    },
+    {
+      "dayOfWeek": "Wednesday",
+      "type": "Cycling",
+      "targetDuration": 75,
+      "targetIntensity": "Z2 Endurance (130-140 bpm)",
+      "notes": "Día exclusivo de resistencia aeróbica"
+    },
+    {
+      "dayOfWeek": "Thursday",
+      "type": "Gym",
+      "exercises": [
+        { "name": "Prensa 45°", "targetSets": 4, "targetReps": "12" },
+        { "name": "Peso Muerto Rumano", "targetSets": 4, "targetReps": "10" },
+        { "name": "Curl Femoral Máquina", "targetSets": 4, "targetReps": "12" },
+        { "name": "Sillón de Cuádriceps", "targetSets": 3, "targetReps": "15" },
+        { "name": "Elevación de Talones", "targetSets": 4, "targetReps": "15" },
+        { "name": "Plancha Abdominal", "targetSets": 3, "targetReps": "60s" }
+      ],
+      "notes": "Descanso total de bicicleta para priorizar piernas"
+    },
+    {
+      "dayOfWeek": "Friday",
+      "type": "Gym + Cycling",
+      "exercises": [
+        { "name": "Press de Banca Plano", "targetSets": 3, "targetReps": "10" },
+        { "name": "Remo Polea Baja", "targetSets": 3, "targetReps": "10" },
+        { "name": "Press Hombro Sentado", "targetSets": 3, "targetReps": "10" },
+        { "name": "Vuelos Laterales", "targetSets": 3, "targetReps": "15" },
+        { "name": "Curl Bíceps (Var.)", "targetSets": 3, "targetReps": "12" },
+        { "name": "Extensión Tríceps (Var.)", "targetSets": 3, "targetReps": "12" }
+      ],
+      "targetDuration": 20,
+      "targetIntensity": "Z2 Endurance (Recovery)"
+    },
+    {
+      "dayOfWeek": "Saturday",
+      "type": "Cycling",
+      "targetDuration": 120,
+      "targetIntensity": "Z2 Endurance (Gran Fondo)",
+      "notes": "Objetivo: 45km+ manteniendo pulso estable"
+    },
+    {
+      "dayOfWeek": "Sunday",
+      "type": "Rest",
+      "notes": "Recuperación total y Citrato de Magnesio"
+    }
+  ]
+}

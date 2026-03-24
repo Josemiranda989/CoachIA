@@ -1,0 +1,61 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Routine {
+  id        String   @id @default(cuid())
+  weekStart DateTime
+  createdAt DateTime @default(now())
+  
+  days      DailyWorkout[]
+}
+
+model DailyWorkout {
+  id          String   @id @default(cuid())
+  routineId   String
+  dayOfWeek   String   
+  date        DateTime? 
+  type        String   // 'Gym', 'Cycling', 'Rest'
+  
+  // Cycling targets
+  targetDuration Int?    // minutes
+  targetPower    String? // e.g. "Zone 2"
+  
+  // Actuals
+  actualDuration Int?
+  rpe            Int?    // 1-10
+  notes          String?
+  completed      Boolean @default(false)
+  creatineTaken  Boolean @default(false)
+  
+  routine     Routine @relation(fields: [routineId], references: [id], onDelete: Cascade)
+  exercises   Exercise[]
+}
+
+model Exercise {
+  id             String   @id @default(cuid())
+  dailyWorkoutId String
+  
+  name           String
+  targetSets     Int
+  targetReps     String?  
+  
+  dailyWorkout   DailyWorkout @relation(fields: [dailyWorkoutId], references: [id], onDelete: Cascade)
+  logs           WorkoutLog[]
+}
+
+model WorkoutLog {
+  id         String   @id @default(cuid())
+  exerciseId String
+  
+  setNumber  Int
+  reps       Int
+  weight     Float    
+  
+  exercise   Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+}
