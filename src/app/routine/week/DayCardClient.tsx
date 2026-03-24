@@ -35,53 +35,55 @@ export function DayCardClient({ day }: { day: any }) {
   const hasCycling = day.type.includes("Cycling");
 
   return (
-    <div className="card" style={{ marginBottom: "16px", backgroundColor: "var(--bg-card)", transition: "opacity 0.2s", opacity: completed ? 0.6 : 1 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px", flexWrap: "wrap", gap: "12px" }}>
-        <h2 style={{ fontSize: "20px", color: isRest ? "var(--text-secondary)" : "var(--text-primary)", minWidth: "120px" }}>
+    <div className={`card mb-4 transition-opacity ${completed ? 'opacity-60' : 'opacity-100'}`}>
+      <div className="flex justify-between items-start mb-3 flex-wrap gap-3">
+        <h2 className={`text-xl ${isRest ? 'text-text-secondary' : 'text-text-primary'} min-w-[120px]`}>
           {day.dayOfWeek}
         </h2>
         
-        <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
-          <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", fontSize: "14px", color: creatine ? "var(--accent-gym)" : "var(--text-secondary)", fontWeight: creatine ? "bold" : "normal" }}>
+        <div className="flex gap-4 items-center">
+          <label className="flex items-center gap-2 cursor-pointer text-sm font-medium" style={{ color: creatine ? 'var(--accent-gym)' : 'var(--text-secondary)' }}>
             <input 
               type="checkbox" 
               checked={creatine} 
               onChange={() => toggleField("creatineTaken", creatine)}
               disabled={loading}
-              style={{ width: "16px", height: "16px", accentColor: "var(--accent-gym)", cursor: "pointer" }}
+              className="w-4 h-4 accent-current cursor-pointer"
+              aria-label={`Marcar creatina tomada para ${day.dayOfWeek}`}
             />
             Creatina
           </label>
 
-          <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", fontSize: "14px", color: completed ? "var(--accent-cycling)" : "var(--text-secondary)", fontWeight: completed ? "bold" : "normal" }}>
+          <label className="flex items-center gap-2 cursor-pointer text-sm font-medium" style={{ color: completed ? 'var(--accent-cycling)' : 'var(--text-secondary)' }}>
             <input 
               type="checkbox" 
               checked={completed} 
               onChange={() => toggleField("completed", completed)}
               disabled={loading}
-              style={{ width: "16px", height: "16px", accentColor: "var(--accent-cycling)", cursor: "pointer" }}
+              className="w-4 h-4 accent-current cursor-pointer"
+              aria-label={`${isRest ? 'Marcar recuperado' : 'Marcar finalizado'} para ${day.dayOfWeek}`}
             />
             {isRest ? "Recuperado" : "Finalizado"}
           </label>
         </div>
       </div>
 
-      <p style={{ fontWeight: "bold", color: "var(--accent-primary)", marginBottom: "8px" }}>
+      <p className="font-bold text-accent-primary mb-2">
         {day.type}
       </p>
 
       {day.notes && (
-        <p style={{ color: "var(--text-secondary)", fontSize: "14px", fontStyle: "italic", marginBottom: "12px" }}>
-          &quot;{day.notes}&quot;
+        <p className="text-text-secondary text-sm italic mb-3">
+          "{day.notes}"
         </p>
       )}
 
       {!isRest && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+        <div className="flex flex-col gap-3">
           {hasGym && day.exercises?.length > 0 && (
             <div>
-              <strong style={{ color: "var(--accent-gym)", fontSize: "14px" }}>Gym:</strong>
-              <ul style={{ listStyleType: "none", margin: 0, paddingLeft: "12px", fontSize: "14px", color: "var(--text-secondary)" }}>
+              <strong className="text-accent-gym text-sm">Gym:</strong>
+              <ul className="list-none ml-3 text-sm text-text-secondary">
                 {day.exercises.map((ex: any) => (
                   <li key={ex.id}>• {ex.name} ({ex.targetSets}x{ex.targetReps || "?"})</li>
                 ))}
@@ -90,8 +92,8 @@ export function DayCardClient({ day }: { day: any }) {
           )}
 
           {hasCycling && day.targetDuration && (
-            <div style={{ fontSize: "14px" }}>
-              <strong style={{ color: "var(--accent-cycling)" }}>Bici:</strong> {day.targetDuration} min - {day.targetPower}
+            <div className="text-sm">
+              <strong className="text-accent-cycling">Bici:</strong> {day.targetDuration} min - {day.targetPower}
             </div>
           )}
         </div>

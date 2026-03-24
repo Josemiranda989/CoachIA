@@ -1,10 +1,19 @@
-export const dynamic = 'force-dynamic';
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { DayCardClient } from "./DayCardClient";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { redirect } from "next/navigation";
 
 export default async function WeeklyRoutinePage() {
+  const session = await getServerSession(authOptions);
+
+  if (!session) {
+    redirect("/auth/login");
+  }
+
   const routine = await prisma.routine.findFirst({
+    where: { userId: session.user.id },
     orderBy: { createdAt: 'desc' },
     include: {
       days: {
@@ -15,10 +24,10 @@ export default async function WeeklyRoutinePage() {
 
   if (!routine) {
     return (
-      <div className="container">
+      <div className="container py-8">
         <h1 className="title">Rutina de la Semana</h1>
         <p className="subtitle">No tienes ninguna rutina cargada actualmente.</p>
-        <Link href="/routine/load" className="btn" style={{display: "inline-block"}}>Cargar Rutina</Link>
+        <Link href="/routine/load" className="btn inline-block">Cargar Rutina</Link>
       </div>
     );
   }
@@ -31,8 +40,8 @@ export default async function WeeklyRoutinePage() {
   });
 
   return (
-    <div className="container" style={{ paddingBottom: "60px" }}>
-      <Link href="/" style={{ color: "var(--text-secondary)", display: "inline-block", marginBottom: "16px" }}>
+    <div className="container py-8 pb-16">
+      <Link href="/" className="text-text-secondary inline-block mb-4 hover:text-text-primary transition-colors">
         &larr; Volver
       </Link>
       <h1 className="title">Tu Semana en un Vistazo 🗓️</h1>

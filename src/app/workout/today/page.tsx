@@ -1,11 +1,20 @@
-export const dynamic = 'force-dynamic';
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { GymWorkoutClient } from "./GymWorkoutClient";
 import { CyclingWorkoutClient } from "./CyclingWorkoutClient";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { redirect } from "next/navigation";
 
 export default async function TodayWorkoutPage() {
+  const session = await getServerSession(authOptions);
+
+  if (!session) {
+    redirect("/auth/login");
+  }
+
   const routine = await prisma.routine.findFirst({
+    where: { userId: session.user.id },
     orderBy: { createdAt: 'desc' },
     include: {
       days: {
@@ -16,10 +25,10 @@ export default async function TodayWorkoutPage() {
 
   if (!routine) {
     return (
-      <div className="container">
+      <div className="container py-8">
         <h1 className="title">Día de Hoy</h1>
         <p className="subtitle">No tienes ninguna rutina cargada.</p>
-        <Link href="/routine/load" className="btn" style={{display: "inline-block"}}>Cargar Rutina</Link>
+        <Link href="/routine/load" className="btn inline-block">Cargar Rutina</Link>
       </div>
     );
   }
@@ -32,15 +41,15 @@ export default async function TodayWorkoutPage() {
 
   if (!todayWorkout || todayWorkout.type.includes("Rest")) {
     return (
-      <div className="container">
+      <div className="container py-8">
         <h1 className="title">Día de Hoy ({todayName})</h1>
         <p className="subtitle">Día de descanso. ¡Recupera energías!</p>
         {todayWorkout?.notes && (
-          <div className="card" style={{marginTop: "16px", backgroundColor: "var(--bg-card)"}}>
-            <p style={{ color: "var(--text-secondary)" }}>{todayWorkout.notes}</p>
+          <div className="card mt-4 bg-bg-card">
+            <p className="text-text-secondary">{todayWorkout.notes}</p>
           </div>
         )}
-        <Link href="/" className="btn btn-secondary" style={{marginTop: "24px", display: "inline-block"}}>&larr; Volver</Link>
+        <Link href="/" className="btn btn-secondary mt-6 inline-block">&larr; Volver</Link>
       </div>
     );
   }
@@ -72,29 +81,29 @@ export default async function TodayWorkoutPage() {
   const workoutWithLastWeights = { ...todayWorkout, exercises: exercisesWithLastWeight };
 
   return (
-    <div className="container" style={{ paddingBottom: "60px" }}>
-      <Link href="/" style={{ color: "var(--text-secondary)", display: "inline-block", marginBottom: "16px" }}>
+    <div className="container py-8 pb-16">
+      <Link href="/" className="text-text-secondary inline-block mb-4 hover:text-text-primary transition-colors">
         &larr; Volver
       </Link>
       <h1 className="title">{title}</h1>
       <p className="subtitle">Rutina del {todayWorkout.dayOfWeek}</p>
 
       {todayWorkout.notes && (
-        <div className="card" style={{ marginBottom: "24px", backgroundColor: "var(--bg-card)", padding: "16px" }}>
-          <p style={{ color: "var(--text-secondary)", fontSize: "14px" }}>📝 {todayWorkout.notes}</p>
+        <div className="card mb-6 p-4 bg-bg-card">
+          <p className="text-text-secondary text-sm">📝 {todayWorkout.notes}</p>
         </div>
       )}
 
       {isGym && (
-        <div style={{ marginBottom: "32px" }}>
-          {isCycling && <h2 style={{ fontSize: "20px", marginBottom: "16px", color: "var(--text-primary)" }}>1. Sesión de Gym</h2>}
+        <div className="mb-8">
+          {isCycling && <h2 className="text-xl mb-4 text-text-primary">1. Sesión de Gym</h2>}
           <GymWorkoutClient workout={workoutWithLastWeights} />
         </div>
       )}
 
       {isCycling && (
         <div>
-          {isGym && <h2 style={{ fontSize: "20px", marginBottom: "16px", color: "var(--text-primary)", marginTop: "16px" }}>2. Sesión de Bici</h2>}
+          {isGym && <h2 className="text-xl mb-4 text-text-primary mt-4">2. Sesión de Bici</h2>}
           <CyclingWorkoutClient workout={todayWorkout} />
         </div>
       )}

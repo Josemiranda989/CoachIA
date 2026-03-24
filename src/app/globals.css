@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 :root {
   --bg-main: #0a0a0b;
   --bg-card: #151518;
@@ -15,6 +17,21 @@
   --radius-lg: 16px;
   
   --shadow-subtle: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.light {
+  --bg-main: #ffffff;
+  --bg-card: #f8f9fa;
+  --bg-card-hover: #e9ecef;
+  --text-primary: #212529;
+  --text-secondary: #6c757d;
+  
+  --accent-primary: #007bff; 
+  --accent-gym: #fd7e14; 
+  --accent-cycling: #28a745; 
+  
+  --border-color: #dee2e6;
+  --shadow-subtle: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
 
 * {
@@ -49,42 +66,49 @@ a {
   padding: 24px;
   box-shadow: var(--shadow-subtle);
   transition: all 0.2s ease;
-  cursor: pointer;
-  display: block;
 }
 
 .card:hover {
-  border-color: #3f3f46;
-  background-color: var(--bg-card-hover);
-}
-
-.title {
-  font-size: 28px;
-  font-weight: 700;
-  margin-bottom: 8px;
-  letter-spacing: -0.5px;
-}
-
-.subtitle {
-  color: var(--text-secondary);
-  font-size: 16px;
-  margin-bottom: 24px;
+  background: var(--bg-card-hover);
 }
 
 .btn {
-  background-color: var(--accent-primary);
-  color: #fff;
-  border: none;
+  background: var(--accent-primary);
+  color: white;
+  padding: 12px 24px;
   border-radius: var(--radius-sm);
-  padding: 10px 16px;
-  font-size: 14px;
-  font-weight: 600;
+  border: none;
   cursor: pointer;
-  transition: opacity 0.2s ease;
+  font-weight: 500;
+  transition: background 0.2s ease;
 }
 
 .btn:hover {
+  background: var(--accent-primary);
   opacity: 0.9;
+}
+
+.btn-secondary {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+  background: var(--bg-card-hover);
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+}
+
+.subtitle {
+  font-size: 1.125rem;
+  color: var(--text-secondary);
+  margin-bottom: 24px;
 }
 
 .btn-secondary {
