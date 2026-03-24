@@ -13,7 +13,7 @@ export default async function WeeklyRoutinePage() {
   }
 
   const routine = await prisma.routine.findFirst({
-    where: { userId: session.user.id },
+    where: { userId: (session as any).user.id },
     orderBy: { createdAt: 'desc' },
     include: {
       days: {

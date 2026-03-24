@@ -9,8 +9,8 @@ export async function POST(request: Request) {
     const session = await getServerSession(authOptions);
     let userId: string | null = null;
 
-    if (session?.user?.id) {
-      userId = session.user.id as string;
+    if ((session as any)?.user?.id) {
+      userId = (session as any).user.id as string;
     } else {
       // Development fallback: use first existing user so local tests no longer fall
       // for not-authenticated status while iterating on JSON load.
@@ -82,7 +82,7 @@ export async function POST(request: Request) {
 
     const routine = await prisma.routine.create({
       data: {
-        userId: session.user.id,
+        userId: (session as any).user.id,
         weekStart: new Date(data.weekStart),
         days: {
           create: (data.days as DayInput[]).map((day) => ({

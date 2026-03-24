@@ -6,9 +6,12 @@ services:
     volumes:
       - .:/app
       - /app/node_modules
+      - /app/.next
       - ./prisma/dev.db:/app/prisma/dev.db
     environment:
       - NODE_ENV=development
+      - NEXTAUTH_URL=https://gym.homelab989.duckdns.org
+      - NEXTAUTH_SECRET=coach-ia-super-secret-jwt-key-2024
     command: npm run dev
     networks:
       - inmich_net
