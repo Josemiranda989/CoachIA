@@ -30,6 +30,8 @@ model DailyWorkout {
   
   // Actuals
   actualDuration Int?
+  distance       Float?
+  averageHeartRate Int?
   rpe            Int?    // 1-10
   notes          String?
   completed      Boolean @default(false)

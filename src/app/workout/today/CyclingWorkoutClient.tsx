@@ -6,7 +6,8 @@ export function CyclingWorkoutClient({ workout }: { workout: any }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [actualDuration, setActualDuration] = useState(workout.actualDuration || "");
-  const [rpe, setRpe] = useState(workout.rpe || "");
+  const [distance, setDistance] = useState(workout.distance || "");
+  const [averageHeartRate, setAverageHeartRate] = useState(workout.averageHeartRate || "");
 
   const handleSave = async () => {
     setLoading(true);
@@ -17,7 +18,8 @@ export function CyclingWorkoutClient({ workout }: { workout: any }) {
         body: JSON.stringify({ 
           workoutId: workout.id, 
           actualDuration: parseInt(actualDuration),
-          rpe: parseInt(rpe)
+          distance: parseFloat(distance),
+          averageHeartRate: parseInt(averageHeartRate)
         })
       });
       if (!res.ok) throw new Error("Error");
@@ -52,14 +54,26 @@ export function CyclingWorkoutClient({ workout }: { workout: any }) {
         
         <div>
           <label style={{ display: "block", marginBottom: "8px", color: "var(--text-secondary)" }}>
-            RPE (Esfuerzo percibido 1-10)
+            Distancia (km)
           </label>
           <input 
             className="input" 
             type="number" 
-            min="1" max="10"
-            value={rpe}
-            onChange={(e) => setRpe(e.target.value)}
+            step="0.1"
+            value={distance}
+            onChange={(e) => setDistance(e.target.value)}
+          />
+        </div>
+        
+        <div>
+          <label style={{ display: "block", marginBottom: "8px", color: "var(--text-secondary)" }}>
+            Frecuencia Cardíaca Promedio (bpm)
+          </label>
+          <input 
+            className="input" 
+            type="number" 
+            value={averageHeartRate}
+            onChange={(e) => setAverageHeartRate(e.target.value)}
           />
         </div>
       </div>

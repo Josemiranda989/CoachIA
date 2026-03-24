@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 
 export async function POST(request: Request) {
   try {
-    const { workoutId, actualDuration, rpe } = await request.json();
+    const { workoutId, actualDuration, distance, averageHeartRate, rpe } = await request.json();
 
     if (!workoutId) {
       return NextResponse.json({ error: 'Invalid data' }, { status: 400 });
@@ -13,6 +13,8 @@ export async function POST(request: Request) {
       where: { id: workoutId },
       data: {
         actualDuration,
+        distance,
+        averageHeartRate,
         rpe,
         completed: true,
         date: new Date()

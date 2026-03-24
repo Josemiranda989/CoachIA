@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  allowedDevOrigins: ["gym.homelab989.duckdns.org"],
 };
 
 export default nextConfig;

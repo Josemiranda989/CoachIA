@@ -50,7 +50,7 @@ export default function LoadRoutinePage() {
 }`;
 
   return (
-    <div className="container">
+    <div className="app-container">
       <h1 className="title">Cargar Rutina Semanal</h1>
       <p className="subtitle">Pega aquí el JSON generado por tu IA.</p>
       
