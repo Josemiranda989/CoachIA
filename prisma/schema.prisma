@@ -81,6 +81,11 @@ model User {
   stravaRefreshToken String?
   stravaTokenExpiry  Int?     // Unix timestamp
 
+  // Google Fit integration
+  googleFitAccessToken  String?
+  googleFitRefreshToken String?
+  googleFitTokenExpiry  Int?    // Unix timestamp (seconds)
+
   accounts      Account[]
   sessions      Session[]
   routines      Routine[]

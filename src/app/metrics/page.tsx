@@ -1,21 +1,29 @@
 export const dynamic = 'force-dynamic';
 import { prisma } from "@/lib/prisma";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import Link from "next/link";
 import { ArrowRight, Dumbbell, Trophy, Clock, Bike, Heart, TrendingUp } from "lucide-react";
 import { StravaActivities } from "@/components/StravaActivities";
 import { isStravaConfigured, getStravaAuthUrl } from "@/lib/strava";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import GoogleFitSection from "./GoogleFitSection";
 
 export default async function MetricsPage() {
   const session = await getServerSession(authOptions);
-  const userId = (session as any)?.user?.id;
+  const userId = (session as any)?.user?.id as string | undefined;
 
   const stravaConfigured = isStravaConfigured();
   const stravaAuthUrl = stravaConfigured ? getStravaAuthUrl() : null;
 
   const stravaConnected = userId && stravaConfigured
     ? !!(await prisma.user.findUnique({ where: { id: userId }, select: { stravaAthleteId: true } }))?.stravaAthleteId
+    : false;
+
+  const googleFitConnected = userId
+    ? !!(await prisma.user.findUnique({
+        where: { id: userId },
+        select: { googleFitAccessToken: true },
+      }))?.googleFitAccessToken
     : false;
 
   const allLogs = await prisma.workoutLog.findMany({
@@ -161,6 +169,8 @@ export default async function MetricsPage() {
             </p>
           </div>
         </Link>
+
+        <GoogleFitSection isConnected={googleFitConnected} />
       </div>
 
       {/* Strava Section */}
