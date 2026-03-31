@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useTheme } from "next-themes";
 import { useSession, signOut } from "next-auth/react";
-import { Home, Calendar, Dumbbell, BarChart3, HelpCircle, Sun, Moon, LogOut, LogIn } from "lucide-react";
+import { Home, Calendar, Dumbbell, BarChart3, HelpCircle, Sun, Moon, LogOut, LogIn, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 
@@ -24,26 +24,44 @@ export function Header() {
     { href: "/help", label: "Ayuda", icon: HelpCircle },
   ];
 
+  const userInitial = session?.user?.name?.charAt(0)?.toUpperCase() || "U";
+
   return (
-    <header className="bg-bg-card/80 backdrop-blur-md border-b border-glass-border sticky top-0 z-50">
-      <div className="app-container mx-auto px-6 py-4 flex items-center justify-between">
-        <Link href="/" className="text-2xl font-black tracking-tighter text-white hover:opacity-80 transition-opacity">
-          Coach<span className="text-accent-primary">IA</span>
+    <header className="sticky top-0 z-50" style={{ background: "var(--bg-card)", borderBottom: "1px solid var(--glass-border)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)" }}>
+      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px", display: "flex", alignItems: "center", height: 64 }}>
+        {/* Logo */}
+        <Link href="/" style={{ display: "flex", alignItems: "center", gap: 2, textDecoration: "none", marginRight: 48 }}>
+          <span style={{ fontSize: 24, fontWeight: 900, letterSpacing: "-0.04em", color: "var(--text-primary)" }}>
+            Coach
+          </span>
+          <span style={{ fontSize: 24, fontWeight: 900, letterSpacing: "-0.04em", color: "var(--accent-primary)" }}>
+            IA
+          </span>
         </Link>
 
-        <nav className="hidden md:flex items-center space-x-6">
+        {/* Desktop Nav */}
+        <nav className="hidden md:flex" style={{ display: "flex", alignItems: "center", gap: 4, flex: 1 }}>
           {navLinks.map((link) => {
             const Icon = link.icon;
             const isActive = pathname === link.href;
             return (
-              <Link 
+              <Link
                 key={link.href}
-                href={link.href} 
-                className={`flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                  isActive 
-                    ? "bg-accent-primary text-white shadow-lg shadow-accent-primary/20" 
-                    : "text-text-secondary hover:text-text-primary hover:bg-glass-bg"
-                }`}
+                href={link.href}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "10px 18px",
+                  borderRadius: 10,
+                  fontSize: 14,
+                  fontWeight: 500,
+                  textDecoration: "none",
+                  transition: "all 0.2s ease",
+                  color: isActive ? "#fff" : "var(--text-secondary)",
+                  background: isActive ? "var(--accent-primary)" : "transparent",
+                  boxShadow: isActive ? "0 4px 12px rgba(220, 38, 38, 0.25)" : "none",
+                }}
               >
                 <Icon size={16} />
                 <span>{link.label}</span>
@@ -52,27 +70,86 @@ export function Header() {
           })}
         </nav>
 
-        <div className="flex items-center space-x-8">
+        {/* Right side controls */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginLeft: "auto" }}>
+          {/* Theme toggle */}
           <button
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="p-2.5 rounded-full bg-glass-bg border border-glass-border hover:bg-glass-border transition-colors text-text-primary"
             aria-label="Toggle theme"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              border: "1px solid var(--glass-border)",
+              background: "var(--glass-bg)",
+              color: "var(--text-primary)",
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+            }}
           >
             {mounted && (theme === "dark" ? <Sun size={18} /> : <Moon size={18} />)}
           </button>
 
+          {/* Auth area */}
           {session ? (
-            <button
-              onClick={() => signOut()}
-              className="hidden md:flex items-center space-x-2 px-4 py-2 rounded-full bg-glass-bg border border-glass-border text-text-secondary hover:text-red-400 hover:border-red-400/50 transition-all text-sm font-medium"
-            >
-              <LogOut size={16} />
-              <span>Cerrar Sesión</span>
-            </button>
+            <div className="hidden md:flex" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              {/* User avatar */}
+              <div style={{
+                width: 36,
+                height: 36,
+                borderRadius: 10,
+                background: "var(--accent-primary)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#fff",
+                fontSize: 14,
+                fontWeight: 700,
+              }}>
+                {userInitial}
+              </div>
+              <button
+                onClick={() => signOut()}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "10px 18px",
+                  borderRadius: 10,
+                  border: "1px solid var(--glass-border)",
+                  background: "var(--glass-bg)",
+                  color: "var(--text-secondary)",
+                  cursor: "pointer",
+                  fontSize: 14,
+                  fontWeight: 500,
+                  transition: "all 0.2s ease",
+                }}
+              >
+                <LogOut size={16} />
+                <span>Salir</span>
+              </button>
+            </div>
           ) : (
-            <Link 
-              href="/auth/login" 
-              className="hidden md:flex items-center space-x-2 px-4 py-2 rounded-full bg-accent-primary text-white hover:opacity-90 transition-all text-sm font-medium shadow-lg shadow-accent-primary/20"
+            <Link
+              href="/auth/login"
+              className="hidden md:flex"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "10px 20px",
+                borderRadius: 10,
+                background: "var(--accent-primary)",
+                color: "#fff",
+                fontSize: 14,
+                fontWeight: 600,
+                textDecoration: "none",
+                boxShadow: "0 4px 12px rgba(220, 38, 38, 0.25)",
+                transition: "all 0.2s ease",
+              }}
             >
               <LogIn size={16} />
               <span>Iniciar Sesión</span>
@@ -81,22 +158,37 @@ export function Header() {
         </div>
       </div>
 
-      {/* Mobile nav */}
-      <div className="md:hidden border-t border-glass-border bg-bg-card/90 backdrop-blur-lg">
-        <nav className="flex justify-around py-3 px-2">
+      {/* Mobile bottom nav */}
+      <div className="md:hidden" style={{
+        borderTop: "1px solid var(--glass-border)",
+        background: "var(--bg-card)",
+        backdropFilter: "blur(16px)",
+      }}>
+        <nav style={{ display: "flex", justifyContent: "space-around", padding: "8px 8px 12px" }}>
           {navLinks.map((link) => {
             const Icon = link.icon;
             const isActive = pathname === link.href;
             return (
-              <Link 
+              <Link
                 key={link.href}
-                href={link.href} 
-                className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all ${
-                  isActive ? "text-accent-primary" : "text-text-secondary"
-                }`}
+                href={link.href}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 4,
+                  padding: "8px 12px",
+                  borderRadius: 12,
+                  textDecoration: "none",
+                  transition: "all 0.2s ease",
+                  color: isActive ? "var(--accent-primary)" : "var(--text-secondary)",
+                  background: isActive ? "rgba(220, 38, 38, 0.1)" : "transparent",
+                }}
               >
                 <Icon size={20} />
-                <span className="text-[10px] font-bold uppercase tracking-wider">{link.label}</span>
+                <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  {link.label}
+                </span>
               </Link>
             );
           })}

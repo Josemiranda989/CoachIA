@@ -39,28 +39,35 @@ export default async function TodayWorkoutPage() {
   const todayWorkout = routine.days.find(d => d.dayOfWeek === todayName) || routine.days.find(d => d.dayOfWeek === "Monday"); 
   // Fallback to Monday for demonstration purposes if today finds nothing, useful for the user checking the app.
 
-  if (!todayWorkout || todayWorkout.type.includes("Rest")) {
+  // Inferir comportamiento por datos, no por el texto del tipo
+  const hasExercises = (todayWorkout?.exercises?.length ?? 0) > 0;
+  const hasCyclingData = !!(todayWorkout?.targetDuration);
+  const isRestLike = !todayWorkout || (!hasExercises && !hasCyclingData);
+
+  if (isRestLike) {
     return (
-      <div className="container py-8">
-        <h1 className="title">Día de Hoy ({todayName})</h1>
-        <p className="subtitle">Día de descanso. ¡Recupera energías!</p>
+      <div className="app-container py-8">
+        <Link href="/" className="back-btn">&larr; Volver</Link>
+        <h1 className="title">{todayWorkout?.type ?? "Descanso"}</h1>
+        {todayWorkout?.targetDuration && (
+          <p className="subtitle">{todayWorkout.targetDuration} min — {todayWorkout.targetPower}</p>
+        )}
         {todayWorkout?.notes && (
-          <div className="card mt-4 bg-bg-card">
-            <p className="text-text-secondary">{todayWorkout.notes}</p>
+          <div className="card mt-4">
+            <p className="text-text-secondary">📝 {todayWorkout.notes}</p>
           </div>
         )}
-        <Link href="/" className="btn btn-secondary mt-6 inline-block">&larr; Volver</Link>
       </div>
     );
   }
 
-  const isGym = todayWorkout.type.includes("Gym");
-  const isCycling = todayWorkout.type.includes("Cycling");
+  const isGym = hasExercises;
+  const isCycling = hasCyclingData;
 
-  let title = "Entrenamiento";
-  if (isGym && isCycling) title = "Gym + Bici 🏋️‍♂️🚴‍♂️";
-  else if (isGym) title = "Entrenamiento Gym 🏋️‍♂️";
-  else if (isCycling) title = "Entrenamiento Bici 🚴‍♂️";
+  let title = todayWorkout.type;
+  if (isGym && isCycling) title = `${todayWorkout.type} 🏋️‍♂️🚴‍♂️`;
+  else if (isGym) title = `${todayWorkout.type} 🏋️‍♂️`;
+  else if (isCycling) title = `${todayWorkout.type} 🚴‍♂️`;
 
   // Fetch last weight for each exercise
   const exercisesWithLastWeight = await Promise.all(
@@ -81,7 +88,7 @@ export default async function TodayWorkoutPage() {
   const workoutWithLastWeights = { ...todayWorkout, exercises: exercisesWithLastWeight };
 
   return (
-    <div className="container py-8 pb-16">
+    <div style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 24px 64px" }}>
       <Link href="/" className="text-text-secondary inline-block mb-4 hover:text-text-primary transition-colors">
         &larr; Volver
       </Link>

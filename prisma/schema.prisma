@@ -75,6 +75,12 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
+  // Strava integration
+  stravaAthleteId    String?
+  stravaAccessToken  String?
+  stravaRefreshToken String?
+  stravaTokenExpiry  Int?     // Unix timestamp
+
   accounts      Account[]
   sessions      Session[]
   routines      Routine[]

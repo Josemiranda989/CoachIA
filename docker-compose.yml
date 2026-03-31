@@ -12,6 +12,7 @@ services:
       - NODE_ENV=development
       - NEXTAUTH_URL=https://gym.homelab989.duckdns.org
       - NEXTAUTH_SECRET=coach-ia-super-secret-jwt-key-2024
+      - GEMINI_API_KEY=AIzaSyBbkqF0czucTAwUwXSL1i65gczdq11MSw0
     command: npm run dev
     networks:
       - inmich_net
