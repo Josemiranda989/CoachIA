@@ -1,52 +1,86 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CoachIA
 
-## Getting Started
+**CoachIA** es un entrenador personal inteligente que agrega datos de múltiples fuentes (Strava, Samsung Health, Xiaomi) para generar planes de entrenamiento personalizados mediante IA.
 
-First, run the development server:
+Diseñado para atletas que combinan ciclismo y gimnasio, CoachIA unifica métricas de rendimiento, carga de entrenamiento y composición corporal en un único dashboard, y usa esa información para ofrecer coaching basado en datos reales.
+
+---
+
+## Dispositivos y fuentes de datos soportadas
+
+| Fuente | Datos |
+|--------|-------|
+| Strava | Actividades de ciclismo, potencia, ritmo cardíaco (iGPSport BSC300T) |
+| Samsung Health / Galaxy Watch 7 | Pasos diarios, entrenamientos de fuerza/gym |
+| Xiaomi S400 (báscula) | Peso corporal, composición corporal |
+
+---
+
+## Estado del proyecto
+
+### Completado
+
+- [x] Autenticación con NextAuth (Google OAuth)
+- [x] Integración Strava OAuth — sincronización de actividades de ciclismo
+- [x] Vista `/metrics` con datos de actividades de Strava
+- [x] Gestión de rutinas y entrenamientos (CRUD básico)
+- [x] Navbar rediseñado (esquema de colores rojo/gris/blanco)
+- [x] Fixes de layout en `/workout/today`
+- [x] Dockerización del proyecto
+
+### Pendiente — Integraciones de datos
+
+- [ ] **Samsung Health / Galaxy Watch 7** — importar pasos diarios y sesiones de entrenamiento de pesas
+- [ ] **Xiaomi S400** — importar registros de peso y composición corporal
+- [ ] **Dashboard unificado** — agregar métricas de todas las fuentes en una sola vista
+
+### Pendiente — AI Coach (objetivo final)
+
+- [ ] Diseñar modelo de datos para planes de entrenamiento (estructura semanal/mensual)
+- [ ] UI para visualizar y editar planes generados por la IA
+- [ ] Motor de generación de planes: integrar LLM con contexto de:
+  - Historial de ciclismo y HR de Strava/iGPSport BSC300T
+  - Datos de pasos y gym del Galaxy Watch 7
+  - Peso y composición corporal del Xiaomi S400
+  - Historial de entrenamientos y progresión en el tiempo
+- [ ] Recomendaciones adaptativas (ajustes según fatiga, adherencia y progreso)
+
+---
+
+## Primeros pasos
+
+### Desarrollo local
 
 ```bash
 npm run dev
-# or
+# o
 yarn dev
-# or
+# o
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abre [http://localhost:3000](http://localhost:3000) en el navegador.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Docker
-
-To run the project using Docker:
-
-1. Ensure Docker is installed on your system.
-
-2. Build and run the application:
+### Con Docker
 
 ```bash
 docker-compose up --build
 ```
 
-The application will be available at [http://localhost:3000](http://localhost:3000).
+La aplicación estará disponible en [http://localhost:3000](http://localhost:3000).
 
-For production, use the Dockerfile to build an image and run it.
+---
 
-## Learn More
+## Stack tecnológico
 
-To learn more about Next.js, take a look at the following resources:
+- [Next.js](https://nextjs.org) — framework principal
+- [Prisma](https://www.prisma.io) — ORM y esquema de base de datos
+- [NextAuth.js](https://next-auth.js.org) — autenticación
+- [Strava API](https://developers.strava.com) — integración de ciclismo
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Recursos
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [Documentación de Next.js](https://nextjs.org/docs)
+- [Tutorial interactivo de Next.js](https://nextjs.org/learn)
