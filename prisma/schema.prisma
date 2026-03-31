@@ -75,6 +75,11 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
+  // Google Fit integration
+  googleFitAccessToken  String?
+  googleFitRefreshToken String?
+  googleFitTokenExpiry  Int?    // Unix timestamp (seconds)
+
   accounts      Account[]
   sessions      Session[]
   routines      Routine[]
