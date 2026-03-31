@@ -1,8 +1,21 @@
 export const dynamic = 'force-dynamic';
 import { prisma } from "@/lib/prisma";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import Link from "next/link";
+import GoogleFitSection from "./GoogleFitSection";
 
 export default async function MetricsPage() {
+  const session = await getServerSession(authOptions);
+  const userId = (session as any)?.user?.id as string | undefined;
+
+  const googleFitConnected = userId
+    ? !!(await prisma.user.findUnique({
+        where: { id: userId },
+        select: { googleFitAccessToken: true },
+      }))?.googleFitAccessToken
+    : false;
+
   const allLogs = await prisma.workoutLog.findMany({
     include: {
       exercise: {
@@ -77,6 +90,8 @@ export default async function MetricsPage() {
             Consulta el máximo peso y reps logradas en cada ejercicio.
           </p>
         </Link>
+
+        <GoogleFitSection isConnected={googleFitConnected} />
       </div>
     </div>
   );
