@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function LoadRoutinePage() {
   const router = useRouter();
@@ -53,6 +54,18 @@ export default function LoadRoutinePage() {
     <div className="app-container">
       <h1 className="title">Cargar Rutina Semanal</h1>
       <p className="subtitle">Pega aquí el JSON generado por tu IA.</p>
+
+      <Link
+        href="/routine/generate"
+        className="card flex items-center gap-3 mb-6"
+        style={{ background: "linear-gradient(135deg, rgba(59,130,246,0.1), rgba(59,130,246,0.05))", border: "1px solid rgba(59,130,246,0.2)", cursor: "pointer" }}
+      >
+        <span style={{ fontSize: "24px" }}>&#10024;</span>
+        <div>
+          <p className="text-accent-primary font-semibold text-sm">Generar con Gemini</p>
+          <p className="text-text-secondary text-xs">Describí tus objetivos y la IA arma la rutina por vos.</p>
+        </div>
+      </Link>
       
       <div className="card" style={{ marginBottom: "20px" }}>
         <textarea

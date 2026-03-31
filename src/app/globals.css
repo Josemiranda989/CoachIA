@@ -10,8 +10,8 @@
   --text-primary: #fafafa;
   --text-secondary: #a1a1aa;
   
-  --accent-primary: #3b82f6; 
-  --accent-gym: #f59e0b; 
+  --accent-primary: #dc2626;
+  --accent-gym: #f59e0b;
   --accent-cycling: #10b981; 
   
   --border-color: rgba(255, 255, 255, 0.1);
@@ -33,8 +33,8 @@
   --text-primary: #0f172a;
   --text-secondary: #64748b;
   
-  --accent-primary: #2563eb; 
-  --accent-gym: #e67e22; 
+  --accent-primary: #b91c1c;
+  --accent-gym: #e67e22;
   --accent-cycling: #16a34a; 
   
   --border-color: rgba(0, 0, 0, 0.08);
@@ -130,7 +130,7 @@ body {
 .btn:hover {
   filter: brightness(1.1);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
 }
 
 .btn-secondary {
@@ -179,5 +179,5 @@ body {
   outline: none;
   border-color: var(--accent-primary);
   background: rgba(0, 0, 0, 0.3);
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.15);
 }

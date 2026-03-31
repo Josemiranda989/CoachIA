@@ -39,14 +39,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'days must be a non-empty array' }, { status: 400 });
     }
 
-    const allowedTypes = ['Gym', 'Cycling', 'Rest', 'Gym + Cycling'];
-
     for (const [idx, day] of data.days.entries()) {
       if (!day.dayOfWeek || typeof day.dayOfWeek !== 'string') {
         return NextResponse.json({ error: `days[${idx}].dayOfWeek is required` }, { status: 400 });
       }
-      if (!day.type || typeof day.type !== 'string' || !allowedTypes.includes(day.type)) {
-        return NextResponse.json({ error: `days[${idx}].type is invalid (allowed: ${allowedTypes.join(', ')})` }, { status: 400 });
+      if (!day.type || typeof day.type !== 'string') {
+        return NextResponse.json({ error: `days[${idx}].type is required` }, { status: 400 });
       }
       if (day.exercises) {
         if (!Array.isArray(day.exercises)) {
