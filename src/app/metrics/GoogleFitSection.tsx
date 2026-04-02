@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { DEFAULT_FETCH_DAYS } from "@/lib/google-fit";
 
 interface DailyFitData {
   date: string;
@@ -24,6 +25,25 @@ interface Props {
   isConnected: boolean;
 }
 
+interface MetricCardProps {
+  title: string;
+  value: string | number;
+  unit: string;
+  description: string;
+}
+
+function MetricCard({ title, value, unit, description }: MetricCardProps) {
+  return (
+    <div className="card">
+      <h3 style={{ color: "var(--accent-gym)" }}>{title}</h3>
+      <p style={{ fontSize: "32px", fontWeight: "bold", margin: "12px 0" }}>
+        {value} <span style={{ fontSize: "16px", color: "var(--text-secondary)" }}>{unit}</span>
+      </p>
+      <p style={{ color: "var(--text-secondary)", fontSize: "14px" }}>{description}</p>
+    </div>
+  );
+}
+
 export default function GoogleFitSection({ isConnected }: Props) {
   const [data, setData] = useState<GoogleFitData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -32,24 +52,54 @@ export default function GoogleFitSection({ isConnected }: Props) {
 
   useEffect(() => {
     if (!isConnected) return;
+
+    const controller = new AbortController();
     setLoading(true);
-    fetch("/api/google-fit/data?days=30")
+
+    fetch(`/api/google-fit/data?days=${DEFAULT_FETCH_DAYS}`, { signal: controller.signal })
       .then((r) => r.json())
       .then((d) => {
         if (d.error) setError(d.error);
         else setData(d);
       })
-      .catch(() => setError("Error al cargar datos de Google Fit"))
+      .catch((err) => {
+        if (err.name !== "AbortError") {
+          setError("Error al cargar datos de Google Fit");
+        }
+      })
       .finally(() => setLoading(false));
+
+    return () => controller.abort();
   }, [isConnected]);
 
   async function handleDisconnect() {
     setDisconnecting(true);
-    await fetch("/api/google-fit/disconnect", { method: "POST" });
-    window.location.reload();
+    try {
+      const res = await fetch("/api/google-fit/disconnect", { method: "POST" });
+      if (!res.ok) throw new Error("Disconnect failed");
+      window.location.reload();
+    } catch {
+      setDisconnecting(false);
+      setError("Error al desconectar Google Fit");
+    }
   }
 
-  // --- No conectado ---
+  const { latestWeight, avgHR, stepsAvg7 } = useMemo(() => {
+    if (!data) return { latestWeight: null, avgHR: null, stepsAvg7: 0 };
+
+    const last7 = data.days.slice(-DEFAULT_FETCH_DAYS);
+    const weight = data.days.filter((d) => d.weightKg).pop()?.weightKg ?? null;
+    const withHR = last7.filter((d) => d.heartRateAvg);
+    const hr = withHR.length
+      ? Math.round(withHR.reduce((a, d) => a + d.heartRateAvg!, 0) / withHR.length)
+      : null;
+    const steps = last7.length
+      ? Math.round(last7.reduce((a, d) => a + d.steps, 0) / last7.length)
+      : 0;
+
+    return { latestWeight: weight, avgHR: hr, stepsAvg7: steps };
+  }, [data]);
+
   if (!isConnected) {
     return (
       <div className="card" style={{ borderColor: "var(--accent-gym)", gridColumn: "1 / -1" }}>
@@ -79,7 +129,6 @@ export default function GoogleFitSection({ isConnected }: Props) {
     );
   }
 
-  // --- Cargando ---
   if (loading) {
     return (
       <div className="card" style={{ gridColumn: "1 / -1" }}>
@@ -89,7 +138,6 @@ export default function GoogleFitSection({ isConnected }: Props) {
     );
   }
 
-  // --- Error ---
   if (error) {
     return (
       <div className="card" style={{ gridColumn: "1 / -1", borderColor: "#ef4444" }}>
@@ -105,21 +153,9 @@ export default function GoogleFitSection({ isConnected }: Props) {
     );
   }
 
-  // --- Conectado con datos ---
-  const last7 = data?.days.slice(-7) ?? [];
-  const latestWeight = data?.days.filter((d) => d.weightKg).pop()?.weightKg ?? null;
-  const avgHR = (() => {
-    const withHR = last7.filter((d) => d.heartRateAvg);
-    if (!withHR.length) return null;
-    return Math.round(withHR.reduce((a, d) => a + d.heartRateAvg!, 0) / withHR.length);
-  })();
-  const stepsAvg7 = last7.length
-    ? Math.round(last7.reduce((a, d) => a + d.steps, 0) / last7.length)
-    : 0;
-
   return (
     <>
-      {/* Header row */}
+      {/* Header */}
       <div className="card" style={{ gridColumn: "1 / -1", padding: "12px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <span style={{ fontSize: "20px" }}>🏃</span>
@@ -135,48 +171,38 @@ export default function GoogleFitSection({ isConnected }: Props) {
         </button>
       </div>
 
-      {/* Métricas */}
-      <div className="card">
-        <h3 style={{ color: "var(--accent-gym)" }}>Pasos (promedio 7d)</h3>
-        <p style={{ fontSize: "32px", fontWeight: "bold", margin: "12px 0" }}>
-          {stepsAvg7.toLocaleString()} <span style={{ fontSize: "16px", color: "var(--text-secondary)" }}>pasos/día</span>
-        </p>
-        <p style={{ color: "var(--text-secondary)", fontSize: "14px" }}>Últimos 7 días</p>
-      </div>
-
-      <div className="card">
-        <h3 style={{ color: "var(--accent-gym)" }}>FC Media (7d)</h3>
-        <p style={{ fontSize: "32px", fontWeight: "bold", margin: "12px 0" }}>
-          {avgHR ?? "—"} <span style={{ fontSize: "16px", color: "var(--text-secondary)" }}>bpm</span>
-        </p>
-        <p style={{ color: "var(--text-secondary)", fontSize: "14px" }}>Frecuencia cardíaca promedio</p>
-      </div>
-
-      <div className="card">
-        <h3 style={{ color: "var(--accent-gym)" }}>Minutos Activos (30d)</h3>
-        <p style={{ fontSize: "32px", fontWeight: "bold", margin: "12px 0" }}>
-          {data?.totals.activeMinutes ?? 0} <span style={{ fontSize: "16px", color: "var(--text-secondary)" }}>min</span>
-        </p>
-        <p style={{ color: "var(--text-secondary)", fontSize: "14px" }}>Últimos 30 días acumulado</p>
-      </div>
-
+      <MetricCard
+        title={`Pasos (promedio ${DEFAULT_FETCH_DAYS}d)`}
+        value={stepsAvg7.toLocaleString()}
+        unit="pasos/día"
+        description={`Últimos ${DEFAULT_FETCH_DAYS} días`}
+      />
+      <MetricCard
+        title={`FC Media (${DEFAULT_FETCH_DAYS}d)`}
+        value={avgHR ?? "—"}
+        unit="bpm"
+        description="Frecuencia cardíaca promedio"
+      />
+      <MetricCard
+        title={`Minutos Activos (${DEFAULT_FETCH_DAYS}d)`}
+        value={data?.totals.activeMinutes ?? 0}
+        unit="min"
+        description={`Últimos ${DEFAULT_FETCH_DAYS} días acumulado`}
+      />
       {latestWeight && (
-        <div className="card">
-          <h3 style={{ color: "var(--accent-gym)" }}>Peso Corporal</h3>
-          <p style={{ fontSize: "32px", fontWeight: "bold", margin: "12px 0" }}>
-            {latestWeight.toFixed(1)} <span style={{ fontSize: "16px", color: "var(--text-secondary)" }}>kg</span>
-          </p>
-          <p style={{ color: "var(--text-secondary)", fontSize: "14px" }}>Último registro sincronizado</p>
-        </div>
+        <MetricCard
+          title="Peso Corporal"
+          value={latestWeight.toFixed(1)}
+          unit="kg"
+          description="Último registro sincronizado"
+        />
       )}
-
-      <div className="card">
-        <h3 style={{ color: "var(--accent-gym)" }}>Calorías (30d)</h3>
-        <p style={{ fontSize: "32px", fontWeight: "bold", margin: "12px 0" }}>
-          {Math.round(data?.totals.caloriesBurned ?? 0).toLocaleString()} <span style={{ fontSize: "16px", color: "var(--text-secondary)" }}>kcal</span>
-        </p>
-        <p style={{ color: "var(--text-secondary)", fontSize: "14px" }}>Total quemado en 30 días</p>
-      </div>
+      <MetricCard
+        title={`Calorías (${DEFAULT_FETCH_DAYS}d)`}
+        value={Math.round(data?.totals.caloriesBurned ?? 0).toLocaleString()}
+        unit="kcal"
+        description={`Total quemado en ${DEFAULT_FETCH_DAYS} días`}
+      />
     </>
   );
 }

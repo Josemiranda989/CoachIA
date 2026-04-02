@@ -4,6 +4,10 @@ const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const GOOGLE_FIT_API = "https://www.googleapis.com/fitness/v1/users/me";
 
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const TOKEN_REFRESH_BUFFER_SECS = 60;
+export const DEFAULT_FETCH_DAYS = 7;
+
 const SCOPES = [
   "https://www.googleapis.com/auth/fitness.activity.read",
   "https://www.googleapis.com/auth/fitness.body.read",
@@ -95,7 +99,7 @@ export async function getValidGoogleFitToken(userId: string): Promise<string | n
 
   const nowSecs = Math.floor(Date.now() / 1000);
   const isExpired = user.googleFitTokenExpiry
-    ? user.googleFitTokenExpiry < nowSecs + 60
+    ? user.googleFitTokenExpiry < nowSecs + TOKEN_REFRESH_BUFFER_SECS
     : false;
 
   if (!isExpired) return user.googleFitAccessToken;
@@ -118,13 +122,13 @@ export async function getValidGoogleFitToken(userId: string): Promise<string | n
 // Rango de tiempo: últimos N días
 function timeRangeMillis(days: number): { startMs: number; endMs: number } {
   const endMs = Date.now();
-  const startMs = endMs - days * 24 * 60 * 60 * 1000;
+  const startMs = endMs - days * MS_PER_DAY;
   return { startMs, endMs };
 }
 
 export async function fetchGoogleFitData(
   accessToken: string,
-  days = 30
+  days = DEFAULT_FETCH_DAYS
 ): Promise<GoogleFitData> {
   const { startMs, endMs } = timeRangeMillis(days);
 
@@ -136,7 +140,7 @@ export async function fetchGoogleFitData(
       { dataTypeName: "com.google.active_minutes" },
       { dataTypeName: "com.google.calories.expended" },
     ],
-    bucketByTime: { durationMillis: 86400000 }, // 1 día
+    bucketByTime: { durationMillis: MS_PER_DAY },
     startTimeMillis: startMs,
     endTimeMillis: endMs,
   };
