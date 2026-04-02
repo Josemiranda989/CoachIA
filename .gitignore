@@ -40,6 +40,10 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# claude code
+.agents/
+skills-lock.json
+
 # database
 *.db
 *.db-journal
