@@ -43,6 +43,10 @@ next-env.d.ts
 # claude code
 .agents/
 skills-lock.json
+.claude/worktrees/
+
+# ide
+.vscode/
 
 # database
 *.db
