@@ -3,18 +3,21 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { exchangeCode } from "@/lib/strava";
 import { prisma } from "@/lib/prisma";
+import { getBaseUrl } from "@/lib/url";
 
 export async function GET(request: NextRequest) {
+  const baseUrl = getBaseUrl();
+
   const session = await getServerSession(authOptions);
   if (!session) {
-    return NextResponse.redirect(new URL("/auth/login", request.url));
+    return NextResponse.redirect(new URL("/auth/login", baseUrl));
   }
 
   const code = request.nextUrl.searchParams.get("code");
   const error = request.nextUrl.searchParams.get("error");
 
   if (error || !code) {
-    return NextResponse.redirect(new URL("/metrics?strava=denied", request.url));
+    return NextResponse.redirect(new URL("/metrics?strava=denied", baseUrl));
   }
 
   try {
@@ -30,9 +33,9 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    return NextResponse.redirect(new URL("/metrics?strava=ok", request.url));
+    return NextResponse.redirect(new URL("/metrics?strava=ok", baseUrl));
   } catch (e: any) {
     console.error("[Strava callback]", e);
-    return NextResponse.redirect(new URL("/metrics?strava=error", request.url));
+    return NextResponse.redirect(new URL("/metrics?strava=error", baseUrl));
   }
 }

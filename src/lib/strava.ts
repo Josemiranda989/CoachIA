@@ -1,10 +1,11 @@
 import { prisma } from "@/lib/prisma";
+import { getBaseUrl } from "@/lib/url";
 
 const STRAVA_TOKEN_URL = "https://www.strava.com/oauth/token";
 const STRAVA_API_URL = "https://www.strava.com/api/v3";
 
 export function getStravaAuthUrl() {
-  const base = process.env.NEXTAUTH_URL || "http://localhost:3001";
+  const base = getBaseUrl();
   const redirectUri = `${base}/api/strava/callback`;
   const params = new URLSearchParams({
     client_id: process.env.STRAVA_CLIENT_ID || "",

@@ -3,22 +3,24 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { exchangeGoogleCode } from "@/lib/google-fit";
 import { prisma } from "@/lib/prisma";
+import { getBaseUrl } from "@/lib/url";
 
 export async function GET(request: NextRequest) {
+  const baseUrl = getBaseUrl();
+
   const session = await getServerSession(authOptions);
   if (!session) {
-    return NextResponse.redirect(new URL("/auth/login", request.url));
+    return NextResponse.redirect(new URL("/auth/login", baseUrl));
   }
 
   const code = request.nextUrl.searchParams.get("code");
   const error = request.nextUrl.searchParams.get("error");
 
   if (error || !code) {
-    return NextResponse.redirect(new URL("/metrics?googlefit=error", request.url));
+    return NextResponse.redirect(new URL("/metrics?googlefit=error", baseUrl));
   }
 
   try {
-    const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
     const redirectUri = `${baseUrl}/api/google-fit/callback`;
 
     const tokens = await exchangeGoogleCode(code, redirectUri);
@@ -34,9 +36,9 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    return NextResponse.redirect(new URL("/metrics?googlefit=connected", request.url));
+    return NextResponse.redirect(new URL("/metrics?googlefit=connected", baseUrl));
   } catch (err: any) {
     console.error("Google Fit callback error:", err);
-    return NextResponse.redirect(new URL("/metrics?googlefit=error", request.url));
+    return NextResponse.redirect(new URL("/metrics?googlefit=error", baseUrl));
   }
 }
