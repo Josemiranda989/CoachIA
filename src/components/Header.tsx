@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useTheme } from "next-themes";
 import { useSession, signOut } from "next-auth/react";
-import { Home, Calendar, Dumbbell, BarChart3, HelpCircle, Sun, Moon, LogOut, LogIn, User } from "lucide-react";
+import { Home, Calendar, Dumbbell, BarChart3, Apple, Sun, Moon, LogOut, LogIn, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 
@@ -21,7 +21,7 @@ export function Header() {
     { href: "/routine/week", label: "Rutina", icon: Calendar },
     { href: "/workout/today", label: "Entrenamiento", icon: Dumbbell },
     { href: "/metrics", label: "Métricas", icon: BarChart3 },
-    { href: "/help", label: "Ayuda", icon: HelpCircle },
+    { href: "/nutrition", label: "Nutrición", icon: Apple },
   ];
 
   const userInitial = session?.user?.name?.charAt(0)?.toUpperCase() || "U";

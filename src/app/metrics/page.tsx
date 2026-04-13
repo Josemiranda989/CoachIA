@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import Link from "next/link";
-import { ArrowRight, Dumbbell, Trophy, Clock, Bike, Heart, TrendingUp } from "lucide-react";
+import { ArrowRight, Dumbbell, Trophy, Clock, TrendingUp } from "lucide-react";
 import { StravaActivities } from "@/components/StravaActivities";
 import { isStravaConfigured, getStravaAuthUrl } from "@/lib/strava";
 import GoogleFitSection from "./GoogleFitSection";
@@ -39,29 +39,18 @@ export default async function MetricsPage() {
     }
   });
 
-  const cyclingWorkouts = await prisma.dailyWorkout.findMany({
-    where: { type: "Cycling", completed: true }
-  });
-
   const totalVolume = allLogs.reduce((acc, log) => acc + (log.reps * log.weight), 0);
   const maxSquat = allLogs
     .filter(l => l.exercise.name.toLowerCase().includes("sentadilla") || l.exercise.name.toLowerCase().includes("squat"))
     .reduce((max, log) => log.weight > max ? log.weight : max, 0);
 
-  const avgCyclingDistance = cyclingWorkouts.length > 0
-    ? (cyclingWorkouts.reduce((acc, w) => acc + (w.distance || 0), 0) / cyclingWorkouts.length).toFixed(1)
-    : "N/A";
-
-  const avgCyclingHR = cyclingWorkouts.length > 0
-    ? Math.round(cyclingWorkouts.reduce((acc, w) => acc + (w.averageHeartRate || 0), 0) / cyclingWorkouts.length)
-    : "N/A";
-
-  const totalCyclingMins = cyclingWorkouts.reduce((acc, w) => acc + (w.actualDuration || 0), 0);
+  const totalSets = allLogs.length;
+  const totalWorkouts = new Set(allLogs.map(l => l.exercise.dailyWorkout.id)).size;
 
   const metrics = [
     {
       label: "Volumen Histórico",
-      value: totalVolume,
+      value: totalVolume.toLocaleString("es-AR"),
       unit: "kg",
       description: "Peso total levantado sumando todos tus sets",
       icon: TrendingUp,
@@ -80,34 +69,24 @@ export default async function MetricsPage() {
       border: "color-mix(in srgb, var(--accent-gym) 20%, transparent)",
     },
     {
-      label: "Tiempo Total Bici",
-      value: totalCyclingMins,
-      unit: "min",
-      description: "Tiempo total acumulado sobre la bici",
+      label: "Sesiones Gym",
+      value: totalWorkouts,
+      unit: "días",
+      description: "Total de sesiones de gym completadas",
+      icon: Dumbbell,
+      color: "var(--accent-gym)",
+      bg: "color-mix(in srgb, var(--accent-gym) 8%, transparent)",
+      border: "color-mix(in srgb, var(--accent-gym) 20%, transparent)",
+    },
+    {
+      label: "Series Totales",
+      value: totalSets.toLocaleString("es-AR"),
+      unit: "sets",
+      description: "Total de series registradas",
       icon: Clock,
-      color: "var(--accent-cycling)",
-      bg: "color-mix(in srgb, var(--accent-cycling) 8%, transparent)",
-      border: "color-mix(in srgb, var(--accent-cycling) 20%, transparent)",
-    },
-    {
-      label: "Distancia Media",
-      value: avgCyclingDistance,
-      unit: avgCyclingDistance !== "N/A" ? "km" : "",
-      description: "Distancia promedio por sesión de bici",
-      icon: Bike,
-      color: "var(--accent-cycling)",
-      bg: "color-mix(in srgb, var(--accent-cycling) 8%, transparent)",
-      border: "color-mix(in srgb, var(--accent-cycling) 20%, transparent)",
-    },
-    {
-      label: "FC Promedio",
-      value: avgCyclingHR,
-      unit: avgCyclingHR !== "N/A" ? "bpm" : "",
-      description: "Frecuencia cardíaca media en bici",
-      icon: Heart,
-      color: "var(--accent-cycling)",
-      bg: "color-mix(in srgb, var(--accent-cycling) 8%, transparent)",
-      border: "color-mix(in srgb, var(--accent-cycling) 20%, transparent)",
+      color: "var(--accent-gym)",
+      bg: "color-mix(in srgb, var(--accent-gym) 8%, transparent)",
+      border: "color-mix(in srgb, var(--accent-gym) 20%, transparent)",
     },
   ];
 
