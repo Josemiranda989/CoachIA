@@ -41,12 +41,7 @@ model DailyWorkout {
   // Cycling targets
   targetDuration Int?    // minutes
   targetPower    String? // e.g. "Zone 2"
-  
-  // Actuals
-  actualDuration Int?
-  distance       Float?
-  averageHeartRate Int?
-  rpe            Int?    // 1-10
+
   notes          String?
   completed      Boolean @default(false)
   creatineTaken  Boolean @default(false)
@@ -94,11 +89,6 @@ model User {
   stravaAccessToken  String?
   stravaRefreshToken String?
   stravaTokenExpiry  Int?     // Unix timestamp
-
-  // Google Fit integration
-  googleFitAccessToken  String?
-  googleFitRefreshToken String?
-  googleFitTokenExpiry  Int?    // Unix timestamp (seconds)
 
   accounts      Account[]
   sessions      Session[]
