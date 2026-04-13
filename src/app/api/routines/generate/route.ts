@@ -2,72 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { GoogleGenAI, Type } from '@google/genai';
-
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY ?? '' });
-
-// Schema that forces Gemini to return exactly the format /api/routines expects
-const routineResponseSchema = {
-  type: Type.OBJECT,
-  properties: {
-    weekStart: {
-      type: Type.STRING,
-      description: 'ISO 8601 date string for the next Monday, e.g. "2026-03-30T00:00:00Z"',
-    },
-    days: {
-      type: Type.ARRAY,
-      items: {
-        type: Type.OBJECT,
-        properties: {
-          dayOfWeek: {
-            type: Type.STRING,
-            description: 'Day name in English: Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday',
-          },
-          type: {
-            type: Type.STRING,
-            description: 'Workout type: Gym, Cycling, Rest, or Gym + Cycling',
-          },
-          exercises: {
-            type: Type.ARRAY,
-            description: 'List of exercises for Gym days. Omit for Cycling or Rest days.',
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                name: {
-                  type: Type.STRING,
-                  description: 'Exercise name in Spanish',
-                },
-                targetSets: {
-                  type: Type.NUMBER,
-                  description: 'Number of sets (positive integer)',
-                },
-                targetReps: {
-                  type: Type.STRING,
-                  description: 'Target reps as a string range, e.g. "8-10", "12-15", "5"',
-                },
-              },
-              required: ['name', 'targetSets', 'targetReps'],
-            },
-          },
-          targetDuration: {
-            type: Type.NUMBER,
-            description: 'Target duration in minutes for Cycling days',
-          },
-          targetPower: {
-            type: Type.STRING,
-            description: 'Target power zone for Cycling days, e.g. "Z2 Endurance", "Z3 Tempo"',
-          },
-          notes: {
-            type: Type.STRING,
-            description: 'Optional notes for the day',
-          },
-        },
-        required: ['dayOfWeek', 'type'],
-      },
-    },
-  },
-  required: ['weekStart', 'days'],
-};
+import Anthropic from '@anthropic-ai/sdk';
 
 function getNextMonday(): string {
   const now = new Date();
@@ -96,8 +31,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized: please login first' }, { status: 401 });
     }
 
-    if (!process.env.GEMINI_API_KEY) {
-      return NextResponse.json({ error: 'GEMINI_API_KEY no está configurada en el servidor' }, { status: 500 });
+    if (!process.env.ANTHROPIC_API_KEY) {
+      return NextResponse.json({ error: 'ANTHROPIC_API_KEY no está configurada en el servidor' }, { status: 500 });
     }
 
     const body = await request.json();
@@ -109,7 +44,9 @@ export async function POST(request: Request) {
 
     const nextMonday = getNextMonday();
 
-    const prompt = `Eres un entrenador personal experto en fuerza y ciclismo. Genera una rutina semanal COMPLETA de 7 días (de Monday a Sunday).
+    const client = new Anthropic();
+
+    const prompt = `Genera una rutina semanal COMPLETA de 7 días (Monday a Sunday) en formato JSON.
 
 DATOS DEL ATLETA:
 - Objetivo principal: ${goal}
@@ -126,30 +63,52 @@ REGLAS ESTRICTAS:
 5. Para días Cycling: incluir targetDuration (60-120 minutos) y targetPower (zona como "Z2 Endurance", "Z3 Tempo", "Z4 Threshold")
 6. Para días Rest: NO incluir exercises, targetDuration ni targetPower
 7. Variar los grupos musculares entre días de gym (no repetir el mismo grupo dos días seguidos)
-8. Los ejercicios deben ser realistas y progresivos para el objetivo "${goal}"`;
+8. Los ejercicios deben ser realistas y progresivos para el objetivo "${goal}"
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.0-flash',
-      contents: prompt,
-      config: {
-        responseMimeType: 'application/json',
-        responseSchema: routineResponseSchema,
-      },
+Responde UNICAMENTE con el JSON, sin texto adicional ni markdown. El formato exacto es:
+{
+  "weekStart": "${nextMonday}",
+  "days": [
+    {
+      "dayOfWeek": "Monday",
+      "type": "Gym",
+      "exercises": [{ "name": "Sentadillas", "targetSets": 4, "targetReps": "8-10" }]
+    },
+    {
+      "dayOfWeek": "Tuesday",
+      "type": "Cycling",
+      "targetDuration": 90,
+      "targetPower": "Z2 Endurance"
+    },
+    {
+      "dayOfWeek": "Wednesday",
+      "type": "Rest"
+    }
+  ]
+}`;
+
+    const response = await client.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 4096,
+      messages: [
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
     });
 
-    const text = response.text;
-    if (!text) {
-      return NextResponse.json({ error: 'Gemini no devolvió una respuesta válida' }, { status: 502 });
+    const textBlock = response.content.find((b) => b.type === 'text');
+    if (!textBlock || textBlock.type !== 'text') {
+      return NextResponse.json({ error: 'Claude no devolvió una respuesta válida' }, { status: 502 });
     }
 
-    const routine = JSON.parse(text);
-
-    // Ensure weekStart is correct (override if Gemini changed it)
+    const routine = JSON.parse(textBlock.text);
     routine.weekStart = nextMonday;
 
     return NextResponse.json(routine);
   } catch (err: any) {
-    console.error('Gemini generation error:', err);
+    console.error('Claude generation error:', err);
     return NextResponse.json(
       { error: 'Error al generar la rutina', details: err.message },
       { status: 500 }
