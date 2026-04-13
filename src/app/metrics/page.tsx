@@ -3,11 +3,12 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import Link from "next/link";
-import { ArrowRight, Dumbbell, Trophy, Clock, TrendingUp } from "lucide-react";
+import { ArrowRight, Dumbbell, Trophy, Clock, TrendingUp, Bike, Mountain, Route, Timer } from "lucide-react";
 import { StravaActivities } from "@/components/StravaActivities";
-import { isStravaConfigured, getStravaAuthUrl } from "@/lib/strava";
-import GoogleFitSection from "./GoogleFitSection";
+import { isStravaConfigured, getStravaAuthUrl, getValidAccessToken, fetchStats } from "@/lib/strava";
 import { WeightChart } from "./WeightChart";
+import { CountUp } from "@/components/CountUp";
+import { BackLink } from "@/components/BackLink";
 
 export default async function MetricsPage() {
   const session = await getServerSession(authOptions);
@@ -18,13 +19,6 @@ export default async function MetricsPage() {
 
   const stravaConnected = userId && stravaConfigured
     ? !!(await prisma.user.findUnique({ where: { id: userId }, select: { stravaAthleteId: true } }))?.stravaAthleteId
-    : false;
-
-  const googleFitConnected = userId
-    ? !!(await prisma.user.findUnique({
-        where: { id: userId },
-        select: { googleFitAccessToken: true },
-      }))?.googleFitAccessToken
     : false;
 
   const allLogs = await prisma.workoutLog.findMany({
@@ -47,26 +41,76 @@ export default async function MetricsPage() {
   const totalSets = allLogs.length;
   const totalWorkouts = new Set(allLogs.map(l => l.exercise.dailyWorkout.id)).size;
 
-  const metrics = [
+  // Cycling stats from Strava (source of truth)
+  let cyclingYtdKm = 0;
+  let cyclingYtdHours = 0;
+  let longestRideKm = 0;
+  let totalElevationM = 0;
+  let cyclingAvailable = false;
+  if (userId && stravaConnected) {
+    try {
+      const token = await getValidAccessToken(userId);
+      const athlete = token
+        ? await prisma.user.findUnique({ where: { id: userId }, select: { stravaAthleteId: true } })
+        : null;
+      if (token && athlete?.stravaAthleteId) {
+        const stats = await fetchStats(token, athlete.stravaAthleteId);
+        const ytd = stats?.ytd_ride_totals;
+        if (ytd) {
+          cyclingYtdKm = ytd.distance / 1000;
+          cyclingYtdHours = ytd.moving_time / 3600;
+          totalElevationM = ytd.elevation_gain || 0;
+        }
+        longestRideKm = (stats?.biggest_ride_distance || 0) / 1000;
+        cyclingAvailable = true;
+      }
+    } catch {
+      // Strava fetch failed (expired token, network) — skip cycling cards silently
+    }
+  }
+
+  const gymColor = {
+    color: "var(--accent-gym)",
+    bg: "color-mix(in srgb, var(--accent-gym) 8%, transparent)",
+    border: "color-mix(in srgb, var(--accent-gym) 20%, transparent)",
+  };
+
+  const cyclingColor = {
+    color: "var(--accent-cycling)",
+    bg: "color-mix(in srgb, var(--accent-cycling) 8%, transparent)",
+    border: "color-mix(in srgb, var(--accent-cycling) 20%, transparent)",
+  };
+
+  type Metric = {
+    label: string;
+    value: number;
+    displayFallback?: string;
+    unit: string;
+    description: string;
+    icon: any;
+    decimals?: number;
+    color: string;
+    bg: string;
+    border: string;
+  };
+
+  const gymMetrics: Metric[] = [
     {
       label: "Volumen Histórico",
-      value: totalVolume.toLocaleString("es-AR"),
+      value: totalVolume,
       unit: "kg",
       description: "Peso total levantado sumando todos tus sets",
       icon: TrendingUp,
-      color: "var(--accent-gym)",
-      bg: "color-mix(in srgb, var(--accent-gym) 8%, transparent)",
-      border: "color-mix(in srgb, var(--accent-gym) 20%, transparent)",
+      ...gymColor,
     },
     {
       label: "Récord Sentadilla",
-      value: maxSquat || "—",
+      value: maxSquat,
+      displayFallback: maxSquat ? undefined : "—",
       unit: maxSquat ? "kg" : "",
       description: "Tu peso máximo registrado en sentadilla",
       icon: Trophy,
-      color: "var(--accent-gym)",
-      bg: "color-mix(in srgb, var(--accent-gym) 8%, transparent)",
-      border: "color-mix(in srgb, var(--accent-gym) 20%, transparent)",
+      ...gymColor,
     },
     {
       label: "Sesiones Gym",
@@ -74,32 +118,67 @@ export default async function MetricsPage() {
       unit: "días",
       description: "Total de sesiones de gym completadas",
       icon: Dumbbell,
-      color: "var(--accent-gym)",
-      bg: "color-mix(in srgb, var(--accent-gym) 8%, transparent)",
-      border: "color-mix(in srgb, var(--accent-gym) 20%, transparent)",
+      ...gymColor,
     },
     {
       label: "Series Totales",
-      value: totalSets.toLocaleString("es-AR"),
+      value: totalSets,
       unit: "sets",
       description: "Total de series registradas",
       icon: Clock,
-      color: "var(--accent-gym)",
-      bg: "color-mix(in srgb, var(--accent-gym) 8%, transparent)",
-      border: "color-mix(in srgb, var(--accent-gym) 20%, transparent)",
+      ...gymColor,
     },
   ];
 
+  const cyclingMetrics: Metric[] = cyclingAvailable
+    ? [
+        {
+          label: "KM Este Año",
+          value: cyclingYtdKm,
+          unit: "km",
+          description: "Distancia total recorrida en bici este año",
+          icon: Route,
+          ...cyclingColor,
+        },
+        {
+          label: "Horas Este Año",
+          value: cyclingYtdHours,
+          decimals: 1,
+          unit: "hs",
+          description: "Tiempo total en bici este año",
+          icon: Timer,
+          ...cyclingColor,
+        },
+        {
+          label: "Ride Más Largo",
+          value: longestRideKm,
+          decimals: 1,
+          unit: "km",
+          description: "Tu salida más larga registrada en Strava",
+          icon: Trophy,
+          ...cyclingColor,
+        },
+        {
+          label: "Desnivel Año",
+          value: totalElevationM,
+          unit: "m",
+          description: "Metros de desnivel positivo acumulados",
+          icon: Mountain,
+          ...cyclingColor,
+        },
+      ]
+    : [];
+
+  const metrics: Metric[] = [...gymMetrics, ...cyclingMetrics];
+
   return (
     <div className="app-container">
-      <Link href="/" className="back-btn">
-        ← Volver
-      </Link>
+      <BackLink href="/" />
       <h1 className="title">Métricas</h1>
       <p className="subtitle">Tu progreso general</p>
 
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-        {metrics.map(({ label, value, unit, description, icon: Icon, color, bg, border }) => (
+        {metrics.map(({ label, value, displayFallback, unit, description, icon: Icon, color, bg, border, decimals }) => (
           <div
             key={label}
             className="card"
@@ -117,8 +196,10 @@ export default async function MetricsPage() {
               {label}
             </p>
             <p className="font-bold mb-1 text-xl md:text-3xl" style={{ color }}>
-              {value}{" "}
-              <span className="text-xs md:text-sm" style={{ color: "var(--text-secondary)", fontWeight: 400 }}>{unit}</span>
+              {displayFallback ?? <CountUp value={value} decimals={decimals ?? 0} />}{" "}
+              {unit && (
+                <span className="text-xs md:text-sm" style={{ color: "var(--text-secondary)", fontWeight: 400 }}>{unit}</span>
+              )}
             </p>
             <p style={{ color: "var(--text-secondary)", fontSize: "12px" }}>{description}</p>
           </div>
@@ -149,8 +230,6 @@ export default async function MetricsPage() {
             </p>
           </div>
         </Link>
-
-        <GoogleFitSection isConnected={googleFitConnected} />
 
         <WeightChart />
       </div>
