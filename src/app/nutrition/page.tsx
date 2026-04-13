@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ArrowLeft, Zap, Ban, Droplets, Clock, Apple, AlertTriangle } from "lucide-react";
+import { Zap, Ban, Droplets, Clock, Apple, AlertTriangle } from "lucide-react";
+import { BackLink } from "@/components/BackLink";
 
 type FuelItem = {
   name: string;
@@ -229,15 +230,7 @@ function TimingBadge({ timing }: { timing: FuelItem["timing"] }) {
 export default function NutritionPage() {
   return (
     <div className="app-container py-10 pb-24 md:pb-10">
-      {/* Back */}
-      <Link
-        href="/"
-        className="inline-flex items-center gap-2 text-sm font-medium mb-8 transition-colors"
-        style={{ color: "var(--text-secondary)" }}
-      >
-        <ArrowLeft size={16} />
-        Volver al Dashboard
-      </Link>
+      <BackLink href="/" label="Volver al Dashboard" />
 
       {/* Hero */}
       <header className="mb-10 animate-fade-up">

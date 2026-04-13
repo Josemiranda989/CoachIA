@@ -158,44 +158,6 @@ export function Header() {
         </div>
       </div>
 
-      {/* Mobile bottom nav */}
-      <div className="md:hidden" style={{
-        borderTop: "1px solid var(--glass-border)",
-        background: "var(--bg-card)",
-        backdropFilter: "blur(16px)",
-      }}>
-        <nav style={{ display: "flex", justifyContent: "space-around", padding: "6px 4px 10px" }}>
-          {navLinks.map((link) => {
-            const Icon = link.icon;
-            const isActive = pathname === link.href;
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 2,
-                  padding: "6px 10px",
-                  minHeight: 48,
-                  borderRadius: 12,
-                  textDecoration: "none",
-                  transition: "all 0.2s ease",
-                  color: isActive ? "var(--accent-primary)" : "var(--text-secondary)",
-                  background: isActive ? "rgba(220, 38, 38, 0.1)" : "transparent",
-                }}
-              >
-                <Icon size={22} />
-                <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                  {link.label}
-                </span>
-              </Link>
-            );
-          })}
-        </nav>
-      </div>
     </header>
   );
 }

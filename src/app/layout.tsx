@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Providers } from "@/components/Providers";
 import { Header } from "@/components/Header";
+import { BottomNav } from "@/components/BottomNav";
+import { PageTransition } from "@/components/PageTransition";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -18,7 +20,10 @@ export default function RootLayout({
       <body className="bg-bg-main text-text-primary min-h-screen">
         <Providers>
           <Header />
-          <main className="pb-20 md:pb-0">{children}</main>
+          <main className="pb-20 md:pb-0">
+            <PageTransition>{children}</PageTransition>
+          </main>
+          <BottomNav />
         </Providers>
       </body>
     </html>

@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import { BackLink } from "@/components/BackLink";
 
 export default async function RecordsPage() {
   const allLogs = await prisma.workoutLog.findMany({
@@ -35,9 +36,7 @@ export default async function RecordsPage() {
 
   return (
     <div className="container" style={{ paddingBottom: "60px" }}>
-      <Link href="/metrics" className="inline-flex items-center gap-1 mb-4 text-sm transition-colors hover:text-[var(--text-primary)]" style={{ color: "var(--text-secondary)" }}>
-        &larr; Volver a Métricas
-      </Link>
+      <BackLink href="/metrics" label="Volver a Métricas" />
       <h1 className="title">Récords Personales (PRs) 🏆</h1>
       <p className="subtitle">Tu máximo peso levantado por ejercicio</p>
 
