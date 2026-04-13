@@ -319,28 +319,28 @@ export default function NutritionPage() {
               </div>
 
               {/* Stats */}
-              <div className="grid grid-cols-3 gap-3 mb-3">
-                <div className="rounded-xl p-2.5 text-center" style={{ background: "rgba(255,255,255,0.04)" }}>
-                  <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: "var(--text-secondary)" }}>
+              <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-3">
+                <div className="rounded-xl p-2 sm:p-2.5 text-center" style={{ background: "rgba(255,255,255,0.04)" }}>
+                  <p className="text-[9px] sm:text-[10px] uppercase tracking-wider mb-1" style={{ color: "var(--text-secondary)" }}>
                     Carbos/100g
                   </p>
-                  <p className="text-sm font-bold" style={{ color: "var(--accent-gym)" }}>
+                  <p className="text-xs sm:text-sm font-bold" style={{ color: "var(--accent-gym)" }}>
                     {item.carbsPer}
                   </p>
                 </div>
-                <div className="rounded-xl p-2.5 text-center" style={{ background: "rgba(255,255,255,0.04)" }}>
-                  <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: "var(--text-secondary)" }}>
+                <div className="rounded-xl p-2 sm:p-2.5 text-center" style={{ background: "rgba(255,255,255,0.04)" }}>
+                  <p className="text-[9px] sm:text-[10px] uppercase tracking-wider mb-1" style={{ color: "var(--text-secondary)" }}>
                     Porcion
                   </p>
-                  <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
+                  <p className="text-xs sm:text-sm font-bold" style={{ color: "var(--text-primary)" }}>
                     {item.portion}
                   </p>
                 </div>
-                <div className="rounded-xl p-2.5 text-center" style={{ background: "rgba(16,185,129,0.08)" }}>
-                  <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: "var(--text-secondary)" }}>
+                <div className="rounded-xl p-2 sm:p-2.5 text-center" style={{ background: "color-mix(in srgb, var(--accent-cycling) 8%, transparent)" }}>
+                  <p className="text-[9px] sm:text-[10px] uppercase tracking-wider mb-1" style={{ color: "var(--text-secondary)" }}>
                     Carbos
                   </p>
-                  <p className="text-sm font-bold" style={{ color: "#10b981" }}>
+                  <p className="text-xs sm:text-sm font-bold" style={{ color: "var(--accent-cycling)" }}>
                     {item.carbsPerPortion}g
                   </p>
                 </div>

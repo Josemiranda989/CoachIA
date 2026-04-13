@@ -30,7 +30,7 @@ export function Header() {
     <header className="sticky top-0 z-50" style={{ background: "var(--bg-card)", borderBottom: "1px solid var(--glass-border)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)" }}>
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 16px", display: "flex", alignItems: "center", height: 56 }}>
         {/* Logo */}
-        <Link href="/" style={{ display: "flex", alignItems: "center", gap: 2, textDecoration: "none", marginRight: 48 }}>
+        <Link href="/" style={{ display: "flex", alignItems: "center", gap: 2, textDecoration: "none", marginRight: 32 }}>
           <span style={{ fontSize: 24, fontWeight: 900, letterSpacing: "-0.04em", color: "var(--text-primary)" }}>
             Coach
           </span>
@@ -52,7 +52,7 @@ export function Header() {
                   display: "flex",
                   alignItems: "center",
                   gap: 8,
-                  padding: "10px 18px",
+                  padding: "12px 18px",
                   borderRadius: 10,
                   fontSize: 14,
                   fontWeight: 500,
@@ -164,7 +164,7 @@ export function Header() {
         background: "var(--bg-card)",
         backdropFilter: "blur(16px)",
       }}>
-        <nav style={{ display: "flex", justifyContent: "space-around", padding: "8px 8px 12px" }}>
+        <nav style={{ display: "flex", justifyContent: "space-around", padding: "6px 4px 10px" }}>
           {navLinks.map((link) => {
             const Icon = link.icon;
             const isActive = pathname === link.href;
@@ -176,8 +176,10 @@ export function Header() {
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
-                  gap: 4,
-                  padding: "8px 12px",
+                  justifyContent: "center",
+                  gap: 2,
+                  padding: "6px 10px",
+                  minHeight: 48,
                   borderRadius: 12,
                   textDecoration: "none",
                   transition: "all 0.2s ease",
@@ -185,7 +187,7 @@ export function Header() {
                   background: isActive ? "rgba(220, 38, 38, 0.1)" : "transparent",
                 }}
               >
-                <Icon size={20} />
+                <Icon size={22} />
                 <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>
                   {link.label}
                 </span>

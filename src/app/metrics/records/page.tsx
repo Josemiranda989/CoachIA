@@ -35,13 +35,14 @@ export default async function RecordsPage() {
 
   return (
     <div className="container" style={{ paddingBottom: "60px" }}>
-      <Link href="/metrics" style={{ color: "var(--text-secondary)", display: "inline-block", marginBottom: "16px" }}>
+      <Link href="/metrics" className="inline-flex items-center gap-1 mb-4 text-sm transition-colors hover:text-[var(--text-primary)]" style={{ color: "var(--text-secondary)" }}>
         &larr; Volver a Métricas
       </Link>
       <h1 className="title">Récords Personales (PRs) 🏆</h1>
       <p className="subtitle">Tu máximo peso levantado por ejercicio</p>
 
-      <div className="card" style={{ padding: 0, overflow: "hidden", cursor: "default" }}>
+      {/* Desktop: tabla | Mobile: tarjetas */}
+      <div className="hidden md:block card" style={{ padding: 0, overflow: "hidden", cursor: "default" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", color: "var(--text-primary)" }}>
           <thead>
             <tr style={{ backgroundColor: "var(--bg-card-hover)", textAlign: "left" }}>
@@ -74,6 +75,34 @@ export default async function RecordsPage() {
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile: card layout */}
+      <div className="md:hidden flex flex-col gap-3">
+        {sortedNames.map(name => {
+          const record = recordsMap[name];
+          return (
+            <div key={name} className="card" style={{ cursor: "default" }}>
+              <h3 style={{ fontWeight: 600, marginBottom: 8 }}>{name}</h3>
+              <div className="flex items-center gap-4 text-sm">
+                <span style={{ color: "var(--accent-gym)", fontWeight: 700, fontSize: "18px" }}>
+                  {record.maxWeight} kg
+                </span>
+                <span style={{ color: "var(--text-secondary)" }}>
+                  × {record.reps} reps
+                </span>
+                <span style={{ color: "var(--text-secondary)", fontSize: "12px", marginLeft: "auto" }}>
+                  {record.date ? new Date(record.date).toLocaleDateString() : "-"}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+        {sortedNames.length === 0 && (
+          <div className="card" style={{ textAlign: "center", color: "var(--text-secondary)", cursor: "default" }}>
+            Aún no tienes récords registrados. ¡Empieza a entrenar!
+          </div>
+        )}
       </div>
     </div>
   );

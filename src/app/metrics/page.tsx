@@ -66,8 +66,8 @@ export default async function MetricsPage() {
       description: "Peso total levantado sumando todos tus sets",
       icon: TrendingUp,
       color: "var(--accent-gym)",
-      bg: "rgba(245,158,11,0.08)",
-      border: "rgba(245,158,11,0.2)",
+      bg: "color-mix(in srgb, var(--accent-gym) 8%, transparent)",
+      border: "color-mix(in srgb, var(--accent-gym) 20%, transparent)",
     },
     {
       label: "Récord Sentadilla",
@@ -76,8 +76,8 @@ export default async function MetricsPage() {
       description: "Tu peso máximo registrado en sentadilla",
       icon: Trophy,
       color: "var(--accent-gym)",
-      bg: "rgba(245,158,11,0.08)",
-      border: "rgba(245,158,11,0.2)",
+      bg: "color-mix(in srgb, var(--accent-gym) 8%, transparent)",
+      border: "color-mix(in srgb, var(--accent-gym) 20%, transparent)",
     },
     {
       label: "Tiempo Total Bici",
@@ -86,8 +86,8 @@ export default async function MetricsPage() {
       description: "Tiempo total acumulado sobre la bici",
       icon: Clock,
       color: "var(--accent-cycling)",
-      bg: "rgba(16,185,129,0.08)",
-      border: "rgba(16,185,129,0.2)",
+      bg: "color-mix(in srgb, var(--accent-cycling) 8%, transparent)",
+      border: "color-mix(in srgb, var(--accent-cycling) 20%, transparent)",
     },
     {
       label: "Distancia Media",
@@ -96,8 +96,8 @@ export default async function MetricsPage() {
       description: "Distancia promedio por sesión de bici",
       icon: Bike,
       color: "var(--accent-cycling)",
-      bg: "rgba(16,185,129,0.08)",
-      border: "rgba(16,185,129,0.2)",
+      bg: "color-mix(in srgb, var(--accent-cycling) 8%, transparent)",
+      border: "color-mix(in srgb, var(--accent-cycling) 20%, transparent)",
     },
     {
       label: "FC Promedio",
@@ -106,8 +106,8 @@ export default async function MetricsPage() {
       description: "Frecuencia cardíaca media en bici",
       icon: Heart,
       color: "var(--accent-cycling)",
-      bg: "rgba(16,185,129,0.08)",
-      border: "rgba(16,185,129,0.2)",
+      bg: "color-mix(in srgb, var(--accent-cycling) 8%, transparent)",
+      border: "color-mix(in srgb, var(--accent-cycling) 20%, transparent)",
     },
   ];
 
@@ -129,7 +129,7 @@ export default async function MetricsPage() {
             <div className="flex items-start justify-between mb-3">
               <div
                 className="p-2 rounded-xl"
-                style={{ background: `${color}22` }}
+                style={{ background: `color-mix(in srgb, ${color} 13%, transparent)` }}
               >
                 <Icon size={20} style={{ color }} />
               </div>
@@ -137,9 +137,9 @@ export default async function MetricsPage() {
             <p className="text-sm font-semibold mb-1" style={{ color: "var(--text-secondary)" }}>
               {label}
             </p>
-            <p className="font-bold mb-1" style={{ fontSize: "28px", color }}>
+            <p className="font-bold mb-1 text-xl md:text-3xl" style={{ color }}>
               {value}{" "}
-              <span style={{ fontSize: "14px", color: "var(--text-secondary)", fontWeight: 400 }}>{unit}</span>
+              <span className="text-xs md:text-sm" style={{ color: "var(--text-secondary)", fontWeight: 400 }}>{unit}</span>
             </p>
             <p style={{ color: "var(--text-secondary)", fontSize: "12px" }}>{description}</p>
           </div>
@@ -149,10 +149,10 @@ export default async function MetricsPage() {
         <Link
           href="/metrics/records"
           className="card group flex flex-col justify-between"
-          style={{ border: "1px solid rgba(245,158,11,0.4)", background: "rgba(245,158,11,0.06)" }}
+          style={{ border: "1px solid color-mix(in srgb, var(--accent-gym) 40%, transparent)", background: "color-mix(in srgb, var(--accent-gym) 6%, transparent)" }}
         >
           <div className="flex items-start justify-between mb-3">
-            <div className="p-2 rounded-xl" style={{ background: "rgba(245,158,11,0.15)" }}>
+            <div className="p-2 rounded-xl" style={{ background: "color-mix(in srgb, var(--accent-gym) 15%, transparent)" }}>
               <Dumbbell size={20} style={{ color: "var(--accent-gym)" }} />
             </div>
             <ArrowRight

@@ -129,7 +129,7 @@ export function WeightChart() {
         </div>
       </div>
 
-      <div style={{ width: "100%", height: 200 }}>
+      <div className="w-full h-[180px] md:h-[250px]">
         <ResponsiveContainer>
           <LineChart data={data}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />

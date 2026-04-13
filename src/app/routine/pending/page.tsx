@@ -71,7 +71,7 @@ export default async function PendingRoutinePage() {
   };
 
   return (
-    <div className="app-container py-10 pb-32">
+    <div className="app-container py-10 pb-20">
       <Link
         href="/"
         className="text-text-secondary inline-block mb-4 hover:text-text-primary transition-colors"
@@ -120,10 +120,10 @@ export default async function PendingRoutinePage() {
                 {day.exercises.map((ex) => (
                   <div
                     key={ex.id}
-                    className="flex items-center justify-between text-sm"
+                    className="flex items-center justify-between gap-3 text-sm"
                   >
-                    <span className="text-text-primary">{ex.name}</span>
-                    <span className="text-text-secondary">
+                    <span className="text-text-primary min-w-0 truncate">{ex.name}</span>
+                    <span className="text-text-secondary shrink-0">
                       {ex.targetSets} x {ex.targetReps}
                     </span>
                   </div>
