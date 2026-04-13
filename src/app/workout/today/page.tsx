@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { GymWorkoutClient } from "./GymWorkoutClient";
 import { CyclingWorkoutClient } from "./CyclingWorkoutClient";
+import { BackLink } from "@/components/BackLink";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
@@ -51,7 +52,7 @@ export default async function TodayWorkoutPage() {
   if (isRestLike) {
     return (
       <div className="app-container py-8">
-        <Link href="/" className="back-btn">&larr; Volver</Link>
+        <BackLink href="/" />
         <h1 className="title">{todayWorkout?.type ?? "Descanso"}</h1>
         {todayWorkout?.targetDuration && (
           <p className="subtitle">{todayWorkout.targetDuration} min — {todayWorkout.targetPower}</p>
@@ -93,9 +94,7 @@ export default async function TodayWorkoutPage() {
 
   return (
     <div className="px-4 py-6 md:px-6 md:py-8 pb-16" style={{ maxWidth: 1200, margin: "0 auto" }}>
-      <Link href="/" className="inline-flex items-center gap-1 mb-4 text-sm transition-colors hover:text-[var(--text-primary)]" style={{ color: "var(--text-secondary)" }}>
-        &larr; Volver
-      </Link>
+      <BackLink href="/" />
       <h1 className="title">{title}</h1>
       <p className="subtitle">Rutina del {daysInSpanish[todayWorkout.dayOfWeek] || todayWorkout.dayOfWeek}</p>
 
