@@ -93,7 +93,7 @@ export default async function TodayWorkoutPage() {
 
   return (
     <div className="px-4 py-6 md:px-6 md:py-8 pb-16" style={{ maxWidth: 1200, margin: "0 auto" }}>
-      <Link href="/" className="text-text-secondary inline-block mb-4 hover:text-text-primary transition-colors">
+      <Link href="/" className="inline-flex items-center gap-1 mb-4 text-sm transition-colors hover:text-[var(--text-primary)]" style={{ color: "var(--text-secondary)" }}>
         &larr; Volver
       </Link>
       <h1 className="title">{title}</h1>

@@ -67,7 +67,7 @@ export default async function Home() {
         {totalTrainingDays > 0 && (
           <div
             className="mt-5 p-4 rounded-2xl"
-            style={{ background: "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.18)" }}
+            style={{ background: "color-mix(in srgb, var(--accent-gym) 7%, transparent)", border: "1px solid color-mix(in srgb, var(--accent-gym) 18%, transparent)" }}
           >
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-semibold" style={{ color: "var(--text-secondary)" }}>

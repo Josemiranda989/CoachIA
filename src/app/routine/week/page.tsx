@@ -41,10 +41,10 @@ export default async function WeeklyRoutinePage() {
 
   return (
     <div className="container py-8 pb-16">
-      <Link href="/" className="text-text-secondary inline-block mb-4 hover:text-text-primary transition-colors">
+      <Link href="/" className="inline-flex items-center gap-1 mb-4 text-sm transition-colors hover:text-[var(--text-primary)]" style={{ color: "var(--text-secondary)" }}>
         &larr; Volver
       </Link>
-      <h1 className="title">Tu Semana en un Vistazo 🗓️</h1>
+      <h1 className="title">Tu Semana en un Vistazo</h1>
       <p className="subtitle">Vista general de tu planificación actual</p>
 
       {sortedDays.map((day) => (

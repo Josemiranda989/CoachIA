@@ -69,13 +69,13 @@ export default function LoadRoutinePage() {
       
       <div className="card" style={{ marginBottom: "20px" }}>
         <textarea
-          className="input"
-          style={{ minHeight: "300px", fontFamily: "monospace", resize: "vertical" }}
+          className="input text-sm"
+          style={{ minHeight: "200px", maxHeight: "60vh", fontFamily: "monospace", resize: "vertical" }}
           value={jsonText}
           onChange={(e) => setJsonText(e.target.value)}
           placeholder={sampleJson}
         />
-        {error && <p style={{ color: "#ef4444", marginTop: "12px", fontSize: "14px" }}>{error}</p>}
+        {error && <p className="text-red-500 mt-3 text-sm">{error}</p>}
         <button 
           className="btn" 
           style={{ marginTop: "16px", width: "100%" }}
