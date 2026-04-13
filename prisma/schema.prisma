@@ -9,11 +9,25 @@ generator client {
 
 model Routine {
   id        String   @id @default(cuid())
-  userId    String   // Añadido para relacionar con usuario
+  userId    String
   weekStart DateTime
+  status    String   @default("active") // "draft" | "pending_approval" | "active" | "archived"
   createdAt DateTime @default(now())
-  
+
   days      DailyWorkout[]
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model BodyWeight {
+  id        String   @id @default(cuid())
+  userId    String
+  date      DateTime
+  weight    Float    // kg
+  bodyFat   Float?   // porcentaje
+  muscle    Float?   // porcentaje
+  notes     String?
+  createdAt DateTime @default(now())
+
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
@@ -89,6 +103,7 @@ model User {
   accounts      Account[]
   sessions      Session[]
   routines      Routine[]
+  bodyWeights   BodyWeight[]
 }
 
 model Account {
