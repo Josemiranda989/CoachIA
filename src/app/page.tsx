@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import {
   Sparkles, Calendar, BarChart3, HelpCircle,
-  ArrowRight, Bot, Upload, Zap,
+  ArrowRight, Bot, Upload, Zap, Bell, Apple,
 } from "lucide-react";
 
 export default async function Home() {
@@ -28,10 +28,16 @@ export default async function Home() {
   weekStart.setDate(now.getDate() + diffToMonday);
   weekStart.setHours(0, 0, 0, 0);
 
+  const userId = (session as any).user.id;
+
   const latestRoutine = await prisma.routine.findFirst({
-    where: { userId: (session as any).user.id },
+    where: { userId },
     orderBy: { createdAt: "desc" },
     include: { days: { select: { completed: true, type: true } } },
+  });
+
+  const pendingRoutine = await prisma.routine.findFirst({
+    where: { userId, status: "pending_approval" },
   });
 
   const weekDays = latestRoutine?.days ?? [];
@@ -83,6 +89,41 @@ export default async function Home() {
           </div>
         )}
       </header>
+
+      {/* ── Rutina pendiente de aprobación ── */}
+      {pendingRoutine && (
+        <Link
+          href="/routine/pending"
+          className="card group relative overflow-hidden mb-6 block animate-fade-up border-amber-500/40 hover:border-amber-500/70"
+          style={{
+            background: "linear-gradient(135deg, rgba(245,158,11,0.15) 0%, rgba(24,24,27,0.7) 60%)",
+            animationDelay: "30ms",
+          }}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-4 bg-amber-500/20 rounded-2xl badge-pulse">
+                <Bell className="text-amber-400" size={28} />
+              </div>
+              <div>
+                <p className="text-amber-400 text-xs font-bold uppercase tracking-widest mb-1">
+                  Requiere tu aprobación
+                </p>
+                <h2 className="text-xl md:text-2xl font-bold">
+                  Nueva Rutina Generada por IA
+                </h2>
+                <p className="text-text-secondary mt-1 text-sm">
+                  Revisá la rutina del próximo mes y aprobala o rechazala.
+                </p>
+              </div>
+            </div>
+            <ArrowRight
+              className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-amber-400 shrink-0 hidden md:block"
+              size={28}
+            />
+          </div>
+        </Link>
+      )}
 
       {/* ── Featured: Día de Hoy ── */}
       <Link
@@ -211,8 +252,23 @@ export default async function Home() {
           </p>
         </Link>
 
-        {/* Spacer para alinear grid en desktop */}
-        <div className="hidden lg:block" />
+        {/* Nutrición Ciclismo */}
+        <Link
+          href="/nutrition"
+          className="card group hover:border-emerald-500/50 animate-fade-up"
+          style={{ animationDelay: "360ms" }}
+        >
+          <div className="mb-4 p-3 bg-emerald-500/20 rounded-xl w-fit group-hover:bg-emerald-500/30 transition-colors">
+            <Apple className="text-emerald-400" size={26} />
+          </div>
+          <h2 className="text-lg md:text-xl font-bold mb-2 flex items-center justify-between">
+            Nutricion Bici
+            <ArrowRight className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" size={18} />
+          </h2>
+          <p className="text-text-secondary text-sm leading-relaxed hidden sm:block">
+            Guia de combustible: que comer, cuanto y cuando en tus salidas.
+          </p>
+        </Link>
 
       </div>
     </div>

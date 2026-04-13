@@ -7,12 +7,14 @@ function NumericInput({
   value,
   onChange,
   placeholder,
+  label,
   step = 1,
   min = 0,
 }: {
   value: string;
   onChange: (v: string) => void;
   placeholder: string;
+  label?: string;
   step?: number;
   min?: number;
 }) {
@@ -20,11 +22,18 @@ function NumericInput({
 
   return (
     <div className="flex items-center gap-1">
+      {label && (
+        <span className="text-xs font-semibold mr-1 shrink-0" style={{ color: "var(--text-secondary)", minWidth: "24px" }}>
+          {label}
+        </span>
+      )}
       <button
         type="button"
         onClick={() => onChange(Math.max(min, num - step).toString())}
-        className="w-10 h-12 flex items-center justify-center rounded-lg text-xl font-bold transition-all active:scale-95"
+        className="shrink-0 flex items-center justify-center rounded-lg text-lg font-bold transition-all active:scale-95"
         style={{
+          width: 36,
+          height: 44,
           background: "rgba(245,158,11,0.15)",
           color: "var(--accent-gym)",
           border: "1px solid rgba(245,158,11,0.3)",
@@ -39,14 +48,16 @@ function NumericInput({
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="input text-center font-bold text-lg"
-        style={{ width: "72px", height: "48px", padding: "4px 8px" }}
+        className="input text-center font-bold"
+        style={{ width: "56px", height: "44px", padding: "4px 4px", fontSize: "16px" }}
       />
       <button
         type="button"
         onClick={() => onChange((num + step).toString())}
-        className="w-10 h-12 flex items-center justify-center rounded-lg text-xl font-bold transition-all active:scale-95"
+        className="shrink-0 flex items-center justify-center rounded-lg text-lg font-bold transition-all active:scale-95"
         style={{
+          width: 36,
+          height: 44,
           background: "rgba(245,158,11,0.15)",
           color: "var(--accent-gym)",
           border: "1px solid rgba(245,158,11,0.3)",
@@ -177,17 +188,27 @@ export function GymWorkoutClient({ workout }: { workout: any }) {
               }
 
               return (
-                <div key={setNum} className="flex items-center gap-3">
+                <div
+                  key={setNum}
+                  className="flex items-center gap-2 flex-wrap"
+                  style={{
+                    padding: "8px 10px",
+                    borderRadius: "var(--radius-sm)",
+                    background: "rgba(255,255,255,0.02)",
+                    border: "1px solid rgba(255,255,255,0.04)",
+                  }}
+                >
                   <span
-                    className="text-sm font-semibold shrink-0"
-                    style={{ color: "var(--text-secondary)", width: "50px" }}
+                    className="text-xs font-bold shrink-0 uppercase"
+                    style={{ color: "var(--accent-gym)", minWidth: "36px" }}
                   >
-                    Set {setNum}
+                    S{setNum}
                   </span>
                   <NumericInput
                     value={logs[`${exe.id}_${setNum}`]?.weight || ""}
                     onChange={(v) => handleChange(exe.id, setNum, "weight", v)}
                     placeholder="kg"
+                    label="kg"
                     step={2.5}
                   />
                   <span style={{ color: "var(--text-secondary)", fontSize: "12px" }}>×</span>
@@ -195,6 +216,7 @@ export function GymWorkoutClient({ workout }: { workout: any }) {
                     value={logs[`${exe.id}_${setNum}`]?.reps || ""}
                     onChange={(v) => handleChange(exe.id, setNum, "reps", v)}
                     placeholder="reps"
+                    label="reps"
                     step={1}
                   />
                 </div>

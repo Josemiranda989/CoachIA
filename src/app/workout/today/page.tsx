@@ -34,6 +34,10 @@ export default async function TodayWorkoutPage() {
   }
 
   const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const daysInSpanish: Record<string, string> = {
+    Sunday: "Domingo", Monday: "Lunes", Tuesday: "Martes", Wednesday: "Miércoles",
+    Thursday: "Jueves", Friday: "Viernes", Saturday: "Sábado",
+  };
   const todayName = daysOfWeek[new Date().getDay()];
 
   const todayWorkout = routine.days.find(d => d.dayOfWeek === todayName) || routine.days.find(d => d.dayOfWeek === "Monday"); 
@@ -88,12 +92,12 @@ export default async function TodayWorkoutPage() {
   const workoutWithLastWeights = { ...todayWorkout, exercises: exercisesWithLastWeight };
 
   return (
-    <div style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 24px 64px" }}>
+    <div className="px-4 py-6 md:px-6 md:py-8 pb-16" style={{ maxWidth: 1200, margin: "0 auto" }}>
       <Link href="/" className="text-text-secondary inline-block mb-4 hover:text-text-primary transition-colors">
         &larr; Volver
       </Link>
       <h1 className="title">{title}</h1>
-      <p className="subtitle">Rutina del {todayWorkout.dayOfWeek}</p>
+      <p className="subtitle">Rutina del {daysInSpanish[todayWorkout.dayOfWeek] || todayWorkout.dayOfWeek}</p>
 
       {todayWorkout.notes && (
         <div className="card mb-6 p-4 bg-bg-card">
