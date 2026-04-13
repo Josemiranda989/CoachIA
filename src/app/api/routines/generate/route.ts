@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import Anthropic from '@anthropic-ai/sdk';
+import { getValidAccessToken, fetchActivities, fetchStats } from '@/lib/strava';
 
 function getNextMonday(): string {
   const now = new Date();
@@ -46,7 +47,83 @@ export async function POST(request: Request) {
 
     const client = new Anthropic();
 
-    const prompt = `Genera una rutina semanal COMPLETA de 7 días (Monday a Sunday) en formato JSON.
+    // ── Gather real athlete data ──
+
+    // Gym: PRs and recent volume
+    const allLogs = await prisma.workoutLog.findMany({
+      include: { exercise: { select: { name: true } } },
+      orderBy: { id: 'desc' },
+      take: 500,
+    });
+
+    const prs: Record<string, { weight: number; reps: number }> = {};
+    for (const log of allLogs) {
+      const name = log.exercise.name;
+      if (!prs[name] || log.weight > prs[name].weight) {
+        prs[name] = { weight: log.weight, reps: log.reps };
+      }
+    }
+    const prLines = Object.entries(prs)
+      .sort((a, b) => b[1].weight - a[1].weight)
+      .slice(0, 15)
+      .map(([name, { weight, reps }]) => `  - ${name}: ${weight} kg x ${reps} reps`)
+      .join('\n');
+
+    const totalVolume = allLogs.reduce((acc, l) => acc + l.weight * l.reps, 0);
+
+    // Strava: recent cycling data
+    let stravaSection = '';
+    try {
+      const stravaToken = await getValidAccessToken(userId);
+      if (stravaToken) {
+        const user = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { stravaAthleteId: true },
+        });
+
+        const [recentActivities, stats] = await Promise.all([
+          fetchActivities(stravaToken, 1, 5),
+          user?.stravaAthleteId ? fetchStats(stravaToken, user.stravaAthleteId) : null,
+        ]);
+
+        const rides = (recentActivities || []).filter((a: any) => a.type === 'Ride' || a.type === 'VirtualRide');
+
+        if (stats || rides.length > 0) {
+          stravaSection = '\nDATOS DE CICLISMO (Strava):';
+
+          if (stats?.ytd_ride_totals) {
+            const ytd = stats.ytd_ride_totals;
+            stravaSection += `\n- Este año: ${ytd.count} rides, ${(ytd.distance / 1000).toFixed(0)} km, ${Math.round(ytd.moving_time / 3600)} horas, ${Math.round(ytd.elevation_gain)} m desnivel`;
+          }
+          if (stats?.all_ride_totals) {
+            const all = stats.all_ride_totals;
+            stravaSection += `\n- Totales históricos: ${all.count} rides, ${(all.distance / 1000).toFixed(0)} km`;
+          }
+
+          if (rides.length > 0) {
+            stravaSection += '\n- Últimas salidas:';
+            for (const ride of rides.slice(0, 5)) {
+              const dist = (ride.distance / 1000).toFixed(1);
+              const hrs = Math.floor(ride.moving_time / 3600);
+              const mins = Math.floor((ride.moving_time % 3600) / 60);
+              const speed = (ride.average_speed * 3.6).toFixed(1);
+              let line = `  - ${ride.name}: ${dist} km, ${hrs}h${mins}m, ${speed} km/h avg`;
+              if (ride.average_heartrate) line += `, FC ${Math.round(ride.average_heartrate)} bpm`;
+              if (ride.average_watts) line += `, ${Math.round(ride.average_watts)} W`;
+              stravaSection += `\n${line}`;
+            }
+          }
+        }
+      }
+    } catch {
+      // Strava not available — continue without it
+    }
+
+    const gymSection = prLines
+      ? `\nDATOS DE GYM (historial real):\n- Volumen total histórico: ${totalVolume.toLocaleString()} kg\n- Récords personales (top 15):\n${prLines}`
+      : '';
+
+    const prompt = `Eres un entrenador personal experto en fuerza y ciclismo. Genera una rutina semanal COMPLETA de 7 días (Monday a Sunday) en formato JSON.
 
 DATOS DEL ATLETA:
 - Objetivo principal: ${goal}
@@ -54,6 +131,13 @@ DATOS DEL ATLETA:
 - Días de ciclismo por semana: ${cyclingDays || 0}
 - Áreas de enfoque en gym: ${focusAreas?.length ? focusAreas.join(', ') : 'General (todo el cuerpo)'}
 ${notes ? `- Notas adicionales: ${notes}` : ''}
+${gymSection}
+${stravaSection}
+
+USA LOS DATOS REALES del atleta para:
+- Ajustar los pesos y repeticiones de gym basándote en sus PRs (no pongas pesos genéricos, usá porcentajes realistas de sus récords)
+- Ajustar la duración e intensidad del ciclismo según su nivel real (distancias, velocidad promedio, FC y potencia recientes)
+- Si no hay datos de ciclismo, usá valores conservadores para principiante
 
 REGLAS ESTRICTAS:
 1. weekStart DEBE ser exactamente: "${nextMonday}"
