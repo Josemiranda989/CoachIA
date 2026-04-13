@@ -102,7 +102,7 @@ export default function GenerateRoutinePage() {
       if (!res.ok) throw new Error(data.error || "Error al generar");
       setRoutine(data);
     } catch (err: any) {
-      setError(err.message || "Error al conectar con Claude");
+      setError(err.message || "Error al conectar con IA");
     } finally {
       setGenerating(false);
     }
@@ -136,7 +136,7 @@ export default function GenerateRoutinePage() {
         </div>
         <h1 className="title text-3xl md:text-4xl">Generar Rutina con IA</h1>
       </div>
-      <p className="subtitle mb-8">Describí tus objetivos y Claude arma tu semana completa.</p>
+      <p className="subtitle mb-8">Describí tus objetivos y IA arma tu semana completa.</p>
 
       {/* ── Form ── */}
       {!routine && (
@@ -240,7 +240,7 @@ export default function GenerateRoutinePage() {
             {generating ? (
               <>
                 <Loader2 size={18} className="animate-spin" />
-                Generando con Claude...
+                Generando con IA...
               </>
             ) : (
               <>

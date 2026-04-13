@@ -2,12 +2,46 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import Anthropic from '@anthropic-ai/sdk';
+import { GoogleGenAI, Type } from '@google/genai';
 import { getValidAccessToken, fetchActivities, fetchStats } from '@/lib/strava';
+
+const routineResponseSchema = {
+  type: Type.OBJECT,
+  properties: {
+    weekStart: { type: Type.STRING },
+    days: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          dayOfWeek: { type: Type.STRING },
+          type: { type: Type.STRING },
+          exercises: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                name: { type: Type.STRING },
+                targetSets: { type: Type.NUMBER },
+                targetReps: { type: Type.STRING },
+              },
+              required: ['name', 'targetSets', 'targetReps'],
+            },
+          },
+          targetDuration: { type: Type.NUMBER },
+          targetPower: { type: Type.STRING },
+          notes: { type: Type.STRING },
+        },
+        required: ['dayOfWeek', 'type'],
+      },
+    },
+  },
+  required: ['weekStart', 'days'],
+};
 
 function getNextMonday(): string {
   const now = new Date();
-  const day = now.getDay(); // 0=Sun, 1=Mon, ...
+  const day = now.getDay();
   const daysUntilMonday = day === 0 ? 1 : day === 1 ? 7 : 8 - day;
   const nextMonday = new Date(now);
   nextMonday.setDate(now.getDate() + daysUntilMonday);
@@ -15,9 +49,86 @@ function getNextMonday(): string {
   return nextMonday.toISOString();
 }
 
+async function gatherAthleteData(userId: string) {
+  // Gym: PRs and volume
+  const allLogs = await prisma.workoutLog.findMany({
+    include: { exercise: { select: { name: true } } },
+    orderBy: { id: 'desc' },
+    take: 500,
+  });
+
+  const prs: Record<string, { weight: number; reps: number }> = {};
+  for (const log of allLogs) {
+    const name = log.exercise.name;
+    if (!prs[name] || log.weight > prs[name].weight) {
+      prs[name] = { weight: log.weight, reps: log.reps };
+    }
+  }
+  const prLines = Object.entries(prs)
+    .sort((a, b) => b[1].weight - a[1].weight)
+    .slice(0, 15)
+    .map(([name, { weight, reps }]) => `  - ${name}: ${weight} kg x ${reps} reps`)
+    .join('\n');
+
+  const totalVolume = allLogs.reduce((acc, l) => acc + l.weight * l.reps, 0);
+
+  const gymSection = prLines
+    ? `\nDATOS DE GYM (historial real):\n- Volumen total histórico: ${totalVolume.toLocaleString()} kg\n- Récords personales (top 15):\n${prLines}`
+    : '';
+
+  // Strava: recent cycling data
+  let stravaSection = '';
+  try {
+    const stravaToken = await getValidAccessToken(userId);
+    if (stravaToken) {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { stravaAthleteId: true },
+      });
+
+      const [recentActivities, stats] = await Promise.all([
+        fetchActivities(stravaToken, 1, 5),
+        user?.stravaAthleteId ? fetchStats(stravaToken, user.stravaAthleteId) : null,
+      ]);
+
+      const rides = (recentActivities || []).filter((a: any) => a.type === 'Ride' || a.type === 'VirtualRide');
+
+      if (stats || rides.length > 0) {
+        stravaSection = '\nDATOS DE CICLISMO (Strava):';
+
+        if (stats?.ytd_ride_totals) {
+          const ytd = stats.ytd_ride_totals;
+          stravaSection += `\n- Este año: ${ytd.count} rides, ${(ytd.distance / 1000).toFixed(0)} km, ${Math.round(ytd.moving_time / 3600)} horas, ${Math.round(ytd.elevation_gain)} m desnivel`;
+        }
+        if (stats?.all_ride_totals) {
+          const all = stats.all_ride_totals;
+          stravaSection += `\n- Totales históricos: ${all.count} rides, ${(all.distance / 1000).toFixed(0)} km`;
+        }
+
+        if (rides.length > 0) {
+          stravaSection += '\n- Últimas salidas:';
+          for (const ride of rides.slice(0, 5)) {
+            const dist = (ride.distance / 1000).toFixed(1);
+            const hrs = Math.floor(ride.moving_time / 3600);
+            const mins = Math.floor((ride.moving_time % 3600) / 60);
+            const speed = (ride.average_speed * 3.6).toFixed(1);
+            let line = `  - ${ride.name}: ${dist} km, ${hrs}h${mins}m, ${speed} km/h avg`;
+            if (ride.average_heartrate) line += `, FC ${Math.round(ride.average_heartrate)} bpm`;
+            if (ride.average_watts) line += `, ${Math.round(ride.average_watts)} W`;
+            stravaSection += `\n${line}`;
+          }
+        }
+      }
+    }
+  } catch {
+    // Strava not available — continue without it
+  }
+
+  return { gymSection, stravaSection };
+}
+
 export async function POST(request: Request) {
   try {
-    // Auth check (same pattern as /api/routines)
     const session = await getServerSession(authOptions);
     let userId: string | null = null;
 
@@ -32,8 +143,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized: please login first' }, { status: 401 });
     }
 
-    if (!process.env.ANTHROPIC_API_KEY) {
-      return NextResponse.json({ error: 'ANTHROPIC_API_KEY no está configurada en el servidor' }, { status: 500 });
+    if (!process.env.GEMINI_API_KEY) {
+      return NextResponse.json({ error: 'GEMINI_API_KEY no está configurada en el servidor' }, { status: 500 });
     }
 
     const body = await request.json();
@@ -44,86 +155,11 @@ export async function POST(request: Request) {
     }
 
     const nextMonday = getNextMonday();
+    const { gymSection, stravaSection } = await gatherAthleteData(userId);
 
-    const client = new Anthropic();
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-    // ── Gather real athlete data ──
-
-    // Gym: PRs and recent volume
-    const allLogs = await prisma.workoutLog.findMany({
-      include: { exercise: { select: { name: true } } },
-      orderBy: { id: 'desc' },
-      take: 500,
-    });
-
-    const prs: Record<string, { weight: number; reps: number }> = {};
-    for (const log of allLogs) {
-      const name = log.exercise.name;
-      if (!prs[name] || log.weight > prs[name].weight) {
-        prs[name] = { weight: log.weight, reps: log.reps };
-      }
-    }
-    const prLines = Object.entries(prs)
-      .sort((a, b) => b[1].weight - a[1].weight)
-      .slice(0, 15)
-      .map(([name, { weight, reps }]) => `  - ${name}: ${weight} kg x ${reps} reps`)
-      .join('\n');
-
-    const totalVolume = allLogs.reduce((acc, l) => acc + l.weight * l.reps, 0);
-
-    // Strava: recent cycling data
-    let stravaSection = '';
-    try {
-      const stravaToken = await getValidAccessToken(userId);
-      if (stravaToken) {
-        const user = await prisma.user.findUnique({
-          where: { id: userId },
-          select: { stravaAthleteId: true },
-        });
-
-        const [recentActivities, stats] = await Promise.all([
-          fetchActivities(stravaToken, 1, 5),
-          user?.stravaAthleteId ? fetchStats(stravaToken, user.stravaAthleteId) : null,
-        ]);
-
-        const rides = (recentActivities || []).filter((a: any) => a.type === 'Ride' || a.type === 'VirtualRide');
-
-        if (stats || rides.length > 0) {
-          stravaSection = '\nDATOS DE CICLISMO (Strava):';
-
-          if (stats?.ytd_ride_totals) {
-            const ytd = stats.ytd_ride_totals;
-            stravaSection += `\n- Este año: ${ytd.count} rides, ${(ytd.distance / 1000).toFixed(0)} km, ${Math.round(ytd.moving_time / 3600)} horas, ${Math.round(ytd.elevation_gain)} m desnivel`;
-          }
-          if (stats?.all_ride_totals) {
-            const all = stats.all_ride_totals;
-            stravaSection += `\n- Totales históricos: ${all.count} rides, ${(all.distance / 1000).toFixed(0)} km`;
-          }
-
-          if (rides.length > 0) {
-            stravaSection += '\n- Últimas salidas:';
-            for (const ride of rides.slice(0, 5)) {
-              const dist = (ride.distance / 1000).toFixed(1);
-              const hrs = Math.floor(ride.moving_time / 3600);
-              const mins = Math.floor((ride.moving_time % 3600) / 60);
-              const speed = (ride.average_speed * 3.6).toFixed(1);
-              let line = `  - ${ride.name}: ${dist} km, ${hrs}h${mins}m, ${speed} km/h avg`;
-              if (ride.average_heartrate) line += `, FC ${Math.round(ride.average_heartrate)} bpm`;
-              if (ride.average_watts) line += `, ${Math.round(ride.average_watts)} W`;
-              stravaSection += `\n${line}`;
-            }
-          }
-        }
-      }
-    } catch {
-      // Strava not available — continue without it
-    }
-
-    const gymSection = prLines
-      ? `\nDATOS DE GYM (historial real):\n- Volumen total histórico: ${totalVolume.toLocaleString()} kg\n- Récords personales (top 15):\n${prLines}`
-      : '';
-
-    const prompt = `Eres un entrenador personal experto en fuerza y ciclismo. Genera una rutina semanal COMPLETA de 7 días (Monday a Sunday) en formato JSON.
+    const prompt = `Eres un entrenador personal experto en fuerza y ciclismo. Genera una rutina semanal COMPLETA de 7 días (Monday a Sunday).
 
 DATOS DEL ATLETA:
 - Objetivo principal: ${goal}
@@ -147,52 +183,28 @@ REGLAS ESTRICTAS:
 5. Para días Cycling: incluir targetDuration (60-120 minutos) y targetPower (zona como "Z2 Endurance", "Z3 Tempo", "Z4 Threshold")
 6. Para días Rest: NO incluir exercises, targetDuration ni targetPower
 7. Variar los grupos musculares entre días de gym (no repetir el mismo grupo dos días seguidos)
-8. Los ejercicios deben ser realistas y progresivos para el objetivo "${goal}"
+8. Los ejercicios deben ser realistas y progresivos para el objetivo "${goal}"`;
 
-Responde UNICAMENTE con el JSON, sin texto adicional ni markdown. El formato exacto es:
-{
-  "weekStart": "${nextMonday}",
-  "days": [
-    {
-      "dayOfWeek": "Monday",
-      "type": "Gym",
-      "exercises": [{ "name": "Sentadillas", "targetSets": 4, "targetReps": "8-10" }]
-    },
-    {
-      "dayOfWeek": "Tuesday",
-      "type": "Cycling",
-      "targetDuration": 90,
-      "targetPower": "Z2 Endurance"
-    },
-    {
-      "dayOfWeek": "Wednesday",
-      "type": "Rest"
-    }
-  ]
-}`;
-
-    const response = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 4096,
-      messages: [
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.0-flash',
+      contents: prompt,
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: routineResponseSchema,
+      },
     });
 
-    const textBlock = response.content.find((b) => b.type === 'text');
-    if (!textBlock || textBlock.type !== 'text') {
-      return NextResponse.json({ error: 'Claude no devolvió una respuesta válida' }, { status: 502 });
+    const text = response.text;
+    if (!text) {
+      return NextResponse.json({ error: 'Gemini no devolvió una respuesta válida' }, { status: 502 });
     }
 
-    const routine = JSON.parse(textBlock.text);
+    const routine = JSON.parse(text);
     routine.weekStart = nextMonday;
 
     return NextResponse.json(routine);
   } catch (err: any) {
-    console.error('Claude generation error:', err);
+    console.error('Gemini generation error:', err);
     return NextResponse.json(
       { error: 'Error al generar la rutina', details: err.message },
       { status: 500 }

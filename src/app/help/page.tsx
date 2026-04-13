@@ -37,12 +37,12 @@ export default function HelpPage() {
       {/* Generar rutina con IA */}
       <section className="card" style={{ marginBottom: "24px", cursor: "default" }}>
         <h2 className="text-lg md:text-xl font-bold mb-4" style={{ color: "var(--accent-primary)" }}>
-          1. Generar Rutina con IA (Claude)
+          1. Generar Rutina con IA
         </h2>
         <p style={{ color: "var(--text-secondary)", marginBottom: "12px", lineHeight: "1.6" }}>
           Desde el Dashboard, tocá <strong>&quot;Generar con IA&quot;</strong>. Seleccioná tu objetivo, cantidad de
           días de gym y ciclismo, grupos musculares de enfoque, y opcionalmente agregá notas
-          (ej: &quot;tengo una lesión en el hombro&quot;). Claude genera la semana completa.
+          (ej: &quot;tengo una lesión en el hombro&quot;). La IA genera la semana completa.
         </p>
         <p style={{ color: "var(--text-secondary)", marginBottom: "12px", lineHeight: "1.6" }}>
           Podés <strong>regenerar</strong> si no te convence, y cuando estés conforme, <strong>guardarla</strong> directamente.

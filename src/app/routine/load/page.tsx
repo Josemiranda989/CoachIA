@@ -62,7 +62,7 @@ export default function LoadRoutinePage() {
       >
         <span style={{ fontSize: "24px" }}>&#10024;</span>
         <div>
-          <p className="text-accent-primary font-semibold text-sm">Generar con Claude</p>
+          <p className="text-accent-primary font-semibold text-sm">Generar con IA</p>
           <p className="text-text-secondary text-xs">Describí tus objetivos y la IA arma la rutina por vos.</p>
         </div>
       </Link>
