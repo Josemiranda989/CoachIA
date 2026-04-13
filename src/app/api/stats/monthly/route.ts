@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { resolveAuth } from "@/lib/internal-auth";
+import { getValidAccessToken, fetchActivities } from "@/lib/strava";
 
 export async function GET(request: Request) {
   const auth = await resolveAuth(request);
@@ -95,27 +96,34 @@ export async function GET(request: Request) {
       }),
     ]);
 
-  // --- Cycling stats ---
-  const completedCycling = cyclingWorkouts.filter((w) => w.completed);
-  const totalCyclingKm = completedCycling.reduce(
-    (sum, w) => sum + (w.distance ?? 0),
-    0
-  );
-  const totalCyclingMins = completedCycling.reduce(
-    (sum, w) => sum + (w.actualDuration ?? 0),
-    0
-  );
-  const cyclingHRs = completedCycling
-    .map((w) => w.averageHeartRate)
-    .filter((hr): hr is number => hr !== null);
-  const avgCyclingHR =
-    cyclingHRs.length > 0
-      ? Math.round(cyclingHRs.reduce((a, b) => a + b, 0) / cyclingHRs.length)
-      : null;
-  const longestRideKm = completedCycling.reduce(
-    (max, w) => Math.max(max, w.distance ?? 0),
-    0
-  );
+  // --- Cycling stats (source of truth: Strava) ---
+  let totalCyclingKm = 0;
+  let totalCyclingMins = 0;
+  let avgCyclingHR: number | null = null;
+  let longestRideKm = 0;
+  let ridesCount = 0;
+
+  try {
+    const accessToken = await getValidAccessToken(auth.userId);
+    if (accessToken) {
+      const activities = await fetchActivities(accessToken, 1, 100);
+      const rides = activities.filter(
+        (a: any) =>
+          a.type === "Ride" &&
+          new Date(a.start_date) >= startDate &&
+          new Date(a.start_date) < endDate
+      );
+
+      ridesCount = rides.length;
+      totalCyclingKm = rides.reduce((sum: number, r: any) => sum + r.distance / 1000, 0);
+      totalCyclingMins = rides.reduce((sum: number, r: any) => sum + r.moving_time / 60, 0);
+      const hrs = rides.map((r: any) => r.average_heartrate).filter((hr: any): hr is number => hr != null);
+      avgCyclingHR = hrs.length > 0 ? Math.round(hrs.reduce((a: number, b: number) => a + b, 0) / hrs.length) : null;
+      longestRideKm = rides.reduce((max: number, r: any) => Math.max(max, r.distance / 1000), 0);
+    }
+  } catch {
+    // Strava unavailable — leave stats as zeros
+  }
 
   // --- Gym stats ---
   const completedGym = gymWorkouts.filter((w) => w.completed);
@@ -173,7 +181,7 @@ export async function GET(request: Request) {
       totalKm: Math.round(totalCyclingKm * 10) / 10,
       totalHours: Math.round((totalCyclingMins / 60) * 10) / 10,
       avgHR: avgCyclingHR,
-      rides: completedCycling.length,
+      rides: ridesCount,
       longestRideKm: Math.round(longestRideKm * 10) / 10,
     },
     gym: {
