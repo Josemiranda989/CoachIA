@@ -127,3 +127,79 @@ puntos 2 (dashboard), 5 (métricas) y 6 (generar rutina). Finalmente el resto.
 
 Mantener el tema oscuro, el personaje mascota y el sistema de colores naranja/ámbar 
 como identidad visual de la app.
+
+---
+
+## Estado de implementación (al 2026-04-13)
+
+### 1. Diseño general y consistencia visual
+- [x] Sistema de tokens CSS (ámbar primario, cyan cycling, bg-card, glass-border)
+- [x] Navbar unificado, sin nav duplicada en el DOM
+- [ ] Fondo: se mantiene el personaje mascota desvanecido como identidad visual
+
+### 2. Dashboard (/)
+- [x] Hero con saludo + fecha + barra de progreso semanal
+- [x] Grid uniforme (2 cols mobile, 3 desktop)
+- [x] Badge "NUEVO" con pulse animation
+- [x] Fade + slide-up stagger en las cards
+- [x] Hover con scale(1.02) + lift
+
+### 3. Rutina semanal (/routine/week)
+- [x] Acordeón colapsable por día, hoy expandido por defecto
+- [x] Días en español (DAY_ES mapping)
+- [x] Checkboxes con hit area mobile, animación de check
+- [x] Día actual resaltado con borde ámbar
+
+### 4. Entrenamiento del día (/workout/today)
+- [x] Inputs táctiles (min 48px), botones +/- para mobile
+- [x] Separación visual entre ejercicios
+- [x] FAB fijo en mobile para guardar
+- [x] Vista de bici simplificada a informativa (Strava = source of truth)
+
+### 5. Métricas (/metrics)
+- [x] Iconos por métrica (TrendingUp, Trophy, Dumbbell, Route, Timer, Mountain)
+- [x] Count-up animation en números (easeOutExpo ~900ms)
+- [x] Color diferenciado: gym en ámbar, cycling en cyan
+- [x] Flecha en card "Todos los Récords"
+- [x] Grid 3 cols desktop, 2 cols mobile
+- [x] Bug `Bike is not defined` corregido
+
+### 6. Generar rutina (/routine/generate)
+- [x] Chips con fill + emoji + glow cuando están selected
+- [x] Botón "Generar" en naranja/ámbar
+- [x] Loading skeleton con 7 cards fantasma + hero "IA en acción"
+- [x] Textarea con resize vertical controlado
+
+### 7. Responsividad y mobile
+- [x] Bottom navigation bar fijo con 4 destinos (Dashboard, Rutina, Hoy, Métricas)
+- [x] Hit targets táctiles >= 48px
+- [x] Safe area inset para iPhone notch
+- [x] Header compacto en mobile
+
+### 8. Detalles y polish
+- [x] `<BackLink />` unificado con ícono + hover effect
+- [x] Transiciones de página (fade + slide-up 280ms, respeta prefers-reduced-motion)
+- [x] Focus states globales (keyboard-only, outline ámbar)
+- [x] Íconos SVG de lucide-react reemplazaron placeholders
+
+---
+
+## Trabajo extra realizado (fuera del brief original)
+
+- Periodización obligatoria en el prompt de IA (sábado prioritario, piernas 72h+ antes)
+- Migración de modelo a `gemini-flash-latest` (evita roturas por cambios de free tier)
+- Rotación de secrets: Telegram, NEXTAUTH, INTERNAL_API_KEY (antes hardcoded en docker-compose)
+- Eliminación de Google Fit integration (rota, no se usaba)
+- Cycling stats migrados a Strava (source of truth en `/api/stats/monthly` y `/metrics`)
+- Schema Prisma limpio (se borraron columnas `actualDuration`, `distance`, `averageHeartRate`, `rpe`, `googleFit*` del modelo)
+- Dependencia muerta removida (`@anthropic-ai/sdk`)
+
+---
+
+## Pendiente real (para próximas sesiones)
+
+- Integración Samsung Health / Galaxy Watch 7 (pasos, gym)
+- Integración Xiaomi S400 vía pipeline MQTT ya existente (openScale → n8n → API)
+- Purgar API keys viejas del git history (las keys ya están rotadas pero quedaron en commits públicos)
+- Dashboard unificado que agregue todas las fuentes de datos
+- Plan mensual adaptativo con ajuste por fatiga/adherencia
