@@ -175,6 +175,15 @@ USA LOS DATOS REALES del atleta para:
 - Ajustar la duración e intensidad del ciclismo según su nivel real (distancias, velocidad promedio, FC y potencia recientes)
 - Si no hay datos de ciclismo, usá valores conservadores para principiante
 
+PERIODIZACIÓN SEMANAL (OBLIGATORIA — el atleta prioriza el fondo largo del SÁBADO):
+A. Saturday SIEMPRE es "Cycling" con el ride más largo y exigente de la semana (90-180min, Z2-Z3). Es el día prioritario; toda la semana se programa hacia atrás desde este día.
+B. Las piernas pesadas en gym (sentadilla, prensa, peso muerto, zancadas, hip thrust) NUNCA pueden caer dentro de las 72 horas previas al sábado. Idealmente Tuesday, máximo Wednesday. NUNCA Thursday/Friday/Saturday.
+C. El día siguiente a una sesión de piernas debe ser "Rest" o "Cycling" Z1-Z2 recovery (≤90min, intensidad baja). NUNCA intensidad alta ni otra sesión de piernas.
+D. Si hay días de ciclismo con intensidad (Z3+, intervalos, umbral), programarlos con piernas frescas (Monday o Tuesday temprano). Los rides recovery van al día siguiente de piernas.
+E. Friday debe ser "Rest" o gym muy ligero de tren superior (<40min). Prohibido piernas o bici intensa el viernes.
+F. Sunday debe ser "Rest" o "Cycling" Z1 muy suave (≤60min) post-fondo.
+G. Empuje y jalones pueden distribuirse Lunes/Miércoles/Jueves según los días de gym disponibles.
+
 REGLAS ESTRICTAS:
 1. weekStart DEBE ser exactamente: "${nextMonday}"
 2. SIEMPRE incluir los 7 días de la semana (Monday a Sunday)
@@ -186,7 +195,7 @@ REGLAS ESTRICTAS:
 8. Los ejercicios deben ser realistas y progresivos para el objetivo "${goal}"`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-flash-latest',
       contents: prompt,
       config: {
         responseMimeType: 'application/json',
