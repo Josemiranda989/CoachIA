@@ -28,7 +28,7 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50" style={{ background: "var(--bg-card)", borderBottom: "1px solid var(--glass-border)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)" }}>
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px", display: "flex", alignItems: "center", height: 64 }}>
+      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 16px", display: "flex", alignItems: "center", height: 56 }}>
         {/* Logo */}
         <Link href="/" style={{ display: "flex", alignItems: "center", gap: 2, textDecoration: "none", marginRight: 48 }}>
           <span style={{ fontSize: 24, fontWeight: 900, letterSpacing: "-0.04em", color: "var(--text-primary)" }}>
@@ -40,7 +40,7 @@ export function Header() {
         </Link>
 
         {/* Desktop Nav */}
-        <nav className="hidden md:flex" style={{ display: "flex", alignItems: "center", gap: 4, flex: 1 }}>
+        <nav className="hidden md:flex items-center flex-1" style={{ gap: 4 }}>
           {navLinks.map((link) => {
             const Icon = link.icon;
             const isActive = pathname === link.href;
@@ -95,7 +95,7 @@ export function Header() {
 
           {/* Auth area */}
           {session ? (
-            <div className="hidden md:flex" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div className="hidden md:flex items-center" style={{ gap: 12 }}>
               {/* User avatar */}
               <div style={{
                 width: 36,
