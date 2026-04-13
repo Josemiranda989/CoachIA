@@ -7,6 +7,7 @@ import { ArrowRight, Dumbbell, Trophy, Clock, Bike, Heart, TrendingUp } from "lu
 import { StravaActivities } from "@/components/StravaActivities";
 import { isStravaConfigured, getStravaAuthUrl } from "@/lib/strava";
 import GoogleFitSection from "./GoogleFitSection";
+import { WeightChart } from "./WeightChart";
 
 export default async function MetricsPage() {
   const session = await getServerSession(authOptions);
@@ -171,6 +172,8 @@ export default async function MetricsPage() {
         </Link>
 
         <GoogleFitSection isConnected={googleFitConnected} />
+
+        <WeightChart />
       </div>
 
       {/* Strava Section */}
