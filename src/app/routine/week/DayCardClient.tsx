@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { ChevronDown } from "lucide-react";
 
 const DAY_ES: Record<string, string> = {
   Monday: "Lunes",
@@ -21,6 +22,12 @@ export function DayCardClient({ day }: { day: any }) {
   const [loading, setLoading] = useState(false);
 
   const isToday = day.dayOfWeek === TODAY_EN;
+  const [expanded, setExpanded] = useState(isToday);
+
+  const hasGym = (day.exercises?.length ?? 0) > 0;
+  const hasCycling = !!day.targetDuration;
+  const isRest = !hasGym && !hasCycling;
+  const canExpand = !isRest;
 
   const toggleField = async (field: "completed" | "creatineTaken", currentValue: boolean) => {
     const newValue = !currentValue;
@@ -44,12 +51,12 @@ export function DayCardClient({ day }: { day: any }) {
     }
   };
 
-  // Inferir por datos, no por texto del tipo (soporta cualquier idioma/descripción)
-  const hasGym = (day.exercises?.length ?? 0) > 0;
-  const hasCycling = !!day.targetDuration;
-  const isRest = !hasGym && !hasCycling;
-
   const dayLabel = DAY_ES[day.dayOfWeek] || day.dayOfWeek;
+
+  const summaryParts: string[] = [];
+  if (hasGym) summaryParts.push(`${day.exercises.length} ejercicio${day.exercises.length === 1 ? "" : "s"}`);
+  if (hasCycling) summaryParts.push(`${day.targetDuration}min bici`);
+  const summary = summaryParts.join(" · ");
 
   return (
     <div
@@ -59,8 +66,35 @@ export function DayCardClient({ day }: { day: any }) {
         boxShadow: "0 0 0 3px rgba(245,158,11,0.1)",
       } : {}}
     >
-      <div className="flex justify-between items-start mb-3 flex-wrap gap-3">
-        <div className="flex items-center gap-2">
+      <div className="flex justify-between items-start flex-wrap gap-3">
+        {/* Left: toggle + day label + summary */}
+        <button
+          type="button"
+          onClick={() => canExpand && setExpanded((v) => !v)}
+          disabled={!canExpand}
+          aria-expanded={expanded}
+          aria-label={`${expanded ? "Colapsar" : "Expandir"} ${dayLabel}`}
+          className="flex items-center gap-2 text-left"
+          style={{
+            background: "transparent",
+            border: "none",
+            padding: 0,
+            cursor: canExpand ? "pointer" : "default",
+            flex: "1 1 auto",
+            minWidth: 0,
+          }}
+        >
+          {canExpand && (
+            <ChevronDown
+              size={18}
+              style={{
+                transition: "transform 0.2s ease",
+                transform: expanded ? "rotate(0deg)" : "rotate(-90deg)",
+                color: "var(--text-secondary)",
+                flexShrink: 0,
+              }}
+            />
+          )}
           {isToday && (
             <span
               className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full"
@@ -72,10 +106,15 @@ export function DayCardClient({ day }: { day: any }) {
           <h2 className={`text-xl font-bold ${isRest ? "text-text-secondary" : "text-text-primary"}`}>
             {dayLabel}
           </h2>
-        </div>
+          {!expanded && summary && (
+            <span className="text-xs text-text-secondary hidden sm:inline">
+              · {summary}
+            </span>
+          )}
+        </button>
 
-        <div className="flex gap-5 items-center">
-          {/* Checkbox Creatina */}
+        {/* Right: checkboxes */}
+        <div className="flex gap-5 items-center" onClick={(e) => e.stopPropagation()}>
           <label
             className="flex items-center gap-2 cursor-pointer select-none"
             style={{ color: creatine ? "var(--accent-gym)" : "var(--text-secondary)" }}
@@ -103,7 +142,6 @@ export function DayCardClient({ day }: { day: any }) {
             <span className="text-sm font-medium">Creatina</span>
           </label>
 
-          {/* Checkbox Finalizado */}
           <label
             className="flex items-center gap-2 cursor-pointer select-none"
             style={{ color: completed ? "var(--accent-cycling)" : "var(--text-secondary)" }}
@@ -133,31 +171,39 @@ export function DayCardClient({ day }: { day: any }) {
         </div>
       </div>
 
-      <p className="font-bold text-accent-primary mb-2">{day.type}</p>
-
-      {day.notes && (
-        <p className="text-text-secondary text-sm italic mb-3">"{day.notes}"</p>
+      {/* Type label (always visible when not rest) */}
+      {!isRest && (
+        <p className="font-bold text-accent-primary mt-2 mb-0" style={{ fontSize: 14 }}>
+          {day.type}
+        </p>
       )}
 
-      {!isRest && (
-        <div className="flex flex-col gap-3">
-          {hasGym && day.exercises?.length > 0 && (
-            <div>
-              <strong className="text-accent-gym text-sm">Gym:</strong>
-              <ul className="list-none ml-3 text-sm text-text-secondary mt-1 space-y-0.5">
-                {day.exercises.map((ex: any) => (
-                  <li key={ex.id}>· {ex.name} ({ex.targetSets}×{ex.targetReps || "?"})</li>
-                ))}
-              </ul>
-            </div>
+      {/* Collapsible content */}
+      {expanded && !isRest && (
+        <div className="mt-3">
+          {day.notes && (
+            <p className="text-text-secondary text-sm italic mb-3">&ldquo;{day.notes}&rdquo;</p>
           )}
 
-          {hasCycling && day.targetDuration && (
-            <div className="text-sm">
-              <strong className="text-accent-cycling">Bici:</strong>{" "}
-              <span className="text-text-secondary">{day.targetDuration} min — {day.targetPower}</span>
-            </div>
-          )}
+          <div className="flex flex-col gap-3">
+            {hasGym && day.exercises?.length > 0 && (
+              <div>
+                <strong className="text-accent-gym text-sm">Gym:</strong>
+                <ul className="list-none ml-3 text-sm text-text-secondary mt-1 space-y-0.5">
+                  {day.exercises.map((ex: any) => (
+                    <li key={ex.id}>· {ex.name} ({ex.targetSets}×{ex.targetReps || "?"})</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {hasCycling && day.targetDuration && (
+              <div className="text-sm">
+                <strong className="text-accent-cycling">Bici:</strong>{" "}
+                <span className="text-text-secondary">{day.targetDuration} min — {day.targetPower}</span>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
