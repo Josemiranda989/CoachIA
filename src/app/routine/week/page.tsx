@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { DayCardClient } from "./DayCardClient";
+import { BackLink } from "@/components/BackLink";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
@@ -41,9 +42,7 @@ export default async function WeeklyRoutinePage() {
 
   return (
     <div className="container py-8 pb-16">
-      <Link href="/" className="inline-flex items-center gap-1 mb-4 text-sm transition-colors hover:text-[var(--text-primary)]" style={{ color: "var(--text-secondary)" }}>
-        &larr; Volver
-      </Link>
+      <BackLink href="/" />
       <h1 className="title">Tu Semana en un Vistazo</h1>
       <p className="subtitle">Vista general de tu planificación actual</p>
 

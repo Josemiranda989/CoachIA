@@ -196,6 +196,71 @@ body {
   box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.15);
 }
 
+/* Page transitions — applies each time the route changes */
+.page-transition {
+  animation: page-fade-in 0.28s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes page-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-transition {
+    animation: none;
+  }
+}
+
+/* Back link — unified across all sub-pages */
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  margin: 8px 0 16px -12px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.back-btn:hover {
+  color: var(--text-primary);
+  background: var(--glass-bg);
+  border-color: var(--glass-border);
+  transform: translateX(-2px);
+}
+
+.back-btn:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+/* Global focus states for accessibility — applies to any interactive element
+   that doesn't have its own focus-visible rule. Only keyboard focus shows
+   (focus-visible), clicks don't trigger the ring. */
+a:focus-visible,
+button:focus-visible,
+[role="button"]:focus-visible,
+input[type="checkbox"]:focus-visible + span,
+label:has(input[type="checkbox"]:focus-visible) span {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
 /* ── Mobile-first responsive ── */
 @media (max-width: 480px) {
   .app-container {

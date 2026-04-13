@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { PendingRoutineActions } from "./PendingRoutineActions";
+import { BackLink } from "@/components/BackLink";
 
 export const dynamic = "force-dynamic";
 
@@ -72,12 +73,7 @@ export default async function PendingRoutinePage() {
 
   return (
     <div className="app-container py-10 pb-20">
-      <Link
-        href="/"
-        className="text-text-secondary inline-block mb-4 hover:text-text-primary transition-colors"
-      >
-        &larr; Volver
-      </Link>
+      <BackLink href="/" />
 
       <div className="flex items-center gap-3 mb-2">
         <span className="bg-amber-500/20 text-amber-400 text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full">

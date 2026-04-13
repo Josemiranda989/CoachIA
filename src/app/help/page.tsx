@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BackLink } from "@/components/BackLink";
 
 export default function HelpPage() {
   const jsonMockup = `{
@@ -27,9 +28,7 @@ export default function HelpPage() {
 
   return (
     <div className="app-container" style={{ paddingBottom: "60px" }}>
-      <Link href="/" className="inline-flex items-center gap-1 mb-4 text-sm transition-colors hover:text-[var(--text-primary)]" style={{ color: "var(--text-secondary)" }}>
-        &larr; Volver al Inicio
-      </Link>
+      <BackLink href="/" label="Volver al Inicio" />
 
       <h1 className="title">Centro de Ayuda</h1>
       <p className="subtitle">Todo lo que necesitas para usar CoachIA</p>
