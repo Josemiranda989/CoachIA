@@ -13,6 +13,10 @@ services:
       - NEXTAUTH_URL=https://gym.homelab989.duckdns.org
       - NEXTAUTH_SECRET=REDACTED_NEXTAUTH_SECRET
       - GEMINI_API_KEY=REDACTED_GEMINI_KEY
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - INTERNAL_API_KEY=REDACTED_INTERNAL_API_KEY
+      - TELEGRAM_BOT_TOKEN=REDACTED_TELEGRAM_BOT_TOKEN
+      - TELEGRAM_CHAT_ID=1651813923
     command: npm run dev
     networks:
       - inmich_net
