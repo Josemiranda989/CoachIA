@@ -162,7 +162,7 @@ export default async function Home() {
         {/* Generar con IA */}
         <Link
           href="/routine/generate"
-          className="card group relative overflow-hidden hover:border-blue-500/50 animate-fade-up"
+          className="card group relative overflow-hidden hover:border-blue-500/50 hover:scale-[1.02] animate-fade-up"
           style={{ animationDelay: "120ms" }}
         >
           <div className="absolute top-3 right-3 badge-pulse bg-accent-primary/20 text-accent-primary text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-full">
@@ -183,7 +183,7 @@ export default async function Home() {
         {/* Toda la Semana */}
         <Link
           href="/routine/week"
-          className="card group hover:border-amber-500/50 animate-fade-up"
+          className="card group hover:border-amber-500/50 hover:scale-[1.02] animate-fade-up"
           style={{ animationDelay: "180ms" }}
         >
           <div className="mb-4 p-3 bg-accent-gym/20 rounded-xl w-fit group-hover:bg-accent-gym/30 transition-colors">
@@ -201,7 +201,7 @@ export default async function Home() {
         {/* Métricas */}
         <Link
           href="/metrics"
-          className="card group hover:border-emerald-500/50 animate-fade-up"
+          className="card group hover:border-emerald-500/50 hover:scale-[1.02] animate-fade-up"
           style={{ animationDelay: "240ms" }}
         >
           <div className="mb-4 p-3 bg-accent-cycling/20 rounded-xl w-fit group-hover:bg-accent-cycling/30 transition-colors">
@@ -219,7 +219,7 @@ export default async function Home() {
         {/* Cargar JSON */}
         <Link
           href="/routine/load"
-          className="card group hover:border-violet-500/50 animate-fade-up"
+          className="card group hover:border-violet-500/50 hover:scale-[1.02] animate-fade-up"
           style={{ animationDelay: "300ms" }}
         >
           <div className="mb-4 p-3 bg-violet-500/20 rounded-xl w-fit group-hover:bg-violet-500/30 transition-colors">
@@ -237,7 +237,7 @@ export default async function Home() {
         {/* Ayuda */}
         <Link
           href="/help"
-          className="card group hover:border-indigo-500/50 animate-fade-up"
+          className="card group hover:border-indigo-500/50 hover:scale-[1.02] animate-fade-up"
           style={{ animationDelay: "360ms" }}
         >
           <div className="mb-4 p-3 bg-indigo-500/20 rounded-xl w-fit group-hover:bg-indigo-500/30 transition-colors">
@@ -255,18 +255,18 @@ export default async function Home() {
         {/* Nutrición Ciclismo */}
         <Link
           href="/nutrition"
-          className="card group hover:border-emerald-500/50 animate-fade-up"
-          style={{ animationDelay: "360ms" }}
+          className="card group hover:border-emerald-500/50 hover:scale-[1.02] animate-fade-up"
+          style={{ animationDelay: "420ms" }}
         >
           <div className="mb-4 p-3 bg-emerald-500/20 rounded-xl w-fit group-hover:bg-emerald-500/30 transition-colors">
             <Apple className="text-emerald-400" size={26} />
           </div>
           <h2 className="text-lg md:text-xl font-bold mb-2 flex items-center justify-between">
-            Nutricion Bici
+            Nutrición Bici
             <ArrowRight className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" size={18} />
           </h2>
           <p className="text-text-secondary text-sm leading-relaxed hidden sm:block">
-            Guia de combustible: que comer, cuanto y cuando en tus salidas.
+            Guía de combustible: qué comer, cuánto y cuándo en tus salidas.
           </p>
         </Link>
 
