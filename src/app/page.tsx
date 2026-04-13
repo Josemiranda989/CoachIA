@@ -176,7 +176,7 @@ export default async function Home() {
             <ArrowRight className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" size={18} />
           </h2>
           <p className="text-text-secondary text-sm leading-relaxed hidden sm:block">
-            Describí tus objetivos y Gemini genera tu rutina semanal completa.
+            Describí tus objetivos y Claude genera tu rutina semanal completa.
           </p>
         </Link>
 
