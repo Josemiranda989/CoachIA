@@ -5,6 +5,7 @@ import { BackLink } from "@/components/BackLink";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { getCurrentWeekStart } from "@/lib/week";
 
 export default async function WeeklyRoutinePage() {
   const session = await getServerSession(authOptions);
@@ -13,12 +14,22 @@ export default async function WeeklyRoutinePage() {
     redirect("/auth/login");
   }
 
+  const weekStart = getCurrentWeekStart();
+
   const routine = await prisma.routine.findFirst({
-    where: { userId: (session as any).user.id },
-    orderBy: { createdAt: 'desc' },
+    where: {
+      userId: (session as any).user.id,
+      status: "active",
+      weekStart: { lte: weekStart },
+    },
+    orderBy: { weekStart: 'desc' },
     include: {
       days: {
-        include: { exercises: true }
+        include: {
+          exercises: true,
+          completions: { where: { weekStart } },
+          blocks: { orderBy: { order: 'asc' } },
+        }
       }
     }
   });
@@ -33,12 +44,17 @@ export default async function WeeklyRoutinePage() {
     );
   }
 
-  // Ordenar días de la semana de Lunes a Domingo
   const order = { "Monday": 1, "Tuesday": 2, "Wednesday": 3, "Thursday": 4, "Friday": 5, "Saturday": 6, "Sunday": 7 };
-  
+
   const sortedDays = [...routine.days].sort((a, b) => {
     return (order[a.dayOfWeek as keyof typeof order] || 8) - (order[b.dayOfWeek as keyof typeof order] || 8);
   });
+
+  const daysForClient = sortedDays.map((d) => ({
+    ...d,
+    completed: d.completions[0]?.completed ?? false,
+    creatineTaken: d.completions[0]?.creatineTaken ?? false,
+  }));
 
   return (
     <div className="container py-8 pb-16">
@@ -46,7 +62,7 @@ export default async function WeeklyRoutinePage() {
       <h1 className="title">Tu Semana en un Vistazo</h1>
       <p className="subtitle">Vista general de tu planificación actual</p>
 
-      {sortedDays.map((day) => (
+      {daysForClient.map((day) => (
         <DayCardClient key={day.id} day={day} />
       ))}
     </div>
