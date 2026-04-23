@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { PendingRoutineActions } from "./PendingRoutineActions";
 import { BackLink } from "@/components/BackLink";
+import { CyclingBlocks } from "@/components/CyclingBlocks";
 
 export const dynamic = "force-dynamic";
 
@@ -46,7 +47,10 @@ export default async function PendingRoutinePage() {
     orderBy: { weekStart: "asc" },
     include: {
       days: {
-        include: { exercises: true },
+        include: {
+          exercises: true,
+          blocks: { orderBy: { order: "asc" } },
+        },
       },
     },
   });
@@ -147,9 +151,17 @@ export default async function PendingRoutinePage() {
                     )}
 
                     {day.targetDuration && (
-                      <div className="mt-2 text-sm text-accent-cycling">
-                        Bici: {day.targetDuration} min
-                        {day.targetPower && ` — ${day.targetPower}`}
+                      <div className="mt-2">
+                        <div className="text-sm text-accent-cycling">
+                          Bici: {day.targetDuration} min
+                          {day.targetPower && ` — ${day.targetPower}`}
+                        </div>
+                        <CyclingBlocks
+                          blocks={(day as any).blocks}
+                          variant="detailed"
+                          fallbackDuration={null}
+                          fallbackPower={null}
+                        />
                       </div>
                     )}
 

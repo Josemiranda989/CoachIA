@@ -1,6 +1,8 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
+import { CyclingBlocks } from "@/components/CyclingBlocks";
 
 export function CyclingWorkoutClient({ workout }: { workout: any }) {
   const router = useRouter();
@@ -19,7 +21,7 @@ export function CyclingWorkoutClient({ workout }: { workout: any }) {
       setCompleted(true);
       router.refresh();
     } catch {
-      alert("Error al marcar como completado");
+      toast.error("Error al marcar como completado");
     } finally {
       setLoading(false);
     }
@@ -32,9 +34,16 @@ export function CyclingWorkoutClient({ workout }: { workout: any }) {
           Objetivo: {workout.targetDuration} min — {workout.targetPower}
         </h3>
 
-        <p style={{ color: "var(--text-secondary)", fontSize: 14, marginTop: 8 }}>
+        <CyclingBlocks
+          blocks={workout.blocks}
+          variant="detailed"
+          fallbackDuration={workout.targetDuration}
+          fallbackPower={workout.targetPower}
+        />
+
+        <p style={{ color: "var(--text-secondary)", fontSize: 13, marginTop: 12 }}>
           Los datos reales (distancia, tiempo, FC, potencia) se sincronizan automáticamente desde Strava.
-          Revisalos en la página de Métricas.
+          Revisalos en Métricas.
         </p>
 
         {/* Desktop button */}

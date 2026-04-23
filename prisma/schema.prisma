@@ -10,7 +10,7 @@ generator client {
 model Routine {
   id        String   @id @default(cuid())
   userId    String
-  weekStart DateTime
+  weekStart String   // YYYY-MM-DD of the Monday in ART; identifier, not a timestamp
   status    String   @default("active") // "draft" | "pending_approval" | "active" | "archived"
   createdAt DateTime @default(now())
 
@@ -25,29 +25,65 @@ model BodyWeight {
   weight    Float    // kg
   bodyFat   Float?   // porcentaje
   muscle    Float?   // porcentaje
+  scaleId   Int?
   notes     String?
   createdAt DateTime @default(now())
 
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, scaleId])
 }
 
 model DailyWorkout {
   id          String   @id @default(cuid())
   routineId   String
-  dayOfWeek   String   
-  date        DateTime? 
+  dayOfWeek   String
+  date        DateTime?
   type        String   // 'Gym', 'Cycling', 'Rest'
-  
-  // Cycling targets
-  targetDuration Int?    // minutes
-  targetPower    String? // e.g. "Zone 2"
+
+  // Cycling summary (for quick display + legacy). Structured detail lives in `blocks`.
+  targetDuration Int?    // total minutes including warmup, intervals, cooldown
+  targetPower    String? // summary label, e.g. "Z2" or "Z2 + 4xZ4"
 
   notes          String?
-  completed      Boolean @default(false)
-  creatineTaken  Boolean @default(false)
-  
+
   routine     Routine @relation(fields: [routineId], references: [id], onDelete: Cascade)
   exercises   Exercise[]
+  completions WorkoutCompletion[]
+  blocks      CyclingBlock[]
+}
+
+model CyclingBlock {
+  id               String   @id @default(cuid())
+  dailyWorkoutId   String
+  order            Int      // sequence within the workout (0, 1, 2, ...)
+  kind             String   // "warmup" | "steady" | "interval" | "cooldown"
+  duration         Int      // minutes (for kind="interval" this is the duration of each rep)
+  targetPower      String   // "Z1", "Z2", "Z4", "85%FTP", etc
+
+  // Only meaningful for kind="interval" — compressed form of "Nx{duration}min {targetPower} / {recoveryDuration}min {recoveryPower}"
+  repetitions      Int?
+  recoveryDuration Int?
+  recoveryPower    String?
+
+  notes            String?
+
+  dailyWorkout     DailyWorkout @relation(fields: [dailyWorkoutId], references: [id], onDelete: Cascade)
+
+  @@index([dailyWorkoutId, order])
+}
+
+model WorkoutCompletion {
+  id             String    @id @default(cuid())
+  dailyWorkoutId String
+  weekStart      String    // YYYY-MM-DD of the Monday in ART; identifier, not a timestamp
+  completed      Boolean   @default(false)
+  creatineTaken  Boolean   @default(false)
+  completedAt    DateTime?
+
+  dailyWorkout DailyWorkout @relation(fields: [dailyWorkoutId], references: [id], onDelete: Cascade)
+
+  @@unique([dailyWorkoutId, weekStart])
 }
 
 model Exercise {

@@ -101,6 +101,16 @@ export async function POST(request: Request) {
       targetReps?: string;
     };
 
+    type CyclingBlockInput = {
+      kind: string; // "warmup" | "steady" | "interval" | "cooldown"
+      duration: number;
+      targetPower: string;
+      repetitions?: number;
+      recoveryDuration?: number;
+      recoveryPower?: string;
+      notes?: string;
+    };
+
     type DayInput = {
       dayOfWeek: string;
       type: string;
@@ -109,6 +119,7 @@ export async function POST(request: Request) {
       targetIntensity?: string;
       notes?: string;
       exercises?: ExerciseInput[];
+      blocks?: CyclingBlockInput[];
     };
 
     const routine = await prisma.routine.create({
@@ -128,14 +139,27 @@ export async function POST(request: Request) {
                 targetSets: ex.targetSets,
                 targetReps: ex.targetReps ?? null
               }))
-            } : undefined
+            } : undefined,
+            blocks: (day.blocks && day.blocks.length > 0) ? {
+              create: day.blocks.map((b, idx) => ({
+                order: idx,
+                kind: b.kind,
+                duration: b.duration,
+                targetPower: b.targetPower,
+                repetitions: b.repetitions ?? null,
+                recoveryDuration: b.recoveryDuration ?? null,
+                recoveryPower: b.recoveryPower ?? null,
+                notes: b.notes ?? null,
+              })),
+            } : undefined,
           }))
         }
       },
       include: {
         days: {
           include: {
-            exercises: true
+            exercises: true,
+            blocks: { orderBy: { order: 'asc' } },
           }
         }
       }

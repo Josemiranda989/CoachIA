@@ -6,6 +6,7 @@ import { BackLink } from "@/components/BackLink";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { getCurrentWeekStart } from "@/lib/week";
 
 export default async function TodayWorkoutPage() {
   const session = await getServerSession(authOptions);
@@ -14,12 +15,22 @@ export default async function TodayWorkoutPage() {
     redirect("/auth/login");
   }
 
+  const weekStart = getCurrentWeekStart();
+
   const routine = await prisma.routine.findFirst({
-    where: { userId: (session as any).user.id },
-    orderBy: { createdAt: 'desc' },
+    where: {
+      userId: (session as any).user.id,
+      status: "active",
+      weekStart: { lte: weekStart },
+    },
+    orderBy: { weekStart: 'desc' },
     include: {
       days: {
-        include: { exercises: { include: { logs: true } } }
+        include: {
+          exercises: { include: { logs: true } },
+          completions: { where: { weekStart } },
+          blocks: { orderBy: { order: 'asc' } },
+        }
       }
     }
   });
@@ -39,7 +50,10 @@ export default async function TodayWorkoutPage() {
     Sunday: "Domingo", Monday: "Lunes", Tuesday: "Martes", Wednesday: "Miércoles",
     Thursday: "Jueves", Friday: "Viernes", Saturday: "Sábado",
   };
-  const todayName = daysOfWeek[new Date().getDay()];
+  const todayName = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Argentina/Tucuman',
+    weekday: 'long',
+  }).format(new Date());
 
   const todayWorkout = routine.days.find(d => d.dayOfWeek === todayName) || routine.days.find(d => d.dayOfWeek === "Monday"); 
   // Fallback to Monday for demonstration purposes if today finds nothing, useful for the user checking the app.
@@ -74,23 +88,29 @@ export default async function TodayWorkoutPage() {
   else if (isGym) title = `${todayWorkout.type} 🏋️‍♂️`;
   else if (isCycling) title = `${todayWorkout.type} 🚴‍♂️`;
 
-  // Fetch last weight for each exercise
+  // Fetch last weight for each exercise (looks at exercises whose day was ever completed)
   const exercisesWithLastWeight = await Promise.all(
     todayWorkout.exercises.map(async (ex: any) => {
       const lastLog = await prisma.workoutLog.findFirst({
-        where: { 
-          exercise: { 
+        where: {
+          exercise: {
             name: ex.name,
-            dailyWorkout: { completed: true }
-          }
+            dailyWorkout: { completions: { some: { completed: true } } },
+          },
         },
-        orderBy: { id: 'desc' }, 
+        orderBy: { id: 'desc' },
       });
       return { ...ex, lastWeight: lastLog?.weight || "" };
     })
   );
 
-  const workoutWithLastWeights = { ...todayWorkout, exercises: exercisesWithLastWeight };
+  const todayCompletion = todayWorkout.completions[0];
+  const workoutWithLastWeights = {
+    ...todayWorkout,
+    exercises: exercisesWithLastWeight,
+    completed: todayCompletion?.completed ?? false,
+  };
+  const cyclingWorkout = { ...todayWorkout, completed: todayCompletion?.completed ?? false };
 
   return (
     <div className="px-4 py-6 md:px-6 md:py-8 pb-16" style={{ maxWidth: 1200, margin: "0 auto" }}>
@@ -114,7 +134,7 @@ export default async function TodayWorkoutPage() {
       {isCycling && (
         <div>
           {isGym && <h2 className="text-xl mb-4 text-text-primary mt-4">2. Sesión de Bici</h2>}
-          <CyclingWorkoutClient workout={todayWorkout} />
+          <CyclingWorkoutClient workout={cyclingWorkout} />
         </div>
       )}
     </div>

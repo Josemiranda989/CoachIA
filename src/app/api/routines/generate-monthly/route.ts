@@ -36,18 +36,35 @@ const monthlyResponseSchema = {
     },
     cyclingByWeek: {
       type: Type.ARRAY,
-      description: "Exactly 4 weeks. Each week is an array of overrides for the cycling days only. dayOfWeek must match a Cycling/Gym + Cycling day from gymTemplate.",
+      description: "Exactly 4 weeks. Each week is an array of cycling overrides. dayOfWeek must match a Cycling/Gym + Cycling day from gymTemplate. Every cycling day MUST include a structured `blocks` array describing warmup, intervals, and cooldown.",
       items: {
         type: Type.ARRAY,
         items: {
           type: Type.OBJECT,
           properties: {
             dayOfWeek: { type: Type.STRING },
-            targetDuration: { type: Type.NUMBER },
-            targetPower: { type: Type.STRING },
+            totalDuration: { type: Type.NUMBER, description: "Total minutes including warmup + all reps + all recoveries + cooldown" },
+            totalPower: { type: Type.STRING, description: "Short summary label, e.g. 'Z2' or 'Z2 + 4xZ4'" },
+            blocks: {
+              type: Type.ARRAY,
+              description: "Ordered blocks making up the ride. Must sum to totalDuration.",
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  kind: { type: Type.STRING, description: "'warmup' | 'steady' | 'interval' | 'cooldown'" },
+                  duration: { type: Type.NUMBER, description: "Minutes. For kind='interval' this is the duration of EACH rep (not total)." },
+                  targetPower: { type: Type.STRING, description: "'Z1', 'Z2', 'Z3', 'Z4', 'Z5', or '%FTP' notation" },
+                  repetitions: { type: Type.NUMBER, description: "Only for kind='interval'. Number of repeats, e.g. 4 for '4x4min Z4'." },
+                  recoveryDuration: { type: Type.NUMBER, description: "Only for kind='interval'. Recovery minutes between reps." },
+                  recoveryPower: { type: Type.STRING, description: "Only for kind='interval'. Zone for recovery, usually Z1 or Z2." },
+                  notes: { type: Type.STRING },
+                },
+                required: ["kind", "duration", "targetPower"],
+              },
+            },
             notes: { type: Type.STRING },
           },
-          required: ["dayOfWeek", "targetDuration", "targetPower"],
+          required: ["dayOfWeek", "totalDuration", "totalPower", "blocks"],
         },
       },
     },
@@ -194,15 +211,91 @@ ${gymSection}
 ${stravaSection}
 
 USA LOS DATOS REALES del atleta para:
-- Ajustar pesos y reps de gym basándote en sus PRs (porcentajes realistas, no valores genéricos)
-- Diseñar la PROGRESIÓN de ciclismo según su nivel real (distancias, velocidad, FC y potencia)
-- Si no hay datos de ciclismo, valores conservadores
+- Ajustar pesos y reps de gym basándote en sus PRs. Para el primer set sugerí ~70-80% del PR como punto de partida (el atleta progresa carga manualmente).
+- Diseñar la PROGRESIÓN de ciclismo según su nivel real (distancias, velocidad, FC y potencia).
+- Si hay average_watts en las rides Strava, estimá FTP ≈ mejor average_watts sostenido en ~60-90min × 0.95. Usá ese FTP para calibrar las zonas. Podés opcionalmente anotar watts entre paréntesis en targetPower (ej "Z4 (~230W)").
+- Si no hay datos de ciclismo, usá valores conservadores pensando en alguien en su primer año de entreno estructurado.
+
+ZONAS DE POTENCIA (Coggan 7-zone model, %FTP):
+- Z1 Recovery activo: <55% FTP — rides post-piernas, very easy
+- Z2 Endurance: 56-75% FTP — base, la mayoría del volumen semanal
+- Z3 Tempo: 76-90% FTP — ritmo "confortable rápido", conversación entrecortada
+- Z4 Threshold: 91-105% FTP — umbral, sostenible 30-60min máximo
+- Z5 VO2max: 106-120% FTP — máximo aeróbico, sostenible 3-8min
+- Z6+ Anaeróbico: >120% — sprints/all-out, sostenible segundos a 1-2min
 
 ESTRUCTURA DE RESPUESTA — DOS PARTES:
 
-1. **gymTemplate**: 7 días Monday→Sunday, define la estructura SEMANAL FIJA. Para días tipo "Cycling" o "Gym + Cycling" → exercises vacío, NO incluyas duración/potencia (eso va en cyclingByWeek). Para días "Gym" → ejercicios con sets/reps. Para "Rest" → exercises vacío.
+1. **gymTemplate**: 7 días Monday→Sunday, estructura SEMANAL FIJA. Para días "Cycling" o "Gym + Cycling" → exercises vacío, NO incluyas duración/potencia (va en cyclingByWeek). Para "Gym" → ejercicios con sets/reps. Para "Rest" → exercises vacío.
 
-2. **cyclingByWeek**: 4 arrays (uno por cada una de las 4 semanas). Cada array contiene SÓLO los días que tienen Cycling, con su targetDuration, targetPower, y notes específicas de esa semana.
+2. **cyclingByWeek**: 4 arrays (uno por semana). Cada array contiene los días Cycling con **totalDuration**, **totalPower** (label), **blocks** (detalle ordenado), y **notes** (propósito).
+
+FORMATO DE BLOCKS (OBLIGATORIO para cada día Cycling):
+- Cada ride tiene 3-5 bloques ordenados: warmup → (steady|interval) × N → cooldown.
+- **warmup**: kind="warmup", duration 10-20min, targetPower Z1 o Z1-Z2 progresivo.
+- **steady**: kind="steady", duration, targetPower. Un bloque sostenido en UNA zona.
+- **interval**: kind="interval" formato COMPRIMIDO: duration=duración DE CADA rep, repetitions=cantidad, recoveryDuration=min entre reps, recoveryPower=zona recovery. Ej "4x4min Z4 con 3min Z2 rec" → {kind:"interval", duration:4, targetPower:"Z4", repetitions:4, recoveryDuration:3, recoveryPower:"Z2"}.
+- **cooldown**: kind="cooldown", duration 8-15min, targetPower Z1.
+
+DURACIONES DE REP POR ZONA (fisiológicamente realistas — NO VIOLAR):
+- Z3 Tempo: 8-20min por rep, 3-5min recovery Z1-Z2
+- Z4 Threshold: 5-15min por rep, 3-5min recovery Z2
+- Z5 VO2max: 2-5min por rep, 2-3x la duración en recovery Z1
+- Z6+ Anaeróbico: 30s-2min por rep, 2-4x recovery Z1
+
+DURACIONES TOTALES TÍPICAS DE RIDE:
+- Recovery ride (Sunday, post-piernas): 40-80min
+- Ride con intervals (VO2max/Threshold): 45-90min total
+- Tempo/sub-umbral sostenido: 60-90min
+- Long ride sábado: 90-180min (no pasarse de 180)
+
+ORDEN DE BLOCKS (guías):
+- Después de un bloque de intervals, ir DIRECTO al cooldown. No intercalar "steady" entre intervals y cooldown salvo que haya 2 sets distintos de intervals separados.
+- Recovery rides: warmup + steady Z1-Z2 + cooldown. SIN intervals.
+- Rides con intensidad: warmup + (interval) + cooldown. O: warmup + steady Z2 + interval + cooldown.
+- La suma de warmup + Σ(rep × (duration + recoveryDuration) para intervals) + Σ(steady.duration) + cooldown DEBE igualar totalDuration exactamente.
+
+USO DEL CAMPO `notes` EN CYCLING:
+- Explicar el PROPÓSITO de la sesión (qué adaptación busca, qué priorizar, qué evitar).
+- Máximo 1 oración útil al atleta durante el entreno. Ej:
+  - "Fondo base del mesociclo. Z2 bajo todo el ride, no acelerar al final."
+  - "Sesión clave VO2max. Primer rep suave, últimos 2 a 120%FTP."
+  - "Recovery post-piernas. Cadencia alta >90rpm, NO subir pulsaciones."
+
+EJEMPLOS COMPLETOS DE DÍAS CYCLING:
+
+Ejemplo A — Saturday long ride BUILD (120min total):
+{
+  "dayOfWeek":"Saturday", "totalDuration":120, "totalPower":"Z2",
+  "blocks":[
+    {"kind":"warmup","duration":15,"targetPower":"Z1"},
+    {"kind":"steady","duration":90,"targetPower":"Z2"},
+    {"kind":"cooldown","duration":15,"targetPower":"Z1"}
+  ],
+  "notes":"Fondo base del mesociclo. Z2 bajo todo el ride, no acelerar al final."
+}
+
+Ejemplo B — Wednesday VO2max PEAK (60min total):
+{
+  "dayOfWeek":"Wednesday", "totalDuration":60, "totalPower":"Z2 + 4xZ5",
+  "blocks":[
+    {"kind":"warmup","duration":15,"targetPower":"Z1-Z2"},
+    {"kind":"interval","duration":4,"targetPower":"Z5","repetitions":4,"recoveryDuration":4,"recoveryPower":"Z1"},
+    {"kind":"cooldown","duration":13,"targetPower":"Z1"}
+  ],
+  "notes":"Sesión clave. 4x4 VO2max. Primer rep suave, últimos 2 a 120%FTP."
+}
+
+Ejemplo C — Sunday recovery (50min total):
+{
+  "dayOfWeek":"Sunday", "totalDuration":50, "totalPower":"Z1",
+  "blocks":[
+    {"kind":"warmup","duration":10,"targetPower":"Z1"},
+    {"kind":"steady","duration":30,"targetPower":"Z1"},
+    {"kind":"cooldown","duration":10,"targetPower":"Z1"}
+  ],
+  "notes":"Recovery post-long ride. Cadencia alta >90rpm, FC debajo de Z2, NO acelerar."
+}
 
 PERIODIZACIÓN SEMANAL (para gymTemplate — OBLIGATORIA):
 A. Saturday SIEMPRE es "Cycling" con el ride más largo de la semana. Es el día prioritario.
@@ -289,17 +382,31 @@ REGLAS ESTRICTAS:
 
       const days = gymTemplate.map((d: any) => {
         const cycling = cyclingByDay[d.dayOfWeek];
+        const blocksRaw: any[] = Array.isArray(cycling?.blocks) ? cycling.blocks : [];
+
         return {
           dayOfWeek: d.dayOfWeek,
           type: d.type,
           notes: cycling?.notes ?? d.notes ?? null,
-          targetDuration: cycling?.targetDuration ?? null,
-          targetPower: cycling?.targetPower ?? null,
+          targetDuration: cycling?.totalDuration ?? cycling?.targetDuration ?? null,
+          targetPower: cycling?.totalPower ?? cycling?.targetPower ?? null,
           exercises: {
             create: (d.exercises ?? []).map((ex: any) => ({
               name: ex.name,
               targetSets: ex.targetSets,
               targetReps: ex.targetReps ?? null,
+            })),
+          },
+          blocks: {
+            create: blocksRaw.map((b: any, idx: number) => ({
+              order: idx,
+              kind: b.kind,
+              duration: b.duration,
+              targetPower: b.targetPower,
+              repetitions: b.repetitions ?? null,
+              recoveryDuration: b.recoveryDuration ?? null,
+              recoveryPower: b.recoveryPower ?? null,
+              notes: b.notes ?? null,
             })),
           },
         };
@@ -335,7 +442,11 @@ REGLAS ESTRICTAS:
       .map((week, idx) => {
         const monday = mondays[idx];
         const lines = week
-          .map((c: any) => `   • ${dayNames[c.dayOfWeek] ?? c.dayOfWeek}: ${c.targetDuration}min ${c.targetPower}`)
+          .map((c: any) => {
+            const total = c.totalDuration ?? c.targetDuration ?? 0;
+            const power = c.totalPower ?? c.targetPower ?? "";
+            return `   • ${dayNames[c.dayOfWeek] ?? c.dayOfWeek}: ${total}min ${power}`;
+          })
           .join("\n");
         return `<b>Semana ${idx + 1}</b> (desde ${monday})\n${lines}`;
       })

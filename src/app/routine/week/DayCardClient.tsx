@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown } from "lucide-react";
+import { CyclingBlocks } from "@/components/CyclingBlocks";
 
 const DAY_ES: Record<string, string> = {
   Monday: "Lunes",
@@ -13,7 +14,10 @@ const DAY_ES: Record<string, string> = {
   Sunday: "Domingo",
 };
 
-const TODAY_EN = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][new Date().getDay()];
+const TODAY_EN = new Intl.DateTimeFormat('en-US', {
+  timeZone: 'America/Argentina/Tucuman',
+  weekday: 'long',
+}).format(new Date());
 
 export function DayCardClient({ day }: { day: any }) {
   const router = useRouter();
@@ -201,6 +205,12 @@ export function DayCardClient({ day }: { day: any }) {
               <div className="text-sm">
                 <strong className="text-accent-cycling">Bici:</strong>{" "}
                 <span className="text-text-secondary">{day.targetDuration} min — {day.targetPower}</span>
+                <CyclingBlocks
+                  blocks={day.blocks}
+                  variant="compact"
+                  fallbackDuration={null}
+                  fallbackPower={null}
+                />
               </div>
             )}
           </div>

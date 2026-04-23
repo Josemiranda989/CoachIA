@@ -28,8 +28,25 @@ const routineResponseSchema = {
               required: ['name', 'targetSets', 'targetReps'],
             },
           },
-          targetDuration: { type: Type.NUMBER },
-          targetPower: { type: Type.STRING },
+          targetDuration: { type: Type.NUMBER, description: 'Total minutes for cycling days (sum of all blocks)' },
+          targetPower: { type: Type.STRING, description: 'Summary label, e.g. "Z2" or "Z2 + 4xZ4"' },
+          blocks: {
+            type: Type.ARRAY,
+            description: 'Only for Cycling days. Ordered ride blocks: warmup -> steady|interval (x N) -> cooldown.',
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                kind: { type: Type.STRING, description: "'warmup' | 'steady' | 'interval' | 'cooldown'" },
+                duration: { type: Type.NUMBER, description: "Minutes. For kind='interval' this is the duration of EACH rep." },
+                targetPower: { type: Type.STRING },
+                repetitions: { type: Type.NUMBER, description: "Only for kind='interval'." },
+                recoveryDuration: { type: Type.NUMBER, description: "Only for kind='interval'. Recovery minutes between reps." },
+                recoveryPower: { type: Type.STRING, description: "Only for kind='interval'. Usually Z1 or Z2." },
+                notes: { type: Type.STRING },
+              },
+              required: ['kind', 'duration', 'targetPower'],
+            },
+          },
           notes: { type: Type.STRING },
         },
         required: ['dayOfWeek', 'type'],
@@ -45,8 +62,10 @@ function getNextMonday(): string {
   const daysUntilMonday = day === 0 ? 1 : day === 1 ? 7 : 8 - day;
   const nextMonday = new Date(now);
   nextMonday.setDate(now.getDate() + daysUntilMonday);
-  nextMonday.setHours(0, 0, 0, 0);
-  return nextMonday.toISOString();
+  const y = nextMonday.getFullYear();
+  const m = String(nextMonday.getMonth() + 1).padStart(2, "0");
+  const d = String(nextMonday.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
 }
 
 async function gatherAthleteData(userId: string) {
@@ -189,8 +208,13 @@ REGLAS ESTRICTAS:
 2. SIEMPRE incluir los 7 días de la semana (Monday a Sunday)
 3. Distribuir ${daysPerWeek} días de tipo "Gym" y ${cyclingDays || 0} días de tipo "Cycling". Los demás son "Rest". Si un día tiene gym Y ciclismo, usar tipo "Gym + Cycling".
 4. Para días Gym: incluir entre 5-8 ejercicios con nombre en ESPAÑOL, targetSets (3-5), y targetReps como rango (ej: "8-10", "12-15")
-5. Para días Cycling: incluir targetDuration (60-120 minutos) y targetPower (zona como "Z2 Endurance", "Z3 Tempo", "Z4 Threshold")
-6. Para días Rest: NO incluir exercises, targetDuration ni targetPower
+5. Para días Cycling: incluir targetDuration (total minutos, 60-120), targetPower (label resumen "Z2" o "Z2 + 4xZ4"), y **blocks** (array ordenado de la ride):
+   - warmup (10-20min Z1-Z2) → steady|interval (×N) → cooldown (8-15min Z1). Entre 3 y 7 bloques.
+   - kind="interval" usa formato COMPRIMIDO: duration=duración DE CADA rep, repetitions=cantidad, recoveryDuration=min entre reps, recoveryPower=zona recovery. Ej "4x4min Z4/3min Z2" → {kind:"interval",duration:4,targetPower:"Z4",repetitions:4,recoveryDuration:3,recoveryPower:"Z2"}.
+   - kind="steady" = bloque sostenido (duration, targetPower). NO usar repetitions.
+   - La suma (warmup + Σ rep*(duration+recoveryDuration) + Σ steady.duration + cooldown) debe igualar targetDuration.
+   - Rides recovery (post-piernas): solo warmup + steady Z1-Z2 + cooldown, sin interval.
+6. Para días Rest: NO incluir exercises, targetDuration, targetPower ni blocks
 7. Variar los grupos musculares entre días de gym (no repetir el mismo grupo dos días seguidos)
 8. Los ejercicios deben ser realistas y progresivos para el objetivo "${goal}"`;
 
