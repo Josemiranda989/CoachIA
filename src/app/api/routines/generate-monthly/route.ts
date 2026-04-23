@@ -5,16 +5,17 @@ import { sendTelegramMessage } from "@/lib/telegram";
 import { GoogleGenAI, Type } from "@google/genai";
 import { getValidAccessToken, fetchActivities, fetchStats } from "@/lib/strava";
 
-const routineResponseSchema = {
+const monthlyResponseSchema = {
   type: Type.OBJECT,
   properties: {
-    days: {
+    gymTemplate: {
       type: Type.ARRAY,
+      description: "7 days (Monday-Sunday). Gym/Rest layout that repeats every week of the month. For Cycling days, leave exercises empty and omit cycling fields here — those are filled per week in cyclingByWeek.",
       items: {
         type: Type.OBJECT,
         properties: {
           dayOfWeek: { type: Type.STRING },
-          type: { type: Type.STRING },
+          type: { type: Type.STRING, description: "'Gym', 'Cycling', 'Rest', or 'Gym + Cycling'" },
           exercises: {
             type: Type.ARRAY,
             items: {
@@ -27,29 +28,53 @@ const routineResponseSchema = {
               required: ["name", "targetSets", "targetReps"],
             },
           },
-          targetDuration: { type: Type.NUMBER },
-          targetPower: { type: Type.STRING },
           notes: { type: Type.STRING },
         },
         required: ["dayOfWeek", "type"],
       },
     },
+    cyclingByWeek: {
+      type: Type.ARRAY,
+      description: "Exactly 4 weeks. Each week is an array of overrides for the cycling days only. dayOfWeek must match a Cycling/Gym + Cycling day from gymTemplate.",
+      items: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            dayOfWeek: { type: Type.STRING },
+            targetDuration: { type: Type.NUMBER },
+            targetPower: { type: Type.STRING },
+            notes: { type: Type.STRING },
+          },
+          required: ["dayOfWeek", "targetDuration", "targetPower"],
+        },
+      },
+    },
   },
-  required: ["days"],
+  required: ["gymTemplate", "cyclingByWeek"],
 };
 
-function getNextMonday(): string {
+function getNextFourMondays(): string[] {
   const now = new Date();
   const day = now.getDay();
   const daysUntilMonday = day === 0 ? 1 : day === 1 ? 7 : 8 - day;
-  const nextMonday = new Date(now);
-  nextMonday.setDate(now.getDate() + daysUntilMonday);
-  nextMonday.setHours(0, 0, 0, 0);
-  return nextMonday.toISOString();
+  const first = new Date(now);
+  first.setDate(now.getDate() + daysUntilMonday);
+  first.setHours(0, 0, 0, 0);
+
+  const mondays: string[] = [];
+  for (let i = 0; i < 4; i++) {
+    const m = new Date(first);
+    m.setDate(first.getDate() + i * 7);
+    const y = m.getFullYear();
+    const mo = String(m.getMonth() + 1).padStart(2, "0");
+    const d = String(m.getDate()).padStart(2, "0");
+    mondays.push(`${y}-${mo}-${d}`);
+  }
+  return mondays;
 }
 
 async function gatherAthleteData(userId: string) {
-  // Gym: PRs and volume
   const allLogs = await prisma.workoutLog.findMany({
     include: { exercise: { select: { name: true } } },
     orderBy: { id: "desc" },
@@ -75,7 +100,6 @@ async function gatherAthleteData(userId: string) {
     ? `\nDATOS DE GYM (historial real):\n- Volumen total histórico: ${totalVolume.toLocaleString()} kg\n- Récords personales (top 15):\n${prLines}`
     : "";
 
-  // Strava
   let stravaSection = "";
   try {
     const stravaToken = await getValidAccessToken(userId);
@@ -128,7 +152,12 @@ async function gatherAthleteData(userId: string) {
   return { gymSection, stravaSection };
 }
 
-// POST: Generate + save + notify — called by cron/n8n
+async function alertAndRespond(msg: string, status: number) {
+  await sendTelegramMessage(`⚠️ Mesociclo mensual: ${msg}`).catch(() => {});
+  return NextResponse.json({ error: msg }, { status });
+}
+
+// POST: Generate monthly plan (4 weeks: same gym template, progressive cycling) — called by cron/n8n
 export async function POST(request: Request) {
   try {
     const auth = await resolveAuth(request);
@@ -137,10 +166,9 @@ export async function POST(request: Request) {
     }
 
     if (!process.env.GEMINI_API_KEY) {
-      return NextResponse.json({ error: "GEMINI_API_KEY not configured" }, { status: 500 });
+      return alertAndRespond("GEMINI_API_KEY not configured", 500);
     }
 
-    // Optional overrides from request body
     const body = await request.json().catch(() => ({}));
     const goal = body.goal || "Hipertrofia";
     const daysPerWeek = body.daysPerWeek || 4;
@@ -148,12 +176,12 @@ export async function POST(request: Request) {
     const focusAreas = body.focusAreas || [];
     const notes = body.notes || "";
 
-    const nextMonday = getNextMonday();
+    const mondays = getNextFourMondays();
     const { gymSection, stravaSection } = await gatherAthleteData(auth.userId);
 
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-    const prompt = `Eres un entrenador personal experto en fuerza y ciclismo. Genera una rutina semanal COMPLETA de 7 días (Monday a Sunday).
+    const prompt = `Eres un entrenador personal experto en fuerza y ciclismo. Genera un MESOCICLO DE 4 SEMANAS: la rutina de gym es FIJA y se repite cada semana (el atleta progresa carga manualmente), y el ciclismo PROGRESA semana a semana (mesociclo build/build/build/recovery).
 
 DATOS DEL ATLETA:
 - Objetivo principal: ${goal}
@@ -165,109 +193,161 @@ ${gymSection}
 ${stravaSection}
 
 USA LOS DATOS REALES del atleta para:
-- Ajustar los pesos y repeticiones de gym basándote en sus PRs (no pongas pesos genéricos, usá porcentajes realistas de sus récords)
-- Ajustar la duración e intensidad del ciclismo según su nivel real (distancias, velocidad promedio, FC y potencia recientes)
-- Si no hay datos de ciclismo, usá valores conservadores para principiante
+- Ajustar pesos y reps de gym basándote en sus PRs (porcentajes realistas, no valores genéricos)
+- Diseñar la PROGRESIÓN de ciclismo según su nivel real (distancias, velocidad, FC y potencia)
+- Si no hay datos de ciclismo, valores conservadores
 
-PERIODIZACIÓN SEMANAL (OBLIGATORIA — el atleta prioriza el fondo largo del SÁBADO):
-A. Saturday SIEMPRE es "Cycling" con el ride más largo y exigente de la semana (90-180min, Z2-Z3). Es el día prioritario; toda la semana se programa hacia atrás desde este día.
-B. Las piernas pesadas en gym (sentadilla, prensa, peso muerto, zancadas, hip thrust) NUNCA pueden caer dentro de las 72 horas previas al sábado. Idealmente Tuesday, máximo Wednesday. NUNCA Thursday/Friday/Saturday.
-C. El día siguiente a una sesión de piernas debe ser "Rest" o "Cycling" Z1-Z2 recovery (≤90min, intensidad baja). NUNCA intensidad alta ni otra sesión de piernas.
-D. Si hay días de ciclismo con intensidad (Z3+, intervalos, umbral), programarlos con piernas frescas (Monday o Tuesday temprano). Los rides recovery van al día siguiente de piernas.
-E. Friday debe ser "Rest" o gym muy ligero de tren superior (<40min). Prohibido piernas o bici intensa el viernes.
-F. Sunday debe ser "Rest" o "Cycling" Z1 muy suave (≤60min) post-fondo.
-G. Empuje y jalones pueden distribuirse Lunes/Miércoles/Jueves según los días de gym disponibles.
+ESTRUCTURA DE RESPUESTA — DOS PARTES:
+
+1. **gymTemplate**: 7 días Monday→Sunday, define la estructura SEMANAL FIJA. Para días tipo "Cycling" o "Gym + Cycling" → exercises vacío, NO incluyas duración/potencia (eso va en cyclingByWeek). Para días "Gym" → ejercicios con sets/reps. Para "Rest" → exercises vacío.
+
+2. **cyclingByWeek**: 4 arrays (uno por cada una de las 4 semanas). Cada array contiene SÓLO los días que tienen Cycling, con su targetDuration, targetPower, y notes específicas de esa semana.
+
+PERIODIZACIÓN SEMANAL (para gymTemplate — OBLIGATORIA):
+A. Saturday SIEMPRE es "Cycling" con el ride más largo de la semana. Es el día prioritario.
+B. Las piernas pesadas en gym (sentadilla, prensa, peso muerto, zancadas, hip thrust) NUNCA dentro de las 72hs previas al sábado. Idealmente Tuesday, máximo Wednesday. NUNCA Thursday/Friday/Saturday.
+C. El día siguiente a piernas debe ser "Rest" o "Cycling" Z1-Z2 recovery (≤90min). NUNCA intensidad alta ni piernas otra vez.
+D. Si hay cycling con intensidad (Z3+, intervalos), programalo con piernas frescas (Monday o Tuesday temprano). Recovery rides van post-piernas.
+E. Friday → "Rest" o gym muy ligero de tren superior (<40min). Prohibido piernas o bici intensa.
+F. Sunday → "Rest" o "Cycling" Z1 muy suave (≤60min) post-fondo.
+G. Empuje y jalones se distribuyen Lunes/Miércoles/Jueves según los días disponibles.
+
+PROGRESIÓN MENSUAL DE CICLISMO (para cyclingByWeek):
+- Semana 1 (BUILD): volumen base, mayoría Z2, una sesión Z3 si hay 2+ cycling days
+- Semana 2 (BUILD): +10-15% volumen vs sem 1, manten intensidad
+- Semana 3 (PEAK): mantener volumen sem 2 pero subir intensidad (más Z3-Z4 en Wednesday si aplica)
+- Semana 4 (RECOVERY): -30-40% volumen, todo Z1-Z2, ride más corto el sábado
 
 REGLAS ESTRICTAS:
-1. SIEMPRE incluir los 7 días de la semana (Monday a Sunday)
-2. Distribuir ${daysPerWeek} días de tipo "Gym" y ${cyclingDays} días de tipo "Cycling". Los demás son "Rest". Si un día tiene gym Y ciclismo, usar tipo "Gym + Cycling".
-3. Para días Gym: incluir entre 5-8 ejercicios con nombre en ESPAÑOL, targetSets (3-5), y targetReps como rango (ej: "8-10", "12-15")
-4. Para días Cycling: incluir targetDuration (60-120 minutos) y targetPower (zona como "Z2 Endurance", "Z3 Tempo", "Z4 Threshold")
-5. Para días Rest: NO incluir exercises, targetDuration ni targetPower
-6. Variar los grupos musculares entre días de gym (no repetir el mismo grupo dos días seguidos)
-7. Los ejercicios deben ser realistas y progresivos para el objetivo "${goal}"`;
+1. gymTemplate SIEMPRE tiene los 7 días (Monday a Sunday)
+2. Distribuir ${daysPerWeek} días "Gym" y ${cyclingDays} días "Cycling". Resto "Rest". Si día tiene gym Y bici, usar "Gym + Cycling".
+3. Días Gym: 5-8 ejercicios con nombre en ESPAÑOL, targetSets (3-5), targetReps como rango ("8-10", "12-15")
+4. Días Rest: NO incluir exercises
+5. cyclingByWeek tiene EXACTAMENTE 4 arrays. Cada uno con tantas entries como días Cycling/Gym + Cycling tengas en gymTemplate.
+6. dayOfWeek en cyclingByWeek debe matchear los días Cycling de gymTemplate.
+7. Variar grupos musculares entre días gym (no repetir el mismo grupo seguido)
+8. Ejercicios realistas y progresivos para el objetivo "${goal}"`;
 
     const response = await ai.models.generateContent({
       model: "gemini-flash-latest",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
-        responseSchema: routineResponseSchema,
+        responseSchema: monthlyResponseSchema,
       },
     });
 
     const text = response.text;
     if (!text) {
-      return NextResponse.json({ error: "Gemini no devolvió respuesta" }, { status: 502 });
+      return alertAndRespond("Gemini no devolvió respuesta", 502);
     }
 
     const generated = JSON.parse(text);
+    const gymTemplate: any[] = generated.gymTemplate;
+    const cyclingByWeek: any[][] = generated.cyclingByWeek;
 
-    // Archive existing pending routines
+    if (!Array.isArray(gymTemplate) || gymTemplate.length !== 7) {
+      return alertAndRespond("gymTemplate must have exactly 7 days", 502);
+    }
+    if (!Array.isArray(cyclingByWeek) || cyclingByWeek.length !== 4) {
+      return alertAndRespond("cyclingByWeek must have exactly 4 weeks", 502);
+    }
+
+    // Archive previous active routines that fall before the new mesocycle
+    const firstNewMonday = mondays[0];
     await prisma.routine.updateMany({
-      where: { userId: auth.userId, status: "pending_approval" },
+      where: {
+        userId: auth.userId,
+        status: { in: ["active", "pending_approval"] },
+        weekStart: { lt: firstNewMonday },
+      },
+      data: { status: "archived" },
+    });
+    // Also archive any pending_approval that overlaps with the new range (avoid duplicates)
+    await prisma.routine.updateMany({
+      where: {
+        userId: auth.userId,
+        status: "pending_approval",
+        weekStart: { gte: firstNewMonday },
+      },
       data: { status: "archived" },
     });
 
-    // Save with pending_approval
-    const saved = await prisma.routine.create({
-      data: {
-        userId: auth.userId,
-        weekStart: new Date(nextMonday),
-        status: "pending_approval",
-        days: {
-          create: generated.days.map((day: any) => ({
-            dayOfWeek: day.dayOfWeek,
-            type: day.type,
-            targetDuration: day.targetDuration ?? null,
-            targetPower: day.targetPower ?? null,
-            notes: day.notes ?? null,
-            exercises: {
-              create: (day.exercises ?? []).map((ex: any) => ({
-                name: ex.name,
-                targetSets: ex.targetSets,
-                targetReps: ex.targetReps ?? null,
-              })),
-            },
-          })),
-        },
-      },
-      include: {
-        days: { include: { exercises: true } },
-      },
-    });
+    const created: { id: string; weekStart: string }[] = [];
 
-    // Telegram notification
+    for (let weekIdx = 0; weekIdx < 4; weekIdx++) {
+      const weekStart = mondays[weekIdx];
+      const cyclingForWeek = cyclingByWeek[weekIdx] ?? [];
+      const cyclingByDay: Record<string, any> = {};
+      for (const c of cyclingForWeek) cyclingByDay[c.dayOfWeek] = c;
+
+      const days = gymTemplate.map((d: any) => {
+        const cycling = cyclingByDay[d.dayOfWeek];
+        return {
+          dayOfWeek: d.dayOfWeek,
+          type: d.type,
+          notes: cycling?.notes ?? d.notes ?? null,
+          targetDuration: cycling?.targetDuration ?? null,
+          targetPower: cycling?.targetPower ?? null,
+          exercises: {
+            create: (d.exercises ?? []).map((ex: any) => ({
+              name: ex.name,
+              targetSets: ex.targetSets,
+              targetReps: ex.targetReps ?? null,
+            })),
+          },
+        };
+      });
+
+      const saved = await prisma.routine.create({
+        data: {
+          userId: auth.userId,
+          weekStart,
+          status: "pending_approval",
+          days: { create: days },
+        },
+      });
+
+      created.push({ id: saved.id, weekStart });
+    }
+
+    // Telegram summary: gym template once + cycling progression per week
     const dayNames: Record<string, string> = {
-      Monday: "Lunes", Tuesday: "Martes", Wednesday: "Miercoles",
-      Thursday: "Jueves", Friday: "Viernes", Saturday: "Sabado", Sunday: "Domingo",
+      Monday: "Lun", Tuesday: "Mar", Wednesday: "Mié",
+      Thursday: "Jue", Friday: "Vie", Saturday: "Sáb", Sunday: "Dom",
     };
 
-    const summary = saved.days
-      .map((d) => {
-        const dayName = dayNames[d.dayOfWeek] ?? d.dayOfWeek;
-        const exercises = d.exercises.length > 0
-          ? d.exercises.map((e) => `  - ${e.name} ${e.targetSets}x${e.targetReps}`).join("\n")
-          : "";
-        const bike = d.targetDuration ? `  Bici: ${d.targetDuration}min ${d.targetPower ?? ""}` : "";
-        return `<b>${dayName}</b> (${d.type})\n${exercises}${bike}`;
+    const gymSummary = gymTemplate
+      .filter((d: any) => (d.exercises?.length ?? 0) > 0)
+      .map((d: any) => {
+        const lines = d.exercises.map((e: any) => `   • ${e.name} ${e.targetSets}x${e.targetReps}`).join("\n");
+        return `<b>${dayNames[d.dayOfWeek] ?? d.dayOfWeek}</b> (${d.type})\n${lines}`;
+      })
+      .join("\n\n");
+
+    const cyclingSummary = cyclingByWeek
+      .map((week, idx) => {
+        const monday = mondays[idx];
+        const lines = week
+          .map((c: any) => `   • ${dayNames[c.dayOfWeek] ?? c.dayOfWeek}: ${c.targetDuration}min ${c.targetPower}`)
+          .join("\n");
+        return `<b>Semana ${idx + 1}</b> (desde ${monday})\n${lines}`;
       })
       .join("\n\n");
 
     await sendTelegramMessage(
-      `🏋️ Nueva rutina generada automaticamente!\n\nComienza: ${new Date(nextMonday).toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })}\n\n${summary}\n\n👉 Aproba o rechazala en CoachIA.`
+      `🏋️🚴 Mesociclo de 4 semanas generado!\n\nDesde: ${mondays[0]} hasta domingo ${mondays[3]} +6d\n\n<b>GYM (mismo todas las semanas)</b>\n\n${gymSummary}\n\n<b>CICLISMO (progresivo)</b>\n\n${cyclingSummary}\n\n👉 Aprobá o rechazá en CoachIA.`
     );
 
     return NextResponse.json({
-      message: "Rutina generada, guardada y notificada por Telegram.",
-      routineId: saved.id,
+      message: "Mesociclo de 4 semanas generado, guardado y notificado por Telegram.",
+      routines: created,
     });
   } catch (err: any) {
     console.error("Monthly generation error:", err);
 
-    // Notify error via Telegram too
     await sendTelegramMessage(
-      `⚠️ Error generando rutina mensual: ${err.message}`
+      `⚠️ Error generando mesociclo mensual: ${err.message}`
     ).catch(() => {});
 
     return NextResponse.json(

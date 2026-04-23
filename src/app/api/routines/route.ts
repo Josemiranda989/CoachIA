@@ -3,6 +3,34 @@ import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { resolveAuth } from '@/lib/internal-auth';
+
+// GET /api/routines?weekStart=YYYY-MM-DD — list routines (optionally filtered by weekStart).
+// Used by the n8n watchdog to verify the monthly mesocycle was created.
+export async function GET(request: Request) {
+  const auth = await resolveAuth(request);
+  if (!auth.authenticated) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
+  const { searchParams } = new URL(request.url);
+  const weekStart = searchParams.get('weekStart');
+
+  if (weekStart && !/^\d{4}-\d{2}-\d{2}$/.test(weekStart)) {
+    return NextResponse.json({ error: 'weekStart must be YYYY-MM-DD' }, { status: 400 });
+  }
+
+  const routines = await prisma.routine.findMany({
+    where: {
+      userId: auth.userId,
+      ...(weekStart ? { weekStart } : {}),
+    },
+    select: { id: true, weekStart: true, status: true, createdAt: true },
+    orderBy: { weekStart: 'desc' },
+  });
+
+  return NextResponse.json({ count: routines.length, routines });
+}
 
 export async function POST(request: Request) {
   try {
@@ -32,7 +60,12 @@ export async function POST(request: Request) {
     }
 
     if (!data.weekStart || typeof data.weekStart !== 'string') {
-      return NextResponse.json({ error: 'weekStart is required and must be an ISO date string' }, { status: 400 });
+      return NextResponse.json({ error: 'weekStart is required and must be a YYYY-MM-DD string' }, { status: 400 });
+    }
+    // Normalize: accept ISO datetime input ("2026-04-20T00:00:00Z") and reduce to YYYY-MM-DD
+    const weekStart = data.weekStart.slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(weekStart)) {
+      return NextResponse.json({ error: 'weekStart must be YYYY-MM-DD or an ISO datetime starting with that' }, { status: 400 });
     }
 
     if (!Array.isArray(data.days) || data.days.length === 0) {
@@ -81,7 +114,7 @@ export async function POST(request: Request) {
     const routine = await prisma.routine.create({
       data: {
         userId: (session as any).user.id,
-        weekStart: new Date(data.weekStart),
+        weekStart,
         days: {
           create: (data.days as DayInput[]).map((day) => ({
             dayOfWeek: day.dayOfWeek,
