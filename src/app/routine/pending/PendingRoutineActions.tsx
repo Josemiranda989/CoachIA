@@ -2,26 +2,30 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 import { Check, X, Loader2 } from "lucide-react";
 
-export function PendingRoutineActions({ routineId }: { routineId: string }) {
+export function PendingRoutineActions({ count }: { count: number }) {
   const router = useRouter();
   const [loading, setLoading] = useState<"approve" | "reject" | null>(null);
 
   async function handleAction(action: "approve" | "reject") {
     setLoading(action);
     try {
-      const res = await fetch(`/api/routines/${routineId}/approve`, {
-        method: "PATCH",
+      const res = await fetch(`/api/routines/pending-action`, {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action }),
       });
 
       if (!res.ok) {
         const data = await res.json();
-        alert(data.error || "Error al procesar");
+        toast.error(data.error || "Error al procesar");
         return;
       }
+
+      const data = await res.json();
+      toast.success(data.message);
 
       if (action === "approve") {
         router.push("/routine/week");
@@ -34,8 +38,18 @@ export function PendingRoutineActions({ routineId }: { routineId: string }) {
     }
   }
 
+  const approveLabel =
+    count > 1 ? `Aprobar mesociclo (${count} semanas)` : "Aprobar y Activar";
+  const rejectLabel = count > 1 ? `Rechazar las ${count}` : "Rechazar";
+
   return (
-    <div className="fixed bottom-0 left-0 right-0 p-4 z-50" style={{ background: "linear-gradient(to top, var(--bg-primary) 70%, transparent)" }}>
+    <div
+      className="fixed left-0 right-0 p-4 z-40"
+      style={{
+        bottom: 72,
+        background: "linear-gradient(to top, var(--bg-main) 70%, transparent)",
+      }}
+    >
       <div className="app-container flex gap-3">
         <button
           onClick={() => handleAction("reject")}
@@ -47,20 +61,22 @@ export function PendingRoutineActions({ routineId }: { routineId: string }) {
           ) : (
             <X size={20} />
           )}
-          Rechazar
+          {rejectLabel}
         </button>
         <button
           onClick={() => handleAction("approve")}
           disabled={loading !== null}
           className="flex-1 py-4 rounded-2xl font-bold text-lg text-black transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-          style={{ background: "linear-gradient(135deg, var(--accent-gym), #fcd34d)" }}
+          style={{
+            background: "linear-gradient(135deg, var(--accent-gym), #fcd34d)",
+          }}
         >
           {loading === "approve" ? (
             <Loader2 className="animate-spin" size={20} />
           ) : (
             <Check size={20} />
           )}
-          Aprobar y Activar
+          {approveLabel}
         </button>
       </div>
     </div>
