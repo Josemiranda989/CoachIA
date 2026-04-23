@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { resolveAuth } from "@/lib/internal-auth";
 import { sendTelegramMessage } from "@/lib/telegram";
+import { getCurrentWeekStart } from "@/lib/week";
 import { GoogleGenAI, Type } from "@google/genai";
 import { getValidAccessToken, fetchActivities, fetchStats } from "@/lib/strava";
 
@@ -253,22 +254,27 @@ REGLAS ESTRICTAS:
       return alertAndRespond("cyclingByWeek must have exactly 4 weeks", 502);
     }
 
-    // Archive previous active routines that fall before the new mesocycle
     const firstNewMonday = mondays[0];
+
+    // Archive active routines whose week has strictly passed. The in-progress week
+    // survives until it naturally ends, so there is no gap between generation day
+    // and the first new week of the mesocycle.
+    const currentWeekMonday = getCurrentWeekStart();
     await prisma.routine.updateMany({
       where: {
         userId: auth.userId,
-        status: { in: ["active", "pending_approval"] },
-        weekStart: { lt: firstNewMonday },
+        status: "active",
+        weekStart: { lt: currentWeekMonday },
       },
       data: { status: "archived" },
     });
-    // Also archive any pending_approval that overlaps with the new range (avoid duplicates)
+
+    // Archive any stale pending_approval (both older ones and ones that overlap with
+    // the new mesocycle range) to avoid duplicates after the user approves.
     await prisma.routine.updateMany({
       where: {
         userId: auth.userId,
         status: "pending_approval",
-        weekStart: { gte: firstNewMonday },
       },
       data: { status: "archived" },
     });
