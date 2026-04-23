@@ -194,14 +194,26 @@ USA LOS DATOS REALES del atleta para:
 - Ajustar la duración e intensidad del ciclismo según su nivel real (distancias, velocidad promedio, FC y potencia recientes)
 - Si no hay datos de ciclismo, usá valores conservadores para principiante
 
-PERIODIZACIÓN SEMANAL (OBLIGATORIA — el atleta prioriza el fondo largo del SÁBADO):
-A. Saturday SIEMPRE es "Cycling" con el ride más largo y exigente de la semana (90-180min, Z2-Z3). Es el día prioritario; toda la semana se programa hacia atrás desde este día.
+PERIODIZACIÓN SEMANAL (OBLIGATORIA — el atleta prioriza el fondo largo del SÁBADO a ritmo social):
+A. Saturday es el ride MÁS LARGO de la semana (90-180min) PERO en intensidad SUAVE (Z1-Z2). El atleta sale con amigos a ritmo social. NUNCA meter intervals, Z4 ni Z5 el sábado. Notes: énfasis en mantener Z2 bajo.
+A2. La intensidad del cycling va en UN interval day entre semana (Tuesday o Wednesday con piernas frescas). Ahí caben Z3-Z5 según objetivo.
 B. Las piernas pesadas en gym (sentadilla, prensa, peso muerto, zancadas, hip thrust) NUNCA pueden caer dentro de las 72 horas previas al sábado. Idealmente Tuesday, máximo Wednesday. NUNCA Thursday/Friday/Saturday.
 C. El día siguiente a una sesión de piernas debe ser "Rest" o "Cycling" Z1-Z2 recovery (≤90min, intensidad baja). NUNCA intensidad alta ni otra sesión de piernas.
-D. Si hay días de ciclismo con intensidad (Z3+, intervalos, umbral), programarlos con piernas frescas (Monday o Tuesday temprano). Los rides recovery van al día siguiente de piernas.
+D. El interval day de cycling SIEMPRE con piernas frescas (si Tuesday es leg day de gym, el interval va a Wednesday o viceversa).
 E. Friday debe ser "Rest" o gym muy ligero de tren superior (<40min). Prohibido piernas o bici intensa el viernes.
-F. Sunday debe ser "Rest" o "Cycling" Z1 muy suave (≤60min) post-fondo.
+F. Sunday debe ser "Rest" o "Cycling" Z1 muy suave (≤60min) post-sábado largo.
 G. Empuje y jalones pueden distribuirse Lunes/Miércoles/Jueves según los días de gym disponibles.
+
+ESTILO DEL ATLETA (preferencias extraídas de un plan real que le funcionó):
+- Vocabulario de intensidad por RPE — úsalo en el campo `notes`:
+  - "suave" = Z1-Z2 bajo, conversación fluida
+  - "ligero" = Z2 cómodo
+  - "medio exigido" = Z3 tempo
+  - "fuerte sostenible" = Z4 umbral
+  - "fuerte" / "máximo" = Z5+
+- Ratios recovery/trabajo en intervals:
+  - Reps 2-5min → 1:1 (recup = trabajo)
+  - Reps 10min → 2:1 (10min work / 5min rec)
 
 REGLAS ESTRICTAS:
 1. weekStart DEBE ser exactamente: "${nextMonday}"
