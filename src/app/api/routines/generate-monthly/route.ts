@@ -255,7 +255,7 @@ ORDEN DE BLOCKS (guías):
 - Rides con intensidad: warmup + (interval) + cooldown. O: warmup + steady Z2 + interval + cooldown.
 - La suma de warmup + Σ(rep × (duration + recoveryDuration) para intervals) + Σ(steady.duration) + cooldown DEBE igualar totalDuration exactamente.
 
-USO DEL CAMPO `notes` EN CYCLING:
+USO DEL CAMPO "notes" EN CYCLING:
 - Explicar el PROPÓSITO de la sesión (qué adaptación busca, qué priorizar, qué evitar).
 - Máximo 1 oración útil al atleta durante el entreno. Ej:
   - "Fondo base del mesociclo. Z2 bajo todo el ride, no acelerar al final."
@@ -308,7 +308,7 @@ F. Sunday → "Rest" o "Cycling" Z1 muy suave (≤60min) post-sábado largo.
 G. Empuje y jalones se distribuyen Lunes/Miércoles/Jueves según los días disponibles.
 
 ESTILO DEL ATLETA (preferencias extraídas de un plan real que le funcionó):
-- Vocabulario de intensidad por RPE — úsalo en el campo `notes` para que el atleta entienda el feel esperado (además del targetPower):
+- Vocabulario de intensidad por RPE — úsalo en el campo "notes" para que el atleta entienda el feel esperado (además del targetPower):
   - "suave" = Z1-Z2 bajo, conversación fluida
   - "ligero" = Z2 cómodo
   - "medio exigido" = Z3 tempo
