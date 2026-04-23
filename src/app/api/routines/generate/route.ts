@@ -205,7 +205,7 @@ F. Sunday debe ser "Rest" o "Cycling" Z1 muy suave (≤60min) post-sábado largo
 G. Empuje y jalones pueden distribuirse Lunes/Miércoles/Jueves según los días de gym disponibles.
 
 ESTILO DEL ATLETA (preferencias extraídas de un plan real que le funcionó):
-- Vocabulario de intensidad por RPE — úsalo en el campo `notes`:
+- Vocabulario de intensidad por RPE — úsalo en el campo "notes":
   - "suave" = Z1-Z2 bajo, conversación fluida
   - "ligero" = Z2 cómodo
   - "medio exigido" = Z3 tempo

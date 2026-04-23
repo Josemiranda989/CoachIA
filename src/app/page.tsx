@@ -3,9 +3,10 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { getCurrentWeekStart } from "@/lib/week";
 import {
   Sparkles, Calendar, BarChart3, HelpCircle,
-  ArrowRight, Bot, Upload, Zap, Bell, Apple,
+  ArrowRight, Bot, Upload, Zap, Bell, Apple, BookOpen,
 } from "lucide-react";
 
 export default async function Home() {
@@ -21,19 +22,24 @@ export default async function Home() {
   const hour = now.getHours();
   const greeting = hour < 12 ? "Buenos días" : hour < 19 ? "Buenas tardes" : "Buenas noches";
 
-  // Progreso semanal: días completados esta semana (lunes→domingo)
-  const dayOfWeek = now.getDay(); // 0=domingo
-  const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-  const weekStart = new Date(now);
-  weekStart.setDate(now.getDate() + diffToMonday);
-  weekStart.setHours(0, 0, 0, 0);
-
+  const weekStart = getCurrentWeekStart(now);
   const userId = (session as any).user.id;
 
   const latestRoutine = await prisma.routine.findFirst({
-    where: { userId },
-    orderBy: { createdAt: "desc" },
-    include: { days: { select: { completed: true, type: true } } },
+    where: {
+      userId,
+      status: "active",
+      weekStart: { lte: weekStart },
+    },
+    orderBy: { weekStart: "desc" },
+    include: {
+      days: {
+        select: {
+          type: true,
+          completions: { where: { weekStart }, select: { completed: true } },
+        },
+      },
+    },
   });
 
   const pendingRoutine = await prisma.routine.findFirst({
@@ -42,7 +48,9 @@ export default async function Home() {
 
   const weekDays = latestRoutine?.days ?? [];
   const totalTrainingDays = weekDays.filter((d) => !d.type.includes("Rest")).length;
-  const completedDays = weekDays.filter((d) => d.completed && !d.type.includes("Rest")).length;
+  const completedDays = weekDays.filter(
+    (d) => !d.type.includes("Rest") && d.completions[0]?.completed
+  ).length;
   const progressPct = totalTrainingDays > 0 ? Math.round((completedDays / totalTrainingDays) * 100) : 0;
 
   return (
@@ -157,7 +165,7 @@ export default async function Home() {
       </Link>
 
       {/* ── Grid de accesos ── */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
 
         {/* Generar con IA */}
         <Link
@@ -267,6 +275,24 @@ export default async function Home() {
           </h2>
           <p className="text-text-secondary text-sm leading-relaxed hidden sm:block">
             Guía de combustible: qué comer, cuánto y cuándo en tus salidas.
+          </p>
+        </Link>
+
+        {/* Wiki de Ejercicios */}
+        <Link
+          href="/wiki"
+          className="card group hover:border-sky-500/50 hover:scale-[1.02] animate-fade-up"
+          style={{ animationDelay: "480ms" }}
+        >
+          <div className="mb-4 p-3 bg-sky-500/20 rounded-xl w-fit group-hover:bg-sky-500/30 transition-colors">
+            <BookOpen className="text-sky-400" size={26} />
+          </div>
+          <h2 className="text-lg md:text-xl font-bold mb-2 flex items-center justify-between">
+            Wiki de Ejercicios
+            <ArrowRight className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" size={18} />
+          </h2>
+          <p className="text-text-secondary text-sm leading-relaxed hidden sm:block">
+            Referencia visual: descripción, ejecución y tips para cada ejercicio.
           </p>
         </Link>
 

@@ -53,6 +53,23 @@ model DailyWorkout {
   blocks      CyclingBlock[]
 }
 
+// Wiki-style reference for each canonical exercise name. One row per canonical
+// exercise, independent of Routine/DailyWorkout. Keyed by `name` (must match the
+// normalized name used in `Exercise.name`).
+model ExerciseDefinition {
+  id           String   @id @default(cuid())
+  name         String   @unique // canonical exercise name (matches Exercise.name)
+  slug         String   @unique // URL-safe, e.g. "face-pull"
+  description  String   // short "what is this exercise" paragraph
+  muscleGroups String   // comma-separated primary+secondary, e.g. "Espalda media, Deltoides posterior"
+  instructions String   // step-by-step execution, newline-separated
+  tips         String?  // coaching cues / common mistakes, newline-separated
+  equipment    String?  // "Polea", "Mancuernas", "Barra", "Peso corporal", etc.
+  imagePath    String?  // path under /public, e.g. "/exercises/face-pull.png"
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
 model CyclingBlock {
   id               String   @id @default(cuid())
   dailyWorkoutId   String
