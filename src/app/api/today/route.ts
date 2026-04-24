@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { resolveAuth } from "@/lib/internal-auth";
+import { getCurrentWeekStart } from "@/lib/week";
 
 const DAY_NAMES = [
   "Sunday",
@@ -19,14 +20,22 @@ export async function GET(request: Request) {
   }
 
   const today = DAY_NAMES[new Date().getDay()];
+  const weekStart = getCurrentWeekStart();
 
   const routine = await prisma.routine.findFirst({
-    where: { userId: auth.userId, status: "active" },
+    where: {
+      userId: auth.userId,
+      status: "active",
+      weekStart: { lte: weekStart },
+    },
     orderBy: { weekStart: "desc" },
     include: {
       days: {
         where: { dayOfWeek: today },
-        include: { exercises: true },
+        include: {
+          exercises: true,
+          completions: { where: { weekStart } },
+        },
       },
     },
   });
@@ -41,6 +50,7 @@ export async function GET(request: Request) {
   }
 
   const day = routine.days[0];
+  const completion = day.completions[0];
 
   return NextResponse.json({
     dayOfWeek: today,
@@ -53,6 +63,6 @@ export async function GET(request: Request) {
     targetDuration: day.targetDuration,
     targetPower: day.targetPower,
     notes: day.notes,
-    completed: day.completed,
+    completed: completion?.completed ?? false,
   });
 }
