@@ -205,7 +205,7 @@ export default async function ExerciseDetailPage({
       </div>
 
       <p className="text-xs text-text-secondary text-center mt-8 opacity-60">
-        Imagen: free-exercise-db (public domain)
+        Imágenes: ExerciseGymGifsDB + free-exercise-db
       </p>
     </div>
   );
