@@ -11,7 +11,8 @@
       "name": "Docker Compose (coach-ia)",
       "runtimeExecutable": "docker-compose",
       "runtimeArgs": ["up"],
-      "port": 3001
+      "port": 3001,
+      "autoPort": false
     }
   ]
 }

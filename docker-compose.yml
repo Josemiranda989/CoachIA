@@ -2,21 +2,16 @@ services:
   coach-ia:
     build: .
     ports:
-      - "3001:3000"  # opcional al usar nginx-proxy-manager
+      - "3001:3000"
     volumes:
-      - .:/app
-      - /app/node_modules
-      - /app/.next
       - ./prisma/dev.db:/app/prisma/dev.db
+    env_file:
+      - .env
+      - .env.local
     environment:
-      - NODE_ENV=development
-      - NEXTAUTH_URL=https://gym.homelab989.duckdns.org
-      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - INTERNAL_API_KEY=${INTERNAL_API_KEY}
-      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
-      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
-    command: npm run dev
+      - NODE_ENV=production
+      - NEXTAUTH_URL=https://coachia.jmlabs.app
+    restart: unless-stopped
     networks:
       - inmich_net
 
