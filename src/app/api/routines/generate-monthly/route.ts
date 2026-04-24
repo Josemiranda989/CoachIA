@@ -189,8 +189,8 @@ export async function POST(request: Request) {
 
     const body = await request.json().catch(() => ({}));
     const goal = body.goal || "Hipertrofia";
-    const daysPerWeek = body.daysPerWeek || 4;
-    const cyclingDays = body.cyclingDays || 2;
+    const daysPerWeek = body.daysPerWeek || 3;
+    const cyclingDays = body.cyclingDays || 3;
     const focusAreas = body.focusAreas || [];
     const notes = body.notes || "";
 
@@ -244,8 +244,8 @@ DURACIONES DE REP POR ZONA (fisiológicamente realistas — NO VIOLAR):
 - Z6+ Anaeróbico: 30s-2min por rep, 2-4x recovery Z1
 
 DURACIONES TOTALES TÍPICAS DE RIDE:
-- Recovery ride (Sunday, post-piernas): 40-80min
-- Ride con intervals (VO2max/Threshold): 45-90min total
+- Recovery ride (post-leg day, ej Thursday si leg day fue Wednesday): 40-80min Z1-Z2
+- Ride con intervals (VO2max/Threshold, Tuesday típico): 45-90min total, duración ideal 1:15-1:30
 - Tempo/sub-umbral sostenido: 60-90min
 - Long ride sábado: 90-180min (no pasarse de 180)
 
@@ -286,51 +286,65 @@ Ejemplo B — Wednesday VO2max PEAK (60min total):
   "notes":"Sesión clave. 4x4 VO2max. Primer rep suave, últimos 2 a 120%FTP."
 }
 
-Ejemplo C — Sunday recovery (50min total):
+Ejemplo C — Thursday recovery post-leg day (60min total, Z2 volumen):
 {
-  "dayOfWeek":"Sunday", "totalDuration":50, "totalPower":"Z1",
+  "dayOfWeek":"Thursday", "totalDuration":60, "totalPower":"Z2",
   "blocks":[
     {"kind":"warmup","duration":10,"targetPower":"Z1"},
-    {"kind":"steady","duration":30,"targetPower":"Z1"},
+    {"kind":"steady","duration":40,"targetPower":"Z2"},
     {"kind":"cooldown","duration":10,"targetPower":"Z1"}
   ],
-  "notes":"Recovery post-long ride. Cadencia alta >90rpm, FC debajo de Z2, NO acelerar."
+  "notes":"Volumen suave post-leg day del miércoles. Cadencia alta >90rpm, NO acelerar, piernas ligeras."
 }
 
 PERIODIZACIÓN SEMANAL (para gymTemplate — OBLIGATORIA):
-A. Saturday es el ride MÁS LARGO de la semana PERO en intensidad SUAVE (Z1-Z2). El atleta sale con amigos a ritmo social los fines de semana. NUNCA meter intervals, Z4 ni Z5 el sábado. Notes del sábado: énfasis en mantener Z2 bajo.
-A2. La intensidad del mesociclo vive en la sesión INTERVAL entre semana (Tuesday o Wednesday, con piernas frescas). Ahí van los Z3-Z5 cuando aplica. Si hay 2 cycling days, uno es el sábado largo-suave, el otro es el interval day.
-B. Las piernas pesadas en gym (sentadilla, prensa, peso muerto, zancadas, hip thrust) NUNCA dentro de las 72hs previas al sábado. Idealmente Tuesday, máximo Wednesday. NUNCA Thursday/Friday/Saturday.
-C. El día siguiente a piernas debe ser "Rest" o "Cycling" Z1-Z2 recovery (≤90min). NUNCA intensidad alta ni piernas otra vez.
-D. El interval day de cycling SIEMPRE con piernas frescas (mismo Tuesday o Wednesday — si ese día es leg day de gym, el interval va al otro día).
-E. Friday → "Rest" o gym muy ligero de tren superior (<40min). Prohibido piernas o bici intensa.
-F. Sunday → "Rest" o "Cycling" Z1 muy suave (≤60min) post-sábado largo.
-G. Empuje y jalones se distribuyen Lunes/Miércoles/Jueves según los días disponibles.
+
+Distribución preferida del atleta cuando hay 3 gym + 3 cycling + 1 rest (Opción A, fija):
+- Monday: Gym (empuje/jalón, SIN piernas)
+- Tuesday: Cycling — INTERVAL day (piernas frescas)
+- Wednesday: Gym — LEG DAY (sentadilla, prensa, peso muerto, zancadas, hip thrust)
+- Thursday: Cycling Z2 volumen (puede incluir tramos tempo si aplica, sin intervals duros)
+- Friday: Gym (empuje/jalón, SIN piernas)
+- Saturday: Cycling — LONG RIDE suave (Z1-Z2)
+- Sunday: Rest
+
+Si daysPerWeek ≠ 3 o cyclingDays ≠ 3, adaptá manteniendo las REGLAS FISIOLÓGICAS abajo. No inventes distribuciones que las violen.
+
+REGLAS FISIOLÓGICAS (OBLIGATORIAS, no negociables):
+A. Saturday es el ride MÁS LARGO de la semana PERO SIEMPRE en intensidad SUAVE (Z1-Z2). NUNCA meter intervals, Z4 ni Z5 el sábado. Notes del sábado: énfasis en mantener Z2 bajo y NO acelerar al final.
+A2. La intensidad del cycling vive en UNA sola sesión INTERVAL entre semana, preferentemente Tuesday. Regla dura: **1 solo día de calidad de cycling por semana**. Los otros cycling days son Z2/Z1 volumen o recovery.
+B. Las piernas pesadas en gym (sentadilla, prensa, peso muerto, zancadas, hip thrust) deben respetar **72hs mínimo antes del sábado**. Ventana válida: Monday, Tuesday, Wednesday. NUNCA Thursday/Friday/Saturday.
+C. El día siguiente a leg day debe ser "Rest" o "Cycling" Z1-Z2 volumen/recovery (≤90min). NUNCA intensidad alta ni piernas otra vez al día siguiente.
+D. El interval day de cycling SIEMPRE con piernas frescas. Si leg day cae el mismo día o el anterior al interval day → mover leg day.
+E. Sunday → Rest post-sábado largo. Rest absoluto, no "cycling Z1 muy suave" — el long ride del sábado ya es la carga aeróbica del fin de semana.
+F. Gym upper (empuje/jalón) se distribuye en los días no-leg y no-interval — típicamente Monday y Friday.
+G. Viernes: si hay gym upper, OK. Si no hay gym ese día, puede ser cycling suave o Rest — NUNCA cycling INTERVAL ni leg day.
 
 ESTILO DEL ATLETA (preferencias extraídas de un plan real que le funcionó):
-- Vocabulario de intensidad por RPE — úsalo en el campo "notes" para que el atleta entienda el feel esperado (además del targetPower):
+- Vocabulario de intensidad por RPE — úsalo en "notes" para que el atleta entienda el feel (además del targetPower):
   - "suave" = Z1-Z2 bajo, conversación fluida
   - "ligero" = Z2 cómodo
   - "medio exigido" = Z3 tempo
-  - "fuerte sostenible" = Z4 umbral
-  - "fuerte" / "máximo" = Z5+ (raro)
-- Ratios recovery/trabajo en intervals (respetá estos):
-  - Reps cortos (2-5min) → ratio 1:1 (recup = duración del trabajo)
-  - Reps largos (10min) → ratio 2:1 (recup = mitad del trabajo, ej 10min work / 5min rec)
-- Días de descanso absoluto crecen con la intensidad del mesociclo:
-  - Semanas 1-2 (BUILD): 1-2 días de Rest/semana
-  - Semana 3 (PEAK): 2-3 días de Rest/semana
-  - Semana 4 (RECOVERY): 2-3 días de Rest/semana + rides muy suaves
-- Progresión de intervals durante el mesociclo (variá el formato cada 1-2 semanas para estimular adaptaciones distintas):
-  - Sem 1-2: reps medios (3-5min) a intensidad moderada-media (Z3-Z4 bajo)
-  - Sem 3 (PEAK): reps más largos (4-10min) o más intensos (Z4-Z5)
-  - Sem 4 (RECOVERY): NO intervals. Todo Z1-Z2.
+  - "fuerte sostenible" = Z4 umbral (clave: **SOSTENIBLE** = podés mantenerlo toda la rep, NO es all-out)
+  - "fuerte" / "máximo" = Z5+ (raro, solo si el objetivo lo pide)
+- Concepto ancla "SOSTENIBLE": el atleta puede MANTENER el esfuerzo todos los minutos que dura la rep. Si la última rep tiene que bajar de ritmo → se pasó. Si al terminar podría hacer una más → quedó corto. Usá esta palabra siempre que prescribas Z3-Z4.
+
+- Ratios recovery/trabajo en intervals (REGLA DURA, respetá exactamente):
+  - **Default: 1:1** — la recovery dura IGUAL que la rep. Aplica a reps de 2', 3', 4', 5'. Ej: 4x4' → recovery 4'.
+  - **Excepción: 2:1 SOLO cuando la rep dura ≥10 minutos**. Ej: 2x10' → recovery 5'.
+  - NO inventar ratios distintos (1:2, 3:1, etc). Si el bloque no encaja en 1:1 o 2:1 → repensalo.
+
+- Descanso estructural del plan (del coach real):
+  - **Domingo SIEMPRE Rest** (post-long ride del sábado).
+  - Semanas 1-3: 1-2 días Rest/semana (según daysPerWeek).
+  - Semana 4 (RECOVERY): agregar 1 día extra de Rest vs las semanas previas.
 
 PROGRESIÓN MENSUAL DE CICLISMO (para cyclingByWeek):
-- Semana 1 (BUILD): volumen base, mayoría Z2, una sesión Z3 si hay 2+ cycling days
-- Semana 2 (BUILD): +10-15% volumen vs sem 1, manten intensidad
-- Semana 3 (PEAK): mantener volumen sem 2 pero subir intensidad (más Z3-Z4 en Wednesday si aplica)
-- Semana 4 (RECOVERY): -30-40% volumen, todo Z1-Z2, ride más corto el sábado
+- **Principio (del coach real)**: el volumen semanal se mantiene ESTABLE (~7-9hs típicas para atleta intermedio). Lo que escala semana a semana es la INTENSIDAD y el tipo de estímulo, NO las horas. No subir volumen sem a sem.
+- Semana 1 (BUILD base): volumen base, mayoría Z2. Interval day con reps cortos (3-5min) a Z3-Z4 bajo, ratio 1:1. Ej: 3x3' medio exigido o 2x5' sostenible.
+- Semana 2 (BUILD): MISMO volumen que sem 1. Subir ligeramente la intensidad del interval day (más reps O intensidad mayor dentro del mismo formato). Ej: 4x4' medio exigido.
+- Semana 3 (PEAK): MISMO volumen. Estímulo más duro: reps más largas (hasta 10min con ratio 2:1) O más fuertes (Z4 sostenible con reps de 4'). Elegir UNA de las dos cosas, no ambas.
+- Semana 4 (RECOVERY): -25-30% volumen, todo Z1-Z2. Sin interval day (el Tuesday pasa a Z2 volumen o Rest). Sábado más corto (-20%).
 
 REGLAS ESTRICTAS:
 1. gymTemplate SIEMPRE tiene los 7 días (Monday a Sunday)

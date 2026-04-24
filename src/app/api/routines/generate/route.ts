@@ -194,26 +194,41 @@ USA LOS DATOS REALES del atleta para:
 - Ajustar la duración e intensidad del ciclismo según su nivel real (distancias, velocidad promedio, FC y potencia recientes)
 - Si no hay datos de ciclismo, usá valores conservadores para principiante
 
-PERIODIZACIÓN SEMANAL (OBLIGATORIA — el atleta prioriza el fondo largo del SÁBADO a ritmo social):
-A. Saturday es el ride MÁS LARGO de la semana (90-180min) PERO en intensidad SUAVE (Z1-Z2). El atleta sale con amigos a ritmo social. NUNCA meter intervals, Z4 ni Z5 el sábado. Notes: énfasis en mantener Z2 bajo.
-A2. La intensidad del cycling va en UN interval day entre semana (Tuesday o Wednesday con piernas frescas). Ahí caben Z3-Z5 según objetivo.
-B. Las piernas pesadas en gym (sentadilla, prensa, peso muerto, zancadas, hip thrust) NUNCA pueden caer dentro de las 72 horas previas al sábado. Idealmente Tuesday, máximo Wednesday. NUNCA Thursday/Friday/Saturday.
-C. El día siguiente a una sesión de piernas debe ser "Rest" o "Cycling" Z1-Z2 recovery (≤90min, intensidad baja). NUNCA intensidad alta ni otra sesión de piernas.
-D. El interval day de cycling SIEMPRE con piernas frescas (si Tuesday es leg day de gym, el interval va a Wednesday o viceversa).
-E. Friday debe ser "Rest" o gym muy ligero de tren superior (<40min). Prohibido piernas o bici intensa el viernes.
-F. Sunday debe ser "Rest" o "Cycling" Z1 muy suave (≤60min) post-sábado largo.
-G. Empuje y jalones pueden distribuirse Lunes/Miércoles/Jueves según los días de gym disponibles.
+PERIODIZACIÓN SEMANAL (OBLIGATORIA):
+
+Distribución preferida del atleta cuando hay 3 gym + 3 cycling + 1 rest (Opción A, fija):
+- Monday: Gym (empuje/jalón, SIN piernas)
+- Tuesday: Cycling — INTERVAL day (piernas frescas)
+- Wednesday: Gym — LEG DAY (sentadilla, prensa, peso muerto, zancadas, hip thrust)
+- Thursday: Cycling Z2 volumen
+- Friday: Gym (empuje/jalón, SIN piernas)
+- Saturday: Cycling — LONG RIDE suave (Z1-Z2)
+- Sunday: Rest
+
+Si daysPerWeek ≠ 3 o cyclingDays ≠ 3, adaptá manteniendo las REGLAS FISIOLÓGICAS abajo.
+
+REGLAS FISIOLÓGICAS (OBLIGATORIAS, no negociables):
+A. Saturday es el ride MÁS LARGO de la semana (90-180min) PERO SIEMPRE en intensidad SUAVE (Z1-Z2). NUNCA meter intervals, Z4 ni Z5 el sábado. Notes del sábado: énfasis en mantener Z2 bajo y NO acelerar al final.
+A2. La intensidad del cycling vive en UNA sola sesión INTERVAL entre semana, preferentemente Tuesday. Regla dura: **1 solo día de calidad de cycling por semana**. Los otros cycling days son Z2/Z1 volumen o recovery.
+B. Las piernas pesadas en gym (sentadilla, prensa, peso muerto, zancadas, hip thrust) deben respetar **72hs mínimo antes del sábado**. Ventana válida: Monday, Tuesday, Wednesday. NUNCA Thursday/Friday/Saturday.
+C. El día siguiente a leg day debe ser "Rest" o "Cycling" Z1-Z2 volumen/recovery (≤90min). NUNCA intensidad alta ni piernas otra vez.
+D. El interval day de cycling SIEMPRE con piernas frescas. Si leg day cae el mismo día o el anterior al interval day → mover leg day.
+E. Sunday → Rest post-sábado largo. Rest absoluto, no "cycling Z1 muy suave".
+F. Gym upper (empuje/jalón) se distribuye en los días no-leg y no-interval — típicamente Monday y Friday.
+G. Viernes: si hay gym upper, OK. Si no hay gym ese día, puede ser cycling suave o Rest — NUNCA cycling INTERVAL ni leg day.
 
 ESTILO DEL ATLETA (preferencias extraídas de un plan real que le funcionó):
 - Vocabulario de intensidad por RPE — úsalo en el campo "notes":
   - "suave" = Z1-Z2 bajo, conversación fluida
   - "ligero" = Z2 cómodo
   - "medio exigido" = Z3 tempo
-  - "fuerte sostenible" = Z4 umbral
-  - "fuerte" / "máximo" = Z5+
-- Ratios recovery/trabajo en intervals:
-  - Reps 2-5min → 1:1 (recup = trabajo)
-  - Reps 10min → 2:1 (10min work / 5min rec)
+  - "fuerte sostenible" = Z4 umbral (clave: **SOSTENIBLE** = podés mantenerlo toda la rep, NO es all-out)
+  - "fuerte" / "máximo" = Z5+ (raro)
+- Concepto ancla "SOSTENIBLE": el atleta puede MANTENER el esfuerzo todos los minutos que dura la rep. Si la última rep tiene que bajar de ritmo → se pasó. Usá esta palabra siempre que prescribas Z3-Z4.
+- Ratios recovery/trabajo en intervals (REGLA DURA):
+  - **Default: 1:1** — recovery dura IGUAL que la rep. Aplica a reps de 2', 3', 4', 5'. Ej: 4x4' → recovery 4'.
+  - **Excepción: 2:1 SOLO cuando la rep dura ≥10 minutos**. Ej: 2x10' → recovery 5'.
+  - NO inventar ratios distintos. Si el bloque no encaja en 1:1 o 2:1 → repensalo.
 
 REGLAS ESTRICTAS:
 1. weekStart DEBE ser exactamente: "${nextMonday}"
