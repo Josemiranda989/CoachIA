@@ -320,7 +320,7 @@ export default function GenerateRoutinePage() {
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-text-primary">
-                Semana desde {new Date(routine.weekStart).toLocaleDateString("es-ES", { day: "numeric", month: "long" })}
+                Semana desde {new Date(routine.weekStart.length === 10 ? routine.weekStart + "T00:00:00" : routine.weekStart).toLocaleDateString("es-ES", { day: "numeric", month: "long" })}
               </h2>
               <div className="flex gap-2 text-xs text-text-secondary">
                 <span className="flex items-center gap-1"><Dumbbell size={14} className="text-accent-gym" /> Gym</span>
