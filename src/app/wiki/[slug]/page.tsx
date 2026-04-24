@@ -117,6 +117,7 @@ export default async function ExerciseDetailPage({
               height={480}
               className="object-cover w-full h-full"
               priority
+              unoptimized
             />
           </div>
         </div>
