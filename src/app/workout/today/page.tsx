@@ -27,7 +27,7 @@ export default async function TodayWorkoutPage() {
     include: {
       days: {
         include: {
-          exercises: { include: { logs: true } },
+          exercises: { include: { logs: { where: { weekStart } } } },
           completions: { where: { weekStart } },
           blocks: { orderBy: { order: 'asc' } },
         }
@@ -88,17 +88,15 @@ export default async function TodayWorkoutPage() {
   else if (isGym) title = `${todayWorkout.type} 🏋️‍♂️`;
   else if (isCycling) title = `${todayWorkout.type} 🚴‍♂️`;
 
-  // Fetch last weight for each exercise (looks at exercises whose day was ever completed)
+  // Prefill last weight from the most recent PAST week (not current) for each exercise name
   const exercisesWithLastWeight = await Promise.all(
     todayWorkout.exercises.map(async (ex: any) => {
       const lastLog = await prisma.workoutLog.findFirst({
         where: {
-          exercise: {
-            name: ex.name,
-            dailyWorkout: { completions: { some: { completed: true } } },
-          },
+          exercise: { name: ex.name },
+          weekStart: { lt: weekStart },
         },
-        orderBy: { id: 'desc' },
+        orderBy: [{ weekStart: 'desc' }, { id: 'desc' }],
       });
       return { ...ex, lastWeight: lastLog?.weight || "" };
     })

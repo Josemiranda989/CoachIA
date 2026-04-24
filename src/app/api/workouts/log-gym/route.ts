@@ -10,26 +10,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid data' }, { status: 400 });
     }
 
+    const weekStart = getCurrentWeekStart();
+
     for (const log of logs) {
-      const existing = await prisma.workoutLog.findFirst({
-        where: { exerciseId: log.exerciseId, setNumber: log.setNumber }
-      });
-      
-      if (existing) {
-        await prisma.workoutLog.update({
-          where: { id: existing.id },
-          data: { weight: log.weight, reps: log.reps }
-        });
-      } else {
-        await prisma.workoutLog.create({
-          data: {
+      await prisma.workoutLog.upsert({
+        where: {
+          exerciseId_setNumber_weekStart: {
             exerciseId: log.exerciseId,
             setNumber: log.setNumber,
-            reps: log.reps,
-            weight: log.weight
-          }
-        });
-      }
+            weekStart,
+          },
+        },
+        update: { weight: log.weight, reps: log.reps },
+        create: {
+          exerciseId: log.exerciseId,
+          setNumber: log.setNumber,
+          weekStart,
+          reps: log.reps,
+          weight: log.weight,
+        },
+      });
     }
 
     await prisma.dailyWorkout.update({
@@ -37,7 +37,6 @@ export async function POST(request: Request) {
       data: { date: new Date() }
     });
 
-    const weekStart = getCurrentWeekStart();
     const now = new Date();
     await prisma.workoutCompletion.upsert({
       where: { dailyWorkoutId_weekStart: { dailyWorkoutId: workoutId, weekStart } },
