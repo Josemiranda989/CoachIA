@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import toast from "react-hot-toast";
 
 export function StravaConnect({ isConnected }: { isConnected: boolean }) {
   const [loading, setLoading] = useState(false);
@@ -11,7 +12,7 @@ export function StravaConnect({ isConnected }: { isConnected: boolean }) {
       await fetch("/api/strava/disconnect", { method: "POST" });
       setConnected(false);
     } catch {
-      alert("Error al desconectar Strava");
+      toast.error("Error al desconectar Strava");
     } finally {
       setLoading(false);
     }

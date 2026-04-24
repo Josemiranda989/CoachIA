@@ -18,6 +18,12 @@ export function CountUp({ value, duration = 900, decimals = 0, locale = "es-AR" 
       return;
     }
 
+    // Skip animation if user prefers reduced motion
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setDisplayed(value);
+      return;
+    }
+
     const start = performance.now();
     const from = 0;
 

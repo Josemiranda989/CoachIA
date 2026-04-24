@@ -11,7 +11,7 @@ export default async function RecordsPage() {
       }
     },
     where: {
-      exercise: { dailyWorkout: { completed: true } }
+      exercise: { dailyWorkout: { completions: { some: { completed: true } } } }
     }
   });
 
