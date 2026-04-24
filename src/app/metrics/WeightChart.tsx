@@ -9,6 +9,7 @@ import {
   YAxis,
   Tooltip,
   CartesianGrid,
+  Legend,
 } from "recharts";
 import { Scale, TrendingDown, TrendingUp, Minus } from "lucide-react";
 
@@ -96,6 +97,11 @@ export function WeightChart() {
   const minW = Math.floor(Math.min(...weights) - 1);
   const maxW = Math.ceil(Math.max(...weights) + 1);
 
+  const fats = data.map((d) => d.bodyFat).filter((v): v is number => v != null);
+  const hasFat = fats.length > 0;
+  const minF = hasFat ? Math.floor(Math.min(...fats) - 1) : 0;
+  const maxF = hasFat ? Math.ceil(Math.max(...fats) + 1) : 100;
+
   return (
     <div
       className="card col-span-2 lg:col-span-3"
@@ -140,12 +146,25 @@ export function WeightChart() {
               axisLine={false}
             />
             <YAxis
+              yAxisId="weight"
               domain={[minW, maxW]}
               tick={{ fill: "var(--text-secondary)", fontSize: 11 }}
               tickLine={false}
               axisLine={false}
               width={35}
             />
+            {hasFat && (
+              <YAxis
+                yAxisId="fat"
+                orientation="right"
+                domain={[minF, maxF]}
+                tick={{ fill: "var(--text-secondary)", fontSize: 11 }}
+                tickLine={false}
+                axisLine={false}
+                width={35}
+                tickFormatter={(v) => `${v}%`}
+              />
+            )}
             <Tooltip
               contentStyle={{
                 background: "var(--bg-card)",
@@ -154,16 +173,38 @@ export function WeightChart() {
                 fontSize: 13,
               }}
               labelStyle={{ color: "var(--text-secondary)" }}
-              formatter={(value: number) => [`${value} kg`, "Peso"]}
+              formatter={(value, name) =>
+                name === "Peso" ? [`${value} kg`, String(name)] : [`${value}%`, String(name)]
+              }
+            />
+            <Legend
+              wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
+              iconType="circle"
             />
             <Line
+              yAxisId="weight"
               type="monotone"
               dataKey="weight"
+              name="Peso"
               stroke="#8b5cf6"
               strokeWidth={2.5}
               dot={{ r: 4, fill: "#8b5cf6", strokeWidth: 0 }}
               activeDot={{ r: 6, fill: "#8b5cf6" }}
             />
+            {hasFat && (
+              <Line
+                yAxisId="fat"
+                type="monotone"
+                dataKey="bodyFat"
+                name="Grasa"
+                stroke="#f59e0b"
+                strokeWidth={2}
+                strokeDasharray="4 3"
+                dot={{ r: 3, fill: "#f59e0b", strokeWidth: 0 }}
+                activeDot={{ r: 5, fill: "#f59e0b" }}
+                connectNulls
+              />
+            )}
           </LineChart>
         </ResponsiveContainer>
       </div>
