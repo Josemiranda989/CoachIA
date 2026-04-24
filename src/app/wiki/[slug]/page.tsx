@@ -83,15 +83,20 @@ export default async function ExerciseDetailPage({
       </h1>
 
       {/* Muscle chips */}
-      <div className="flex flex-wrap gap-1.5 mb-6 justify-center sm:justify-start">
+      <div className="flex flex-wrap gap-2 mb-6 justify-center sm:justify-start">
         {muscleChips.map((m, i) => (
           <span
             key={i}
-            className={`text-xs px-2.5 py-1 rounded-full ${
+            className={`text-xs px-3 py-1 rounded-full ${
               i === 0
-                ? "bg-accent-primary/20 text-accent-primary font-semibold"
-                : "bg-bg-secondary text-text-secondary"
+                ? "text-accent-primary font-semibold"
+                : "text-text-secondary"
             }`}
+            style={
+              i === 0
+                ? { background: "color-mix(in srgb, var(--accent-primary) 20%, transparent)" }
+                : { background: "var(--glass-bg)" }
+            }
           >
             {m}
           </span>
@@ -139,7 +144,7 @@ export default async function ExerciseDetailPage({
         <p className="text-xs uppercase tracking-widest text-text-secondary mb-3">
           Ejecución
         </p>
-        <ol className="space-y-2.5">
+        <ol className="space-y-3">
           {steps.map((step, i) => {
             const cleaned = step.replace(/^\d+\.\s*/, "");
             return (
@@ -173,7 +178,7 @@ export default async function ExerciseDetailPage({
       <div className="grid grid-cols-2 gap-3 mt-8">
         <Link
           href={`/wiki/${prev.slug}`}
-          className="card group hover:border-accent-primary/50 transition-all flex items-center gap-3"
+          className="card group hover:border-red-500/50 transition-all flex items-center gap-3"
         >
           <ChevronLeft size={20} className="text-text-secondary shrink-0" />
           <div className="min-w-0">
@@ -186,7 +191,7 @@ export default async function ExerciseDetailPage({
 
         <Link
           href={`/wiki/${next.slug}`}
-          className="card group hover:border-accent-primary/50 transition-all flex items-center gap-3 justify-end text-right"
+          className="card group hover:border-red-500/50 transition-all flex items-center gap-3 justify-end text-right"
         >
           <div className="min-w-0">
             <p className="text-xs text-text-secondary">Siguiente</p>

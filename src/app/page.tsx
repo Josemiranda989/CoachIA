@@ -144,7 +144,7 @@ export default async function Home() {
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="p-4 bg-accent-primary/20 rounded-2xl group-hover:bg-accent-primary/30 transition-colors">
+            <div className="p-4 bg-accent-primary-soft rounded-2xl">
               <Zap className="text-accent-primary" size={32} />
             </div>
             <div>
@@ -170,13 +170,20 @@ export default async function Home() {
         {/* Generar con IA */}
         <Link
           href="/routine/generate"
-          className="card group relative overflow-hidden hover:border-blue-500/50 hover:scale-[1.02] animate-fade-up"
+          className="card group relative overflow-hidden hover:border-blue-500/50 card-hover-lift animate-fade-up"
           style={{ animationDelay: "120ms" }}
         >
-          <div className="absolute top-3 right-3 badge-pulse bg-accent-primary/20 text-accent-primary text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-full">
+          <div
+            className="absolute top-3 right-3 badge-pulse text-accent-primary font-bold uppercase tracking-widest rounded-full"
+            style={{
+              background: "color-mix(in srgb, var(--accent-primary) 20%, transparent)",
+              fontSize: 10,
+              padding: "4px 8px",
+            }}
+          >
             Nuevo
           </div>
-          <div className="mb-4 p-3 bg-accent-primary/20 rounded-xl w-fit group-hover:bg-accent-primary/30 transition-colors">
+          <div className="mb-4 p-3 bg-accent-primary-soft rounded-xl w-fit">
             <Bot className="text-accent-primary" size={26} />
           </div>
           <h2 className="text-lg md:text-xl font-bold mb-2 flex items-center justify-between">
@@ -191,10 +198,10 @@ export default async function Home() {
         {/* Toda la Semana */}
         <Link
           href="/routine/week"
-          className="card group hover:border-amber-500/50 hover:scale-[1.02] animate-fade-up"
+          className="card group hover:border-amber-500/50 card-hover-lift animate-fade-up"
           style={{ animationDelay: "180ms" }}
         >
-          <div className="mb-4 p-3 bg-accent-gym/20 rounded-xl w-fit group-hover:bg-accent-gym/30 transition-colors">
+          <div className="mb-4 p-3 bg-accent-gym-soft rounded-xl w-fit">
             <Calendar className="text-accent-gym" size={26} />
           </div>
           <h2 className="text-lg md:text-xl font-bold mb-2 flex items-center justify-between">
@@ -209,10 +216,10 @@ export default async function Home() {
         {/* Métricas */}
         <Link
           href="/metrics"
-          className="card group hover:border-emerald-500/50 hover:scale-[1.02] animate-fade-up"
+          className="card group hover:border-emerald-500/50 card-hover-lift animate-fade-up"
           style={{ animationDelay: "240ms" }}
         >
-          <div className="mb-4 p-3 bg-accent-cycling/20 rounded-xl w-fit group-hover:bg-accent-cycling/30 transition-colors">
+          <div className="mb-4 p-3 bg-accent-cycling-soft rounded-xl w-fit">
             <BarChart3 className="text-accent-cycling" size={26} />
           </div>
           <h2 className="text-lg md:text-xl font-bold mb-2 flex items-center justify-between">
@@ -227,7 +234,7 @@ export default async function Home() {
         {/* Cargar JSON */}
         <Link
           href="/routine/load"
-          className="card group hover:border-violet-500/50 hover:scale-[1.02] animate-fade-up"
+          className="card group hover:border-violet-500/50 card-hover-lift animate-fade-up"
           style={{ animationDelay: "300ms" }}
         >
           <div className="mb-4 p-3 bg-violet-500/20 rounded-xl w-fit group-hover:bg-violet-500/30 transition-colors">
@@ -245,7 +252,7 @@ export default async function Home() {
         {/* Ayuda */}
         <Link
           href="/help"
-          className="card group hover:border-indigo-500/50 hover:scale-[1.02] animate-fade-up"
+          className="card group hover:border-indigo-500/50 card-hover-lift animate-fade-up"
           style={{ animationDelay: "360ms" }}
         >
           <div className="mb-4 p-3 bg-indigo-500/20 rounded-xl w-fit group-hover:bg-indigo-500/30 transition-colors">
@@ -263,7 +270,7 @@ export default async function Home() {
         {/* Nutrición Ciclismo */}
         <Link
           href="/nutrition"
-          className="card group hover:border-emerald-500/50 hover:scale-[1.02] animate-fade-up"
+          className="card group hover:border-emerald-500/50 card-hover-lift animate-fade-up"
           style={{ animationDelay: "420ms" }}
         >
           <div className="mb-4 p-3 bg-emerald-500/20 rounded-xl w-fit group-hover:bg-emerald-500/30 transition-colors">
@@ -281,7 +288,7 @@ export default async function Home() {
         {/* Wiki de Ejercicios */}
         <Link
           href="/wiki"
-          className="card group hover:border-sky-500/50 hover:scale-[1.02] animate-fade-up"
+          className="card group hover:border-sky-500/50 card-hover-lift animate-fade-up"
           style={{ animationDelay: "480ms" }}
         >
           <div className="mb-4 p-3 bg-sky-500/20 rounded-xl w-fit group-hover:bg-sky-500/30 transition-colors">

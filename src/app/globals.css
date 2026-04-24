@@ -1,5 +1,77 @@
 @import "tailwindcss";
 
+/* Register palette as Tailwind v4 color tokens. `inline` preserves the var()
+ * references so light/dark theme switching (via .light body override) keeps
+ * working for `text-accent-*`, `bg-accent-*`, etc.
+ *
+ * Tailwind v4 + Turbopack caveat: the class scanner silently misses utilities
+ * with `.`, `/` or `[...]` in them, so fractional spacing (py-0.5), opacity
+ * modifiers (bg-accent-primary/20), arbitrary sizes (text-[10px]), and
+ * arbitrary variants (active:scale-95) don't generate CSS even though they're
+ * valid. For those we either use inline style or the soft-color helper
+ * classes below. */
+@theme inline {
+  --color-accent-primary: var(--accent-primary);
+  --color-accent-gym: var(--accent-gym);
+  --color-accent-cycling: var(--accent-cycling);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-bg-main: var(--bg-main);
+  --color-bg-card: var(--bg-card);
+  --color-bg-card-hover: var(--bg-card-hover);
+  --color-glass-bg: var(--glass-bg);
+  --color-glass-border: var(--glass-border);
+}
+
+/* Opacity-modifier replacements — Turbopack scanner won't emit
+ * bg-accent-*/20 etc. These replace `bg-accent-primary/20` and variants,
+ * and auto-intensify when inside a `.group:hover` for free. */
+.bg-accent-primary-soft { background: color-mix(in srgb, var(--accent-primary) 20%, transparent); transition: background 0.2s ease; }
+.bg-accent-gym-soft     { background: color-mix(in srgb, var(--accent-gym) 20%, transparent);     transition: background 0.2s ease; }
+.bg-accent-cycling-soft { background: color-mix(in srgb, var(--accent-cycling) 20%, transparent); transition: background 0.2s ease; }
+.group:hover .bg-accent-primary-soft { background: color-mix(in srgb, var(--accent-primary) 30%, transparent); }
+.group:hover .bg-accent-gym-soft     { background: color-mix(in srgb, var(--accent-gym) 30%, transparent); }
+.group:hover .bg-accent-cycling-soft { background: color-mix(in srgb, var(--accent-cycling) 30%, transparent); }
+
+.border-accent-primary-soft { border-color: color-mix(in srgb, var(--accent-primary) 30%, transparent); }
+.border-accent-gym-soft     { border-color: color-mix(in srgb, var(--accent-gym) 30%, transparent); }
+.border-accent-cycling-soft { border-color: color-mix(in srgb, var(--accent-cycling) 30%, transparent); }
+
+/* Reusable utilities — Tailwind v4 + Turbopack scanner misses classes with
+ * `.` or arbitrary values like `text-[10px]`, `active:scale-95`, and variants
+ * built on custom keyframes. Easier to ship these as real CSS. */
+.animate-fade-up {
+  animation: fade-up 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.card-hover-lift {
+  transition: transform 0.2s ease;
+}
+.card-hover-lift:hover {
+  transform: scale(1.02);
+}
+.card-hover-lift:active {
+  transform: scale(0.98);
+}
+
+/* Micro text sizes — Turbopack scanner drops text-[9px], text-[10px]. */
+.text-xxs  { font-size: 10px; }
+.text-xxxs { font-size: 9px;  }
+
+.badge-pulse {
+  animation: badge-pulse 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes badge-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
 :root {
   /* Premium Dark Mode Palette */
   --bg-main: #09090b;

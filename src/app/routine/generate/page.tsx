@@ -58,10 +58,10 @@ function DayTypeIcon({ type }: { type: string }) {
 
 function TypeBadge({ type }: { type: string }) {
   const colors: Record<string, string> = {
-    Gym: "bg-accent-gym/20 text-accent-gym border-accent-gym/30",
-    Cycling: "bg-accent-cycling/20 text-accent-cycling border-accent-cycling/30",
+    Gym: "bg-accent-gym-soft text-accent-gym border-accent-gym-soft",
+    Cycling: "bg-accent-cycling-soft text-accent-cycling border-accent-cycling-soft",
     Rest: "bg-glass-bg text-text-secondary border-glass-border",
-    "Gym + Cycling": "bg-accent-primary/20 text-accent-primary border-accent-primary/30",
+    "Gym + Cycling": "bg-accent-primary-soft text-accent-primary border-accent-primary-soft",
   };
   return (
     <span className={`text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full border ${colors[type] || colors.Rest}`}>
@@ -131,7 +131,7 @@ export default function GenerateRoutinePage() {
   return (
     <div className="app-container py-8">
       <div className="flex items-center gap-3 mb-2">
-        <div className="p-2 bg-accent-primary/20 rounded-xl">
+        <div className="p-2 bg-accent-primary-soft rounded-xl">
           <Sparkles className="text-accent-primary" size={24} />
         </div>
         <h1 className="title text-3xl md:text-4xl">Generar Rutina con IA</h1>
@@ -256,7 +256,7 @@ export default function GenerateRoutinePage() {
                     key={label}
                     type="button"
                     onClick={() => toggleFocus(label)}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold border transition-all"
+                    className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold border transition-all"
                     style={selected ? {
                       background: "var(--accent-gym)",
                       color: "#000",
