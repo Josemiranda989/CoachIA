@@ -118,12 +118,16 @@ model Exercise {
 model WorkoutLog {
   id         String   @id @default(cuid())
   exerciseId String
-  
+  weekStart  String?
+
   setNumber  Int
   reps       Int
-  weight     Float    
-  
+  weight     Float
+
   exercise   Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+
+  @@unique([exerciseId, setNumber, weekStart])
+  @@index([weekStart])
 }
 
 // NextAuth models
