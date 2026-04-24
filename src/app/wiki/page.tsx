@@ -41,7 +41,7 @@ export default async function WikiPage() {
           <Link
             key={ex.id}
             href={`/wiki/${ex.slug}`}
-            className="card block hover:scale-[1.02] transition-transform"
+            className="card block card-hover-lift"
             style={{ cursor: "pointer" }}
           >
             <div className="flex gap-3 items-center">

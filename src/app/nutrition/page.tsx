@@ -219,7 +219,7 @@ function TimingBadge({ timing }: { timing: FuelItem["timing"] }) {
   const c = config[timing];
   return (
     <span
-      className="text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-full"
+      className="text-xxs font-bold uppercase tracking-widest px-2 py-1 rounded-full"
       style={{ background: c.bg, color: c.color, border: `1px solid ${c.border}` }}
     >
       {c.label}
@@ -303,7 +303,7 @@ export default function NutritionPage() {
                     {item.name}
                   </h3>
                   {item.brand && (
-                    <p className="text-xs mt-0.5" style={{ color: "var(--text-secondary)" }}>
+                    <p className="text-xs mt-1" style={{ color: "var(--text-secondary)" }}>
                       {item.brand}
                     </p>
                   )}
@@ -313,24 +313,24 @@ export default function NutritionPage() {
 
               {/* Stats */}
               <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-3">
-                <div className="rounded-xl p-2 sm:p-2.5 text-center" style={{ background: "rgba(255,255,255,0.04)" }}>
-                  <p className="text-[9px] sm:text-[10px] uppercase tracking-wider mb-1" style={{ color: "var(--text-secondary)" }}>
+                <div className="rounded-xl p-2 sm:p-3 text-center" style={{ background: "rgba(255,255,255,0.04)" }}>
+                  <p className="text-xxs uppercase tracking-wider mb-1" style={{ color: "var(--text-secondary)" }}>
                     Carbos/100g
                   </p>
                   <p className="text-xs sm:text-sm font-bold" style={{ color: "var(--accent-gym)" }}>
                     {item.carbsPer}
                   </p>
                 </div>
-                <div className="rounded-xl p-2 sm:p-2.5 text-center" style={{ background: "rgba(255,255,255,0.04)" }}>
-                  <p className="text-[9px] sm:text-[10px] uppercase tracking-wider mb-1" style={{ color: "var(--text-secondary)" }}>
+                <div className="rounded-xl p-2 sm:p-3 text-center" style={{ background: "rgba(255,255,255,0.04)" }}>
+                  <p className="text-xxs uppercase tracking-wider mb-1" style={{ color: "var(--text-secondary)" }}>
                     Porcion
                   </p>
                   <p className="text-xs sm:text-sm font-bold" style={{ color: "var(--text-primary)" }}>
                     {item.portion}
                   </p>
                 </div>
-                <div className="rounded-xl p-2 sm:p-2.5 text-center" style={{ background: "color-mix(in srgb, var(--accent-cycling) 8%, transparent)" }}>
-                  <p className="text-[9px] sm:text-[10px] uppercase tracking-wider mb-1" style={{ color: "var(--text-secondary)" }}>
+                <div className="rounded-xl p-2 sm:p-3 text-center" style={{ background: "color-mix(in srgb, var(--accent-cycling) 8%, transparent)" }}>
+                  <p className="text-xxs uppercase tracking-wider mb-1" style={{ color: "var(--text-secondary)" }}>
                     Carbos
                   </p>
                   <p className="text-xs sm:text-sm font-bold" style={{ color: "var(--accent-cycling)" }}>
@@ -369,7 +369,7 @@ export default function NutritionPage() {
                 borderColor: "rgba(220,38,38,0.15)",
               }}
             >
-              <AlertTriangle className="text-red-400 shrink-0 mt-0.5" size={16} />
+              <AlertTriangle className="text-red-400 shrink-0 mt-1" size={16} />
               <div>
                 <h3 className="font-bold text-sm mb-1" style={{ color: "var(--text-primary)" }}>
                   {item.name}
@@ -408,13 +408,13 @@ export default function NutritionPage() {
                 </h3>
                 <div className="flex gap-2 flex-wrap">
                   <span
-                    className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full"
+                    className="text-xxs font-bold uppercase tracking-widest px-3 py-1 rounded-full"
                     style={{ background: "rgba(245,158,11,0.15)", color: "#f59e0b", border: "1px solid rgba(245,158,11,0.3)" }}
                   >
                     Objetivo: {plan.carbGoal}
                   </span>
                   <span
-                    className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full"
+                    className="text-xxs font-bold uppercase tracking-widest px-3 py-1 rounded-full"
                     style={{ background: "rgba(59,130,246,0.15)", color: "#60a5fa", border: "1px solid rgba(59,130,246,0.3)" }}
                   >
                     {plan.hydration}
@@ -424,9 +424,9 @@ export default function NutritionPage() {
 
               <ul className="space-y-2">
                 {plan.plan.map((step, j) => (
-                  <li key={j} className="flex items-start gap-2.5 text-sm" style={{ color: "var(--text-secondary)" }}>
+                  <li key={j} className="flex items-start gap-3 text-sm" style={{ color: "var(--text-secondary)" }}>
                     <span
-                      className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold mt-0.5"
+                      className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xxs font-bold mt-1"
                       style={{ background: "rgba(16,185,129,0.15)", color: "#10b981" }}
                     >
                       {j + 1}
@@ -536,7 +536,7 @@ export default function NutritionPage() {
                 "No combines gel con cafeina + cafe previo a la salida si no estas acostumbrado. Puede generar malestar gastrointestinal.",
                 "Si salis temprano con cafe en el desayuno, el gel con cafeina esta bien para las ultimas horas.",
               ].map((text, i) => (
-                <li key={i} className="flex items-start gap-2.5 text-sm" style={{ color: "var(--text-secondary)" }}>
+                <li key={i} className="flex items-start gap-3 text-sm" style={{ color: "var(--text-secondary)" }}>
                   <span
                     className="shrink-0 w-1.5 h-1.5 rounded-full mt-2"
                     style={{ background: "var(--accent-gym)" }}
@@ -570,7 +570,7 @@ export default function NutritionPage() {
                 <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "#a78bfa" }}>
                   Opciones ideales
                 </p>
-                <ul className="space-y-1.5">
+                <ul className="space-y-2">
                   {[
                     "Tostadas con mermelada + cafe con leche",
                     "Avena cocida con banana y miel",
@@ -589,7 +589,7 @@ export default function NutritionPage() {
                 <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "#a78bfa" }}>
                   Evitar antes de salir
                 </p>
-                <ul className="space-y-1.5">
+                <ul className="space-y-2">
                   {[
                     "Huevos fritos / Tortilla (grasa = digestion lenta)",
                     "Fiambres y queso (proteina pesada)",
