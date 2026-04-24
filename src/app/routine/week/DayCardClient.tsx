@@ -1,7 +1,8 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown } from "lucide-react";
+import toast from "react-hot-toast";
+import { ChevronDown, Download } from "lucide-react";
 import { CyclingBlocks } from "@/components/CyclingBlocks";
 
 const DAY_ES: Record<string, string> = {
@@ -101,8 +102,13 @@ export function DayCardClient({ day }: { day: any }) {
           )}
           {isToday && (
             <span
-              className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full"
-              style={{ background: "var(--accent-gym)", color: "#000" }}
+              className="font-bold uppercase tracking-widest rounded-full"
+              style={{
+                background: "var(--accent-gym)",
+                color: "#000",
+                fontSize: 10,
+                padding: "2px 8px",
+              }}
             >
               Hoy
             </span>
@@ -211,6 +217,17 @@ export function DayCardClient({ day }: { day: any }) {
                   fallbackDuration={null}
                   fallbackPower={null}
                 />
+                {day.blocks?.length > 0 && (
+                  <a
+                    href={`/api/workouts/${day.id}/export-fit`}
+                    download
+                    onClick={() => toast.success("Descargado. Copialo a /Workouts/ de tu iGS", { duration: 5000 })}
+                    className="btn-outline-cycling btn-outline-cycling--sm mt-3"
+                  >
+                    <Download size={14} />
+                    Descargar .fit
+                  </a>
+                )}
               </div>
             )}
           </div>
