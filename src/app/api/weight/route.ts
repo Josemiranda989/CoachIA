@@ -9,13 +9,22 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const { weight, bodyFat, muscle, notes, date } = body;
+  const { weight, bodyFat, muscle, notes, date, scaleId } = body;
 
   if (!weight || typeof weight !== "number" || weight <= 0) {
     return NextResponse.json(
       { error: "weight is required and must be a positive number (kg)" },
       { status: 400 }
     );
+  }
+
+  if (scaleId != null) {
+    const existing = await prisma.bodyWeight.findUnique({
+      where: { userId_scaleId: { userId: auth.userId, scaleId } },
+    });
+    if (existing) {
+      return NextResponse.json(existing, { status: 200 });
+    }
   }
 
   const record = await prisma.bodyWeight.create({
@@ -25,6 +34,7 @@ export async function POST(request: Request) {
       weight,
       bodyFat: bodyFat ?? null,
       muscle: muscle ?? null,
+      scaleId: scaleId ?? null,
       notes: notes ?? null,
     },
   });

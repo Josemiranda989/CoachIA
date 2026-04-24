@@ -33,28 +33,17 @@ export async function GET(request: Request) {
   const dateFilter = { gte: startDate, lt: endDate };
 
   // Parallel queries
-  const [cyclingWorkouts, gymWorkouts, workoutLogs, bodyWeights, routines] =
+  const [completionsInMonth, workoutLogs, bodyWeights, routines] =
     await Promise.all([
-      // Cycling workouts in the period
-      prisma.dailyWorkout.findMany({
+      // Completions in the period (source of truth for adherence/sessions)
+      prisma.workoutCompletion.findMany({
         where: {
-          type: { contains: "Cycling" },
-          date: dateFilter,
-          routine: { userId: auth.userId },
-        },
-      }),
-
-      // Gym workouts in the period
-      prisma.dailyWorkout.findMany({
-        where: {
-          type: { in: ["Gym", "Gym + Cycling"] },
-          date: dateFilter,
-          routine: { userId: auth.userId },
+          completed: true,
+          completedAt: dateFilter,
+          dailyWorkout: { routine: { userId: auth.userId } },
         },
         include: {
-          exercises: {
-            include: { logs: true },
-          },
+          dailyWorkout: { select: { id: true, type: true } },
         },
       }),
 
@@ -82,18 +71,23 @@ export async function GET(request: Request) {
         orderBy: { date: "asc" },
       }),
 
-      // Routines that overlap with this month
-      prisma.routine.findMany({
-        where: {
-          userId: auth.userId,
-          weekStart: { lte: endDate },
-        },
-        include: {
-          days: { include: { exercises: true } },
-        },
-        orderBy: { weekStart: "desc" },
-        take: 5,
-      }),
+      // Routines that overlap with this month (weekStart is YYYY-MM-DD string)
+      (() => {
+        const nextMonth = month === 12
+          ? `${year + 1}-01-01`
+          : `${year}-${String(month + 1).padStart(2, "0")}-01`;
+        return prisma.routine.findMany({
+          where: {
+            userId: auth.userId,
+            weekStart: { lt: nextMonth },
+          },
+          include: {
+            days: { include: { exercises: true } },
+          },
+          orderBy: { weekStart: "desc" },
+          take: 8,
+        });
+      })(),
     ]);
 
   // --- Cycling stats (source of truth: Strava) ---
@@ -126,7 +120,9 @@ export async function GET(request: Request) {
   }
 
   // --- Gym stats ---
-  const completedGym = gymWorkouts.filter((w) => w.completed);
+  const gymCompletions = completionsInMonth.filter((c) =>
+    c.dailyWorkout.type === "Gym" || c.dailyWorkout.type === "Gym + Cycling"
+  );
   const totalVolume = workoutLogs.reduce(
     (sum, log) => sum + log.reps * log.weight,
     0
@@ -164,13 +160,22 @@ export async function GET(request: Request) {
       : null;
 
   // --- Adherence ---
-  const allWorkoutsInPeriod = [...cyclingWorkouts, ...gymWorkouts];
-  // Deduplicate by id (Gym + Cycling days appear in both lists)
-  const uniqueWorkouts = new Map(allWorkoutsInPeriod.map((w) => [w.id, w]));
-  const daysPlanned = uniqueWorkouts.size;
-  const daysCompleted = [...uniqueWorkouts.values()].filter(
-    (w) => w.completed
-  ).length;
+  // Planned: routines whose Monday lands within the month (or up to 6 days before,
+  // so the rest of that week falls inside the month). All weekStart values are YYYY-MM-DD.
+  const minusSixDays = new Date(year, month - 1, 1);
+  minusSixDays.setDate(minusSixDays.getDate() - 6);
+  const monthFirstMondayMinus6 = `${minusSixDays.getFullYear()}-${String(minusSixDays.getMonth() + 1).padStart(2, "0")}-${String(minusSixDays.getDate()).padStart(2, "0")}`;
+  const nextMonthFirstDay = month === 12
+    ? `${year + 1}-01-01`
+    : `${year}-${String(month + 1).padStart(2, "0")}-01`;
+  const routinesInMonth = routines.filter(
+    (r) => r.weekStart >= monthFirstMondayMinus6 && r.weekStart < nextMonthFirstDay
+  );
+  const daysPlanned = routinesInMonth.reduce(
+    (sum, r) => sum + r.days.filter((d) => d.type !== "Rest").length,
+    0
+  );
+  const daysCompleted = completionsInMonth.length;
 
   // --- Current routine (for context in generation) ---
   const currentRoutine = routines.find((r) => r.status === "active") ?? routines[0];
@@ -185,7 +190,7 @@ export async function GET(request: Request) {
       longestRideKm: Math.round(longestRideKm * 10) / 10,
     },
     gym: {
-      sessionsCompleted: completedGym.length,
+      sessionsCompleted: gymCompletions.length,
       totalVolume: Math.round(totalVolume),
       exerciseProgression: exerciseMaxes,
     },

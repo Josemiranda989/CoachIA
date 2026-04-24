@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getCurrentWeekStart } from '@/lib/week';
 
 export async function POST(request: Request) {
   try {
@@ -9,15 +10,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'workoutId is required' }, { status: 400 });
     }
 
-    const updated = await prisma.dailyWorkout.update({
+    await prisma.dailyWorkout.update({
       where: { id: workoutId },
-      data: {
-        completed: true,
-        date: new Date(),
-      },
+      data: { date: new Date() },
     });
 
-    return NextResponse.json(updated);
+    const weekStart = getCurrentWeekStart();
+    const now = new Date();
+    const upserted = await prisma.workoutCompletion.upsert({
+      where: { dailyWorkoutId_weekStart: { dailyWorkoutId: workoutId, weekStart } },
+      update: { completed: true, completedAt: now },
+      create: { dailyWorkoutId: workoutId, weekStart, completed: true, creatineTaken: false, completedAt: now },
+    });
+
+    return NextResponse.json(upserted);
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
