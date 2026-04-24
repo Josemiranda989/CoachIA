@@ -1,7 +1,38 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle2 } from "lucide-react";
+import toast from "react-hot-toast";
+import {
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Timer,
+  Trophy,
+  Dumbbell,
+} from "lucide-react";
+
+/* ------------------------------------------------------------------ */
+/*  Types                                                              */
+/* ------------------------------------------------------------------ */
+
+interface SetLog {
+  reps: string;
+  weight: string;
+  done: boolean;
+}
+
+interface Exercise {
+  id: string;
+  name: string;
+  targetSets: number;
+  targetReps: string;
+  lastWeight?: number;
+  logs?: { setNumber: number; weight: number; reps: number }[];
+}
+
+/* ------------------------------------------------------------------ */
+/*  NumericInput                                                       */
+/* ------------------------------------------------------------------ */
 
 function NumericInput({
   value,
@@ -10,6 +41,7 @@ function NumericInput({
   label,
   step = 1,
   min = 0,
+  disabled,
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -17,26 +49,31 @@ function NumericInput({
   label?: string;
   step?: number;
   min?: number;
+  disabled?: boolean;
 }) {
   const num = parseFloat(value) || 0;
-
   return (
     <div className="flex items-center gap-1">
       {label && (
-        <span className="text-xs font-semibold shrink-0" style={{ color: "var(--text-secondary)", minWidth: "20px" }}>
+        <span
+          className="text-xs font-semibold shrink-0"
+          style={{ color: "var(--text-secondary)", minWidth: "20px" }}
+        >
           {label}
         </span>
       )}
       <button
         type="button"
+        disabled={disabled}
         onClick={() => onChange(Math.max(min, num - step).toString())}
         className="shrink-0 flex items-center justify-center rounded-lg text-base font-bold transition-all active:scale-95"
         style={{
-          width: 32,
-          height: 44,
+          width: 36,
+          height: 48,
           background: "color-mix(in srgb, var(--accent-gym) 15%, transparent)",
           color: "var(--accent-gym)",
           border: "1px solid color-mix(in srgb, var(--accent-gym) 30%, transparent)",
+          opacity: disabled ? 0.4 : 1,
         }}
         aria-label={`Reducir ${placeholder}`}
       >
@@ -45,22 +82,31 @@ function NumericInput({
       <input
         type="number"
         inputMode="decimal"
+        disabled={disabled}
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="input text-center font-bold"
-        style={{ width: "48px", height: "44px", padding: "4px 2px", fontSize: "15px" }}
+        style={{
+          width: "56px",
+          height: "48px",
+          padding: "4px 2px",
+          fontSize: "17px",
+          opacity: disabled ? 0.4 : 1,
+        }}
       />
       <button
         type="button"
+        disabled={disabled}
         onClick={() => onChange((num + step).toString())}
         className="shrink-0 flex items-center justify-center rounded-lg text-base font-bold transition-all active:scale-95"
         style={{
-          width: 32,
-          height: 44,
+          width: 36,
+          height: 48,
           background: "color-mix(in srgb, var(--accent-gym) 15%, transparent)",
           color: "var(--accent-gym)",
           border: "1px solid color-mix(in srgb, var(--accent-gym) 30%, transparent)",
+          opacity: disabled ? 0.4 : 1,
         }}
         aria-label={`Aumentar ${placeholder}`}
       >
@@ -70,31 +116,274 @@ function NumericInput({
   );
 }
 
+/* ------------------------------------------------------------------ */
+/*  RestTimer                                                          */
+/* ------------------------------------------------------------------ */
+
+function RestTimer({ seconds, onDone }: { seconds: number; onDone: () => void }) {
+  const [left, setLeft] = useState(seconds);
+
+  useEffect(() => {
+    if (left <= 0) {
+      onDone();
+      return;
+    }
+    const t = setTimeout(() => setLeft((l) => l - 1), 1000);
+    return () => clearTimeout(t);
+  }, [left, onDone]);
+
+  const mins = Math.floor(left / 60);
+  const secs = left % 60;
+  const pct = ((seconds - left) / seconds) * 100;
+
+  return (
+    <div
+      className="flex flex-col items-center gap-3 py-6 rounded-2xl"
+      style={{
+        background: "color-mix(in srgb, var(--accent-gym) 6%, transparent)",
+        border: "1px solid color-mix(in srgb, var(--accent-gym) 15%, transparent)",
+      }}
+    >
+      <Timer size={24} style={{ color: "var(--accent-gym)" }} />
+      <span className="text-xs uppercase font-bold tracking-widest" style={{ color: "var(--text-secondary)" }}>
+        Descanso
+      </span>
+      <span style={{ fontSize: "48px", fontWeight: 900, color: "var(--accent-gym)", lineHeight: 1 }}>
+        {mins}:{secs.toString().padStart(2, "0")}
+      </span>
+      {/* Progress ring */}
+      <div style={{ width: "100%", maxWidth: 200, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.08)" }}>
+        <div
+          style={{
+            width: `${pct}%`,
+            height: "100%",
+            borderRadius: 2,
+            background: "var(--accent-gym)",
+            transition: "width 1s linear",
+          }}
+        />
+      </div>
+      <button
+        onClick={onDone}
+        className="text-xs font-semibold mt-1 px-4 py-2 rounded-lg transition-all active:scale-95"
+        style={{
+          color: "var(--accent-gym)",
+          background: "color-mix(in srgb, var(--accent-gym) 12%, transparent)",
+          border: "1px solid color-mix(in srgb, var(--accent-gym) 25%, transparent)",
+        }}
+      >
+        Saltar
+      </button>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  WorkoutComplete                                                    */
+/* ------------------------------------------------------------------ */
+
+function WorkoutComplete({ totalSets, onSave, loading }: { totalSets: number; onSave: () => void; loading: boolean }) {
+  return (
+    <div className="flex flex-col items-center gap-4 py-12">
+      <div
+        className="flex items-center justify-center rounded-full"
+        style={{
+          width: 80,
+          height: 80,
+          background: "color-mix(in srgb, var(--accent-cycling) 15%, transparent)",
+          border: "2px solid var(--accent-cycling)",
+        }}
+      >
+        <Trophy size={40} style={{ color: "var(--accent-cycling)" }} />
+      </div>
+      <h2 style={{ fontSize: 24, fontWeight: 800, color: "var(--text-primary)" }}>
+        Sesión Completa
+      </h2>
+      <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>
+        {totalSets} series completadas
+      </p>
+      <button
+        className="btn w-full max-w-xs flex items-center justify-center gap-2 mt-4"
+        style={{ backgroundColor: "var(--accent-gym)", height: 56, fontSize: 16 }}
+        onClick={onSave}
+        disabled={loading}
+      >
+        {loading ? "Guardando..." : "Guardar Sesión"}
+      </button>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Main: GymWorkoutClient                                             */
+/* ------------------------------------------------------------------ */
+
+const REST_SECONDS = 90;
+const LS_KEY = "coachia-gym-session";
+
 export function GymWorkoutClient({ workout }: { workout: any }) {
   const router = useRouter();
+  const exercises: Exercise[] = workout.exercises;
   const [loading, setLoading] = useState(false);
+  const [exIdx, setExIdx] = useState(0);
+  const [resting, setResting] = useState(false);
+  const [inputFocused, setInputFocused] = useState(false);
+  const restDoneRef = useRef<(() => void) | undefined>(undefined);
 
-  const [logs, setLogs] = useState<Record<string, { reps: string; weight: string }>>(() => {
-    const initial: Record<string, { reps: string; weight: string }> = {};
-    workout.exercises.forEach((ex: any) => {
+  // Build initial logs state: restore from localStorage if same workout, else from server
+  const [logs, setLogs] = useState<Record<string, SetLog>>(() => {
+    // Try to restore from localStorage
+    try {
+      const saved = localStorage.getItem(LS_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.workoutId === workout.id && parsed.logs) {
+          return parsed.logs;
+        }
+      }
+    } catch { /* ignore */ }
+
+    // Build from server data. Existing WorkoutLog rows are used ONLY as suggestions
+    // (prefill reps/weight from the most recent log for that set, if any). They never
+    // arrive marked as done, because WorkoutLog has no week identifier — a "done" set
+    // from a previous week would otherwise pollute the current session view.
+    const initial: Record<string, SetLog> = {};
+    exercises.forEach((ex) => {
       const defaultReps = ex.targetReps?.match(/\d+/)?.[0] || "";
       const defaultWeight = ex.lastWeight ? ex.lastWeight.toString() : "";
       for (let i = 1; i <= ex.targetSets; i++) {
-        initial[`${ex.id}_${i}`] = { reps: defaultReps, weight: defaultWeight };
+        const key = `${ex.id}_${i}`;
+        const existing = ex.logs?.find((l) => l.setNumber === i);
+        initial[key] = {
+          reps: existing ? existing.reps.toString() : defaultReps,
+          weight: existing ? existing.weight.toString() : defaultWeight,
+          done: false,
+        };
       }
     });
     return initial;
   });
 
-  const handleChange = (exeId: string, setNum: number, field: string, value: string) => {
-    const key = `${exeId}_${setNum}`;
+  // Persist logs to localStorage on every change
+  useEffect(() => {
+    try {
+      localStorage.setItem(LS_KEY, JSON.stringify({ workoutId: workout.id, logs }));
+    } catch { /* storage full or unavailable */ }
+  }, [logs, workout.id]);
+
+  // Warn before leaving with unsaved data
+  useEffect(() => {
+    const hasUnsaved = Object.values(logs).some((l) => l.done) && !loading;
+    const handler = (e: BeforeUnloadEvent) => {
+      if (hasUnsaved) {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [logs, loading]);
+
+  // Intercept in-app navigation when there's unsaved data
+  useEffect(() => {
+    const hasUnsaved = Object.values(logs).some((l) => l.done);
+    if (!hasUnsaved) return;
+
+    const handler = (e: MouseEvent) => {
+      const anchor = (e.target as HTMLElement).closest("a");
+      if (!anchor || !anchor.href) return;
+      const url = new URL(anchor.href, window.location.origin);
+      if (url.origin !== window.location.origin) return;
+      if (url.pathname === window.location.pathname) return;
+      if (!confirm("Tenés sets sin guardar. ¿Salir igual?")) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+    document.addEventListener("click", handler, true);
+    return () => document.removeEventListener("click", handler, true);
+  }, [logs]);
+
+  // Track input focus to hide FAB when keyboard is open
+  useEffect(() => {
+    const onFocus = (e: FocusEvent) => {
+      if (e.target instanceof HTMLInputElement) setInputFocused(true);
+    };
+    const onBlur = (e: FocusEvent) => {
+      if (e.target instanceof HTMLInputElement) setInputFocused(false);
+    };
+    document.addEventListener("focusin", onFocus);
+    document.addEventListener("focusout", onBlur);
+    return () => {
+      document.removeEventListener("focusin", onFocus);
+      document.removeEventListener("focusout", onBlur);
+    };
+  }, []);
+
+  // Find first incomplete exercise on mount
+  useEffect(() => {
+    const firstIncomplete = exercises.findIndex((ex) => {
+      for (let i = 1; i <= ex.targetSets; i++) {
+        if (!logs[`${ex.id}_${i}`]?.done) return true;
+      }
+      return false;
+    });
+    if (firstIncomplete >= 0) setExIdx(firstIncomplete);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const currentEx = exercises[exIdx];
+  const nextEx = exercises[exIdx + 1];
+
+  // Find current (first incomplete) set for this exercise
+  const currentSetNum = (() => {
+    if (!currentEx) return 1;
+    for (let i = 1; i <= currentEx.targetSets; i++) {
+      if (!logs[`${currentEx.id}_${i}`]?.done) return i;
+    }
+    return currentEx.targetSets + 1; // all done
+  })();
+
+  const allSetsForExDone = currentEx && currentSetNum > currentEx.targetSets;
+
+  // Total progress
+  const totalSets = exercises.reduce((a, e) => a + e.targetSets, 0);
+  const completedSets = Object.values(logs).filter((l) => l.done).length;
+  const allDone = completedSets === totalSets;
+  const progressPct = totalSets > 0 ? (completedSets / totalSets) * 100 : 0;
+
+  const handleChange = (field: "reps" | "weight", value: string) => {
+    const key = `${currentEx.id}_${currentSetNum}`;
     setLogs((prev) => ({ ...prev, [key]: { ...prev[key], [field]: value } }));
+  };
+
+  const handleRestDone = useCallback(() => {
+    setResting(false);
+  }, []);
+
+  // Keep ref updated for RestTimer
+  restDoneRef.current = handleRestDone;
+
+  const handleCompleteSet = () => {
+    const key = `${currentEx.id}_${currentSetNum}`;
+    setLogs((prev) => ({ ...prev, [key]: { ...prev[key], done: true } }));
+
+    // Check if this was the last set of this exercise
+    const isLastSetOfExercise = currentSetNum >= currentEx.targetSets;
+
+    if (isLastSetOfExercise && nextEx) {
+      // Move to next exercise after a brief moment
+      setTimeout(() => setExIdx((i) => i + 1), 300);
+    } else if (!isLastSetOfExercise) {
+      // Start rest timer between sets
+      setResting(true);
+    }
+    // If last set of last exercise → allDone will be true on next render
   };
 
   const handleSave = async () => {
     setLoading(true);
     try {
       const logsArray = Object.entries(logs)
+        .filter(([, val]) => val.done)
         .map(([key, val]) => {
           const [exerciseId, setStr] = key.split("_");
           return {
@@ -112,145 +401,280 @@ export function GymWorkoutClient({ workout }: { workout: any }) {
         body: JSON.stringify({ workoutId: workout.id, logs: logsArray }),
       });
       if (!res.ok) throw new Error("Error");
+      localStorage.removeItem(LS_KEY);
       router.refresh();
-      alert("¡Entrenamiento guardado!");
+      toast.success("Entrenamiento guardado!");
     } catch {
-      alert("Error al guardar");
+      toast.error("Error al guardar");
     } finally {
       setLoading(false);
     }
   };
 
-  const totalSets = workout.exercises.reduce((acc: number, ex: any) => acc + ex.targetSets, 0);
+  /* ---- Render: all done ---- */
+  if (allDone) {
+    return (
+      <div>
+        <ProgressBar pct={100} completed={completedSets} total={totalSets} />
+        <WorkoutComplete totalSets={totalSets} onSave={handleSave} loading={loading} />
+      </div>
+    );
+  }
+
+  if (!currentEx) return null;
+
+  const currentLog = logs[`${currentEx.id}_${currentSetNum}`];
 
   return (
     <div className="pb-24 md:pb-0">
-      {/* Resumen rápido */}
-      <div
-        className="flex gap-4 text-sm mb-6 px-5 py-3 rounded-xl"
-        style={{ background: "color-mix(in srgb, var(--accent-gym) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--accent-gym) 20%, transparent)" }}
-      >
-        <span style={{ color: "var(--text-secondary)" }}>
-          <span style={{ color: "var(--accent-gym)", fontWeight: 700 }}>{workout.exercises.length}</span> ejercicios
+      {/* Global progress */}
+      <ProgressBar pct={progressPct} completed={completedSets} total={totalSets} />
+
+      {/* Exercise navigation */}
+      <div className="flex items-center justify-between mb-4">
+        <button
+          onClick={() => setExIdx((i) => Math.max(0, i - 1))}
+          disabled={exIdx === 0}
+          className="flex items-center justify-center rounded-xl transition-all active:scale-95"
+          style={{
+            width: 40,
+            height: 40,
+            background: "var(--glass-bg)",
+            border: "1px solid var(--glass-border)",
+            color: exIdx === 0 ? "var(--glass-border)" : "var(--text-primary)",
+          }}
+          aria-label="Ejercicio anterior"
+        >
+          <ChevronLeft size={20} />
+        </button>
+        <span className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--text-secondary)" }}>
+          Ejercicio {exIdx + 1} de {exercises.length}
         </span>
-        <span style={{ color: "var(--text-secondary)" }}>·</span>
-        <span style={{ color: "var(--text-secondary)" }}>
-          <span style={{ color: "var(--accent-gym)", fontWeight: 700 }}>{totalSets}</span> series totales
-        </span>
+        <button
+          onClick={() => setExIdx((i) => Math.min(exercises.length - 1, i + 1))}
+          disabled={exIdx === exercises.length - 1}
+          className="flex items-center justify-center rounded-xl transition-all active:scale-95"
+          style={{
+            width: 40,
+            height: 40,
+            background: "var(--glass-bg)",
+            border: "1px solid var(--glass-border)",
+            color: exIdx === exercises.length - 1 ? "var(--glass-border)" : "var(--text-primary)",
+          }}
+          aria-label="Ejercicio siguiente"
+        >
+          <ChevronRight size={20} />
+        </button>
       </div>
 
-      {workout.exercises.map((exe: any, idx: number) => (
-        <div
-          key={exe.id}
-          className="card mb-4"
-          style={{ cursor: "default" }}
-        >
-          {/* Cabecera del ejercicio */}
-          <div className="flex items-start justify-between mb-1">
-            <h3 style={{ fontSize: "18px", color: "var(--accent-gym)", fontWeight: 700 }}>{exe.name}</h3>
-            <span
-              className="text-xs font-bold px-2 py-1 rounded-full shrink-0 ml-2"
-              style={{ background: "color-mix(in srgb, var(--accent-gym) 15%, transparent)", color: "var(--accent-gym)" }}
-            >
-              {idx + 1}/{workout.exercises.length}
+      {/* Current exercise card */}
+      <div className="card mb-4" style={{ cursor: "default" }}>
+        {/* Exercise header */}
+        <div className="flex items-center gap-3 mb-1">
+          <Dumbbell size={20} style={{ color: "var(--accent-gym)" }} />
+          <h2 style={{ fontSize: 22, fontWeight: 800, color: "var(--text-primary)" }}>
+            {currentEx.name}
+          </h2>
+        </div>
+        <p style={{ color: "var(--text-secondary)", fontSize: 13, marginBottom: 20 }}>
+          {currentEx.targetSets} series × {currentEx.targetReps || "?"} reps
+          {currentEx.lastWeight ? (
+            <span style={{ marginLeft: 8, color: "var(--accent-gym)", opacity: 0.7 }}>
+              · última vez {currentEx.lastWeight} kg
             </span>
-          </div>
-          <p style={{ color: "var(--text-secondary)", fontSize: "13px", marginBottom: "16px" }}>
-            {exe.targetSets} sets × {exe.targetReps || "?"} reps
-            {exe.lastWeight ? (
-              <span style={{ marginLeft: "8px", color: "var(--accent-gym)", opacity: 0.7 }}>
-                · última vez {exe.lastWeight} kg
-              </span>
-            ) : null}
-          </p>
+          ) : null}
+        </p>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            {Array.from({ length: exe.targetSets }).map((_, i) => {
-              const setNum = i + 1;
-              const existingLog = exe.logs?.find((l: any) => l.setNumber === setNum);
-
-              if (existingLog) {
-                return (
-                  <div
-                    key={setNum}
-                    className="flex items-center gap-3 px-4 py-3 rounded-xl"
-                    style={{ background: "color-mix(in srgb, var(--accent-cycling) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--accent-cycling) 20%, transparent)" }}
-                  >
-                    <CheckCircle2 size={18} style={{ color: "var(--accent-cycling)", flexShrink: 0 }} />
-                    <span style={{ color: "var(--text-secondary)", fontSize: "13px", width: "50px" }}>
-                      Set {setNum}
-                    </span>
-                    <span style={{ color: "var(--accent-cycling)", fontWeight: 700 }}>
-                      {existingLog.weight} kg × {existingLog.reps} reps
-                    </span>
-                  </div>
-                );
-              }
-
+        {/* Completed sets summary */}
+        {currentSetNum > 1 && (
+          <div className="flex flex-col gap-2 mb-4">
+            {Array.from({ length: currentSetNum - 1 }).map((_, i) => {
+              const sn = i + 1;
+              const log = logs[`${currentEx.id}_${sn}`];
+              if (!log?.done) return null;
               return (
                 <div
-                  key={setNum}
-                  className="flex items-center gap-2 flex-wrap"
+                  key={sn}
+                  className="flex items-center gap-3 px-4 py-2 rounded-xl"
                   style={{
-                    padding: "10px 12px",
-                    borderRadius: "var(--radius-sm)",
-                    background: "rgba(255,255,255,0.02)",
-                    border: "1px solid rgba(255,255,255,0.06)",
+                    background: "color-mix(in srgb, var(--accent-cycling) 8%, transparent)",
+                    border: "1px solid color-mix(in srgb, var(--accent-cycling) 20%, transparent)",
                   }}
                 >
-                  <span
-                    className="text-xs font-bold shrink-0 uppercase"
-                    style={{ color: "var(--accent-gym)", minWidth: "28px" }}
-                  >
-                    S{setNum}
+                  <CheckCircle2 size={16} style={{ color: "var(--accent-cycling)", flexShrink: 0 }} />
+                  <span style={{ color: "var(--text-secondary)", fontSize: 13 }}>Set {sn}</span>
+                  <span style={{ color: "var(--accent-cycling)", fontWeight: 700, fontSize: 14 }}>
+                    {log.weight} kg × {log.reps}
                   </span>
-                  <div className="flex items-center gap-2 flex-1 min-w-0 flex-wrap">
-                    <NumericInput
-                      value={logs[`${exe.id}_${setNum}`]?.weight || ""}
-                      onChange={(v) => handleChange(exe.id, setNum, "weight", v)}
-                      placeholder="kg"
-                      label="kg"
-                      step={2.5}
-                    />
-                    <span className="shrink-0" style={{ color: "var(--text-secondary)", fontSize: "12px" }}>×</span>
-                    <NumericInput
-                      value={logs[`${exe.id}_${setNum}`]?.reps || ""}
-                      onChange={(v) => handleChange(exe.id, setNum, "reps", v)}
-                      placeholder="reps"
-                      label="reps"
-                      step={1}
-                    />
-                  </div>
                 </div>
               );
             })}
           </div>
+        )}
+
+        {/* Rest timer */}
+        {resting && (
+          <div className="mb-4">
+            <RestTimer seconds={REST_SECONDS} onDone={handleRestDone} />
+          </div>
+        )}
+
+        {/* Current set input — or all sets done message */}
+        {allSetsForExDone ? (
+          <div
+            className="flex flex-col items-center gap-2 py-6 rounded-2xl"
+            style={{
+              background: "color-mix(in srgb, var(--accent-cycling) 8%, transparent)",
+              border: "1px solid color-mix(in srgb, var(--accent-cycling) 20%, transparent)",
+            }}
+          >
+            <CheckCircle2 size={32} style={{ color: "var(--accent-cycling)" }} />
+            <span style={{ color: "var(--accent-cycling)", fontWeight: 700, fontSize: 16 }}>
+              Ejercicio completo
+            </span>
+            {nextEx && (
+              <button
+                onClick={() => setExIdx((i) => i + 1)}
+                className="btn mt-2"
+                style={{ backgroundColor: "var(--accent-gym)", fontSize: 14, padding: "10px 24px" }}
+              >
+                Ir a {nextEx.name}
+              </button>
+            )}
+          </div>
+        ) : !resting ? (
+          <div
+            className="rounded-2xl p-4"
+            style={{
+              background: "color-mix(in srgb, var(--accent-gym) 6%, transparent)",
+              border: "2px solid color-mix(in srgb, var(--accent-gym) 30%, transparent)",
+            }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <span style={{ color: "var(--accent-gym)", fontWeight: 800, fontSize: 16 }}>
+                Set {currentSetNum} de {currentEx.targetSets}
+              </span>
+              <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
+                Objetivo: {currentEx.targetReps} reps
+              </span>
+            </div>
+
+            <div className="flex items-center gap-3 justify-center flex-wrap">
+              <NumericInput
+                value={currentLog?.weight || ""}
+                onChange={(v) => handleChange("weight", v)}
+                placeholder="kg"
+                label="kg"
+                step={2.5}
+              />
+              <span style={{ color: "var(--text-secondary)", fontSize: 14, fontWeight: 700 }}>×</span>
+              <NumericInput
+                value={currentLog?.reps || ""}
+                onChange={(v) => handleChange("reps", v)}
+                placeholder="reps"
+                label=""
+                step={1}
+              />
+            </div>
+
+            {/* Complete set button */}
+            <button
+              onClick={handleCompleteSet}
+              className="btn w-full mt-4 flex items-center justify-center gap-2"
+              style={{
+                backgroundColor: "var(--accent-gym)",
+                height: 52,
+                fontSize: 15,
+                fontWeight: 700,
+              }}
+            >
+              <CheckCircle2 size={20} />
+              Completar Set
+            </button>
+          </div>
+        ) : null}
+      </div>
+
+      {/* Next up preview */}
+      {nextEx && !allSetsForExDone && (
+        <div
+          className="flex items-center gap-3 px-4 py-3 rounded-xl"
+          style={{
+            background: "var(--glass-bg)",
+            border: "1px solid var(--glass-border)",
+          }}
+        >
+          <span className="text-xs uppercase font-bold" style={{ color: "var(--text-secondary)" }}>
+            Siguiente:
+          </span>
+          <span className="text-sm" style={{ color: "var(--text-primary)" }}>
+            {nextEx.name}
+          </span>
+          <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
+            {nextEx.targetSets}×{nextEx.targetReps}
+          </span>
         </div>
-      ))}
+      )}
 
-      {/* Botón guardar visible en desktop */}
-      <button
-        className="btn hidden md:flex w-full items-center justify-center gap-2 mt-4"
-        style={{ backgroundColor: "var(--accent-gym)" }}
-        onClick={handleSave}
-        disabled={loading}
-      >
-        {loading ? "Guardando..." : "Guardar Sesión"}
-      </button>
+      {/* Floating save button — hidden when keyboard is open */}
+      {completedSets > 0 && !inputFocused && (
+        <div className="md:hidden fixed left-0 right-0 z-40 px-4 pb-2" style={{ bottom: 72 }}>
+          <button
+            className="btn w-full flex items-center justify-center gap-2 shadow-2xl"
+            style={{
+              backgroundColor: "var(--accent-gym)",
+              height: 56,
+              fontSize: 16,
+              boxShadow: "0 8px 32px rgba(245,158,11,0.4)",
+            }}
+            onClick={handleSave}
+            disabled={loading}
+          >
+            {loading ? "Guardando..." : `Guardar (${completedSets}/${totalSets})`}
+          </button>
+        </div>
+      )}
 
-      {/* FAB fijo en mobile */}
-      <div
-        className="md:hidden fixed left-0 right-0 z-40 px-4 pb-2"
-        style={{ bottom: "72px" }}
-      >
+      {/* Desktop save */}
+      {completedSets > 0 && (
         <button
-          className="btn w-full flex items-center justify-center gap-2 shadow-2xl"
-          style={{ backgroundColor: "var(--accent-gym)", height: "56px", fontSize: "16px", boxShadow: "0 8px 32px rgba(245,158,11,0.4)" }}
+          className="btn hidden md:flex w-full items-center justify-center gap-2 mt-4"
+          style={{ backgroundColor: "var(--accent-gym)" }}
           onClick={handleSave}
           disabled={loading}
         >
-          {loading ? "Guardando..." : "💾 Guardar Sesión"}
+          {loading ? "Guardando..." : `Guardar Sesión (${completedSets}/${totalSets})`}
         </button>
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  ProgressBar                                                        */
+/* ------------------------------------------------------------------ */
+
+function ProgressBar({ pct, completed, total }: { pct: number; completed: number; total: number }) {
+  return (
+    <div className="mb-6">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--text-secondary)" }}>
+          Progreso
+        </span>
+        <span className="text-xs font-bold" style={{ color: "var(--accent-gym)" }}>
+          {completed}/{total} series
+        </span>
+      </div>
+      <div style={{ height: 6, borderRadius: 3, background: "rgba(255,255,255,0.08)" }}>
+        <div
+          style={{
+            width: `${pct}%`,
+            height: "100%",
+            borderRadius: 3,
+            background: "var(--accent-gym)",
+            transition: "width 0.4s ease",
+          }}
+        />
       </div>
     </div>
   );
