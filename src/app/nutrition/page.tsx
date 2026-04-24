@@ -249,9 +249,40 @@ export default function NutritionPage() {
         </p>
       </header>
 
+      {/* Table of contents */}
+      <nav
+        className="mb-8 flex flex-wrap gap-2 animate-fade-up"
+        style={{ animationDelay: "30ms" }}
+      >
+        {[
+          { href: "#regla", label: "Regla de oro" },
+          { href: "#llevar", label: "Qué llevar" },
+          { href: "#no-llevar", label: "Qué NO llevar" },
+          { href: "#planes", label: "Planes" },
+          { href: "#hidratacion", label: "Hidratación" },
+          { href: "#cafeina", label: "Cafeína" },
+          { href: "#pre-salida", label: "Pre-salida" },
+        ].map((item) => (
+          <a
+            key={item.href}
+            href={item.href}
+            className="text-xs font-bold uppercase tracking-wider px-3 py-2 rounded-lg transition-all"
+            style={{
+              background: "var(--glass-bg)",
+              border: "1px solid var(--glass-border)",
+              color: "var(--text-secondary)",
+              textDecoration: "none",
+            }}
+          >
+            {item.label}
+          </a>
+        ))}
+      </nav>
+
       {/* Key principle */}
       <div
-        className="card mb-8 animate-fade-up"
+        id="regla"
+        className="card mb-8 animate-fade-up scroll-mt-20"
         style={{
           background: "linear-gradient(135deg, rgba(245,158,11,0.12) 0%, rgba(24,24,27,0.7) 60%)",
           animationDelay: "60ms",
@@ -279,7 +310,7 @@ export default function NutritionPage() {
       </div>
 
       {/* Fuel items grid */}
-      <section className="mb-12">
+      <section id="llevar" className="mb-12 scroll-mt-20">
         <div className="flex items-center gap-3 mb-6 animate-fade-up" style={{ animationDelay: "120ms" }}>
           <div className="p-2 bg-emerald-500/20 rounded-lg">
             <Zap className="text-emerald-400" size={20} />
@@ -350,7 +381,7 @@ export default function NutritionPage() {
       </section>
 
       {/* Avoid section */}
-      <section className="mb-12">
+      <section id="no-llevar" className="mb-12 scroll-mt-20">
         <div className="flex items-center gap-3 mb-6 animate-fade-up">
           <div className="p-2 bg-red-500/20 rounded-lg">
             <Ban className="text-red-400" size={20} />
@@ -384,7 +415,7 @@ export default function NutritionPage() {
       </section>
 
       {/* Fuel plans by duration */}
-      <section className="mb-12">
+      <section id="planes" className="mb-12 scroll-mt-20">
         <div className="flex items-center gap-3 mb-6 animate-fade-up">
           <div className="p-2 bg-blue-500/20 rounded-lg">
             <Clock className="text-blue-400" size={20} />
@@ -441,7 +472,7 @@ export default function NutritionPage() {
       </section>
 
       {/* Hydration section */}
-      <section className="mb-12">
+      <section id="hidratacion" className="mb-12 scroll-mt-20">
         <div className="flex items-center gap-3 mb-6 animate-fade-up">
           <div className="p-2 bg-cyan-500/20 rounded-lg">
             <Droplets className="text-cyan-400" size={20} />
@@ -516,7 +547,7 @@ export default function NutritionPage() {
       </section>
 
       {/* Caffeine section */}
-      <section className="mb-12">
+      <section id="cafeina" className="mb-12 scroll-mt-20">
         <div className="flex items-center gap-3 mb-6 animate-fade-up">
           <div className="p-2 bg-amber-500/20 rounded-lg">
             <Zap className="text-amber-400" size={20} />
@@ -550,7 +581,7 @@ export default function NutritionPage() {
       </section>
 
       {/* Pre-ride meal */}
-      <section className="mb-8">
+      <section id="pre-salida" className="mb-8 scroll-mt-20">
         <div className="flex items-center gap-3 mb-6 animate-fade-up">
           <div className="p-2 bg-violet-500/20 rounded-lg">
             <Apple className="text-violet-400" size={20} />

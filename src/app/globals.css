@@ -298,6 +298,14 @@ body {
   box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.15);
 }
 
+.light .input {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.light .input:focus {
+  background: rgba(0, 0, 0, 0.06);
+}
+
 /* Page transitions — applies each time the route changes */
 .page-transition {
   animation: page-fade-in 0.28s cubic-bezier(0.4, 0, 0.2, 1) both;
