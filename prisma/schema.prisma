@@ -118,7 +118,7 @@ model Exercise {
 model WorkoutLog {
   id         String   @id @default(cuid())
   exerciseId String
-  weekStart  String?
+  weekStart  String
 
   setNumber  Int
   reps       Int
