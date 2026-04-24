@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import { Download } from "lucide-react";
 import { CyclingBlocks } from "@/components/CyclingBlocks";
 
 export function CyclingWorkoutClient({ workout }: { workout: any }) {
@@ -40,6 +41,18 @@ export function CyclingWorkoutClient({ workout }: { workout: any }) {
           fallbackDuration={workout.targetDuration}
           fallbackPower={workout.targetPower}
         />
+
+        {workout.blocks?.length > 0 && (
+          <a
+            href={`/api/workouts/${workout.id}/export-fit`}
+            download
+            onClick={() => toast.success("Descargado. Copialo a /Workouts/ de tu iGS", { duration: 5000 })}
+            className="btn-outline-cycling mt-4"
+          >
+            <Download size={16} />
+            Descargar .fit para iGPSPORT
+          </a>
+        )}
 
         <p style={{ color: "var(--text-secondary)", fontSize: 13, marginTop: 12 }}>
           Los datos reales (distancia, tiempo, FC, potencia) se sincronizan automáticamente desde Strava.
