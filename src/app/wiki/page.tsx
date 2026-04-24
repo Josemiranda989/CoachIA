@@ -57,6 +57,7 @@ export default async function WikiPage() {
                     height={72}
                     className="object-cover"
                     style={{ width: 72, height: 72 }}
+                    unoptimized
                   />
                 ) : (
                   <span className="text-3xl">🏋️</span>
