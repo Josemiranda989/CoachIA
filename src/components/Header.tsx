@@ -2,19 +2,36 @@
 import Link from "next/link";
 import { useTheme } from "next-themes";
 import { useSession, signOut } from "next-auth/react";
-import { Home, Calendar, Dumbbell, BarChart3, Apple, Sun, Moon, LogOut, LogIn, User } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Home, Calendar, Dumbbell, BarChart3, Apple, Sun, Moon, LogOut, LogIn, User, ChevronDown } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 
 export function Header() {
   const { theme, setTheme } = useTheme();
   const { data: session } = useSession();
   const [mounted, setMounted] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [menuOpen]);
 
   const navLinks = [
     { href: "/", label: "Dashboard", icon: Home },
@@ -95,47 +112,132 @@ export function Header() {
 
           {/* Auth area */}
           {session ? (
-            <div className="hidden md:flex items-center" style={{ gap: 12 }}>
-              {/* User avatar */}
-              <div style={{
-                width: 36,
-                height: 36,
-                borderRadius: 10,
-                background: "var(--accent-primary)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#fff",
-                fontSize: 14,
-                fontWeight: 700,
-              }}>
-                {userInitial}
-              </div>
+            <div ref={menuRef} style={{ position: "relative" }}>
               <button
-                onClick={() => signOut()}
+                onClick={() => setMenuOpen((v) => !v)}
+                aria-label="Menú de usuario"
+                aria-expanded={menuOpen}
+                aria-haspopup="menu"
                 style={{
                   display: "flex",
                   alignItems: "center",
                   gap: 8,
-                  padding: "10px 18px",
+                  padding: "4px 10px 4px 4px",
                   borderRadius: 10,
                   border: "1px solid var(--glass-border)",
-                  background: "var(--glass-bg)",
-                  color: "var(--text-secondary)",
+                  background: menuOpen ? "var(--glass-bg)" : "transparent",
                   cursor: "pointer",
-                  fontSize: 14,
-                  fontWeight: 500,
                   transition: "all 0.2s ease",
                 }}
               >
-                <LogOut size={16} />
-                <span>Salir</span>
+                <div style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 8,
+                  background: "var(--accent-primary)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#fff",
+                  fontSize: 13,
+                  fontWeight: 700,
+                }}>
+                  {userInitial}
+                </div>
+                <ChevronDown
+                  size={14}
+                  style={{
+                    color: "var(--text-secondary)",
+                    transition: "transform 0.2s ease",
+                    transform: menuOpen ? "rotate(180deg)" : "rotate(0deg)",
+                  }}
+                />
               </button>
+
+              {menuOpen && (
+                <div
+                  role="menu"
+                  style={{
+                    position: "absolute",
+                    top: "calc(100% + 8px)",
+                    right: 0,
+                    minWidth: 220,
+                    background: "var(--bg-card)",
+                    border: "1px solid var(--glass-border)",
+                    borderRadius: 12,
+                    boxShadow: "0 12px 32px rgba(0,0,0,0.25)",
+                    backdropFilter: "blur(16px)",
+                    WebkitBackdropFilter: "blur(16px)",
+                    padding: 8,
+                    zIndex: 60,
+                  }}
+                >
+                  <div style={{
+                    padding: "10px 12px",
+                    borderBottom: "1px solid var(--glass-border)",
+                    marginBottom: 6,
+                  }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)" }}>
+                      {session.user?.name || "Atleta"}
+                    </div>
+                    <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 2, wordBreak: "break-all" }}>
+                      {session.user?.email}
+                    </div>
+                  </div>
+
+                  <Link
+                    href="/profile"
+                    role="menuitem"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      padding: "10px 12px",
+                      borderRadius: 8,
+                      textDecoration: "none",
+                      color: "var(--text-primary)",
+                      fontSize: 14,
+                      fontWeight: 500,
+                      transition: "background 0.15s ease",
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = "var(--glass-bg)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                  >
+                    <User size={16} />
+                    <span>Mi Perfil</span>
+                  </Link>
+
+                  <button
+                    role="menuitem"
+                    onClick={() => { setMenuOpen(false); signOut(); }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      width: "100%",
+                      padding: "10px 12px",
+                      borderRadius: 8,
+                      border: "none",
+                      background: "transparent",
+                      color: "var(--text-secondary)",
+                      fontSize: 14,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      textAlign: "left",
+                      transition: "background 0.15s ease",
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = "var(--glass-bg)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                  >
+                    <LogOut size={16} />
+                    <span>Salir</span>
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <Link
               href="/auth/login"
-              className="hidden md:flex"
               style={{
                 display: "flex",
                 alignItems: "center",
