@@ -1,59 +1,77 @@
 # CoachIA
 
-**CoachIA** es un entrenador personal para atletas que combinan ciclismo y gimnasio. Genera rutinas semanales con IA basadas en tu historial real de Strava y gym, te notifica por Telegram cuando hay una rutina nueva, y te deja trackear tus sesiones desde el teléfono.
+**CoachIA** es un entrenador personal para atletas que combinan ciclismo y gimnasio. Genera rutinas semanales con IA basadas en tu historial real de Strava y gym, te notifica por Telegram cuando hay una rutina nueva, y te deja trackear tus sesiones desde el telefono.
 
-La filosofía: **Strava es la fuente de verdad para ciclismo, la DB para gym**. Sin duplicación de datos.
+La filosofia: **Strava es la fuente de verdad para ciclismo, la DB para gym**. Sin duplicacion de datos.
+
+Instalable como app nativa en Android/iOS via PWA.
 
 ---
 
 ## Features
 
-### Generación de rutinas con IA (Gemini)
-- Toma tu historial real: PRs, volumen histórico, últimas 5 salidas de Strava, YTD stats.
-- Aplica periodización semanal obligatoria: sábado = fondo largo prioritario, piernas 72h+ antes del sábado, recovery ride post-piernas.
-- Requiere tu aprobación antes de activar una rutina (flujo `pending_approval`).
+### PWA (Progressive Web App)
+- Instalable en Android/iOS desde Chrome — icono en el launcher, pantalla completa, sin barra del browser.
+- Service worker con cache network-first para soporte offline basico.
+- Iconos generados desde el personaje mascota de la app.
+
+### Generacion de rutinas con IA (Gemini)
+- Toma tu historial real: PRs, volumen historico, ultimas 5 salidas de Strava, YTD stats.
+- Aplica periodizacion semanal obligatoria: sabado = fondo largo prioritario, piernas 72h+ antes del sabado, recovery ride post-piernas.
+- Requiere tu aprobacion antes de activar una rutina (flujo `pending_approval`).
+
+### Entrenamiento del dia (`/workout/today`) — Estilo Hevy
+- **Foco en un ejercicio a la vez** con navegacion lateral entre ejercicios.
+- **Set por set**: ingresa peso y reps, toca "Completar Set" con checkmark.
+- **Rest timer automatico** (90s) entre sets, con countdown visual y boton "Saltar".
+- **"Siguiente:"** preview mostrando el proximo ejercicio.
+- **Barra de progreso** global (series completadas / total).
+- **Auto-fill** del peso de la ultima sesion.
+- **Persistencia en localStorage** — si cerras la app, al volver restaura donde quedaste.
+- **Proteccion contra data loss** — warning al cerrar la pestana o navegar con sets sin guardar.
+- **Bici**: vista informativa (objetivo + zona). Los datos reales vienen de Strava.
 
 ### Vista semanal (`/routine/week`)
-- Acordeón por día: el día actual se abre por defecto, el resto colapsados con resumen.
+- Acordeon por dia: el dia actual se abre por defecto, el resto colapsados con resumen.
 - Checkboxes de Creatina y Finalizado con toggles independientes.
-- Highlight del día actual con borde ámbar.
+- Highlight del dia actual con borde ambar.
 
-### Entrenamiento del día (`/workout/today`)
-- **Gym**: inputs táctiles (48px mín.) para kg y reps, peso sugerido del último log.
-- **Bici**: vista informativa (objetivo + zona). Los datos reales (km, tiempo, FC, watts) vienen de Strava automáticamente.
-- FAB fijo en mobile para guardar.
-
-### Métricas (`/metrics`)
-- Count-up animation en todos los números (~900ms easeOutExpo).
-- 4 cards de gym (ámbar): volumen, récord sentadilla, sesiones, series.
-- 4 cards de cycling (cian, desde Strava): km/año, horas/año, ride más largo, desnivel.
+### Metricas (`/metrics`)
+- Count-up animation en todos los numeros (~900ms easeOutExpo, respeta prefers-reduced-motion).
+- 4 cards de gym (ambar): volumen, record sentadilla, sesiones, series.
+- 4 cards de cycling (cyan, desde Strava): km/ano, horas/ano, ride mas largo, desnivel.
 - Detalle de todos los PRs en `/metrics/records`.
 - Weight chart (Xiaomi S400 → openScale MQTT → n8n).
 
 ### UX mobile
-- Bottom navigation bar fijo con 4 destinos (Dashboard, Rutina, Hoy, Métricas).
-- Header compacto arriba.
+- Bottom navigation bar fijo con 4 destinos (Dashboard, Rutina, Hoy, Metricas).
+- Toast notifications (react-hot-toast) en lugar de alerts bloqueantes.
+- FAB flotante se oculta cuando el teclado virtual esta abierto.
 - Transiciones suaves entre rutas (fade + slide-up).
 - Focus states accesibles (keyboard-only).
+- Dashboard grid responsive: 1 columna en celulares chicos, 2 en phones grandes, 3 en desktop.
 
-### Nutrición ciclismo (`/nutrition`)
-- Guía de fueling para salidas largas con productos argentinos (Arcor, Hidromax, Granix).
+### Nutricion ciclismo (`/nutrition`)
+- Guia de fueling para salidas largas con productos argentinos (Arcor, Hidromax, Granix).
+- Tabla de contenidos con navegacion por anclas a cada seccion.
 
 ### Notificaciones
-- Telegram bot para avisos de rutinas generadas y resúmenes semanales.
+- Telegram bot para avisos de rutinas generadas y resumenes semanales.
+- Toast notifications in-app para feedback de acciones (guardar, errores, etc.).
 
 ---
 
 ## Stack
 
-| Capa | Tecnología |
+| Capa | Tecnologia |
 |------|-----------|
 | Framework | Next.js 16 (App Router + Turbopack) |
-| UI | React 19, Tailwind 4, lucide-react, recharts |
+| UI | React 19, Tailwind 4, lucide-react, recharts, react-hot-toast |
 | Auth | NextAuth.js |
 | DB | SQLite + Prisma |
 | IA | Google Gemini (`gemini-flash-latest`) |
 | Notificaciones | Telegram Bot API |
+| PWA | Web App Manifest + Service Worker |
 | Deploy | Docker Compose |
 
 ---
@@ -62,10 +80,10 @@ La filosofía: **Strava es la fuente de verdad para ciclismo, la DB para gym**. 
 
 | Fuente | Estado | Datos |
 |--------|--------|-------|
-| Strava | ✅ Integrado (OAuth) | Rides, potencia (iGPSport BSC300T), FC, distancia, desnivel |
-| Telegram | ✅ Integrado | Notificaciones de rutinas |
-| Xiaomi S400 | 🟡 Pipeline MQTT vía openScale + n8n | Peso y composición corporal |
-| Samsung Health / Galaxy Watch 7 | ❌ Pendiente | Pasos, entrenamientos de gym |
+| Strava | Integrado (OAuth) | Rides, potencia (iGPSport BSC300T), FC, distancia, desnivel |
+| Telegram | Integrado | Notificaciones de rutinas |
+| Xiaomi S400 | Pipeline MQTT via openScale + n8n | Peso y composicion corporal |
+| Samsung Health / Galaxy Watch 7 | Pendiente | Pasos, entrenamientos de gym |
 
 ---
 
@@ -75,7 +93,7 @@ Este proyecto se corre **exclusivamente con Docker Compose** — Prisma tiene pr
 
 ### 1. Clonar y preparar `.env`
 
-Creá un archivo `.env` en la raíz del proyecto con:
+Crea un archivo `.env` en la raiz del proyecto con:
 
 ```
 GEMINI_API_KEY=<tu key de https://aistudio.google.com/apikey>
@@ -104,11 +122,17 @@ La app queda disponible en [http://localhost:3001](http://localhost:3001).
 
 ### 3. Sincronizar schema de Prisma
 
-Después de cambios en `prisma/schema.prisma`, aplicalos **dentro del container**:
+Despues de cambios en `prisma/schema.prisma`, aplicalos **dentro del container**:
 
 ```bash
 docker exec coachia-coach-ia-1 npx prisma db push
 ```
+
+### 4. Instalar como PWA en Android
+
+1. Abri la app en Chrome
+2. Menu (tres puntos) → "Instalar app"
+3. En Xiaomi/MIUI: habilitar primero "Crear accesos directos en pantalla de inicio" en Ajustes → Apps → Chrome → Otros permisos
 
 ---
 
@@ -117,47 +141,45 @@ docker exec coachia-coach-ia-1 npx prisma db push
 ```
 src/
   app/
-    api/                       Endpoints server-side
-      routines/generate/       Generación semanal con Gemini
-      routines/generate-monthly/  Generación mensual (cron/n8n) + notifica Telegram
-      stats/                   Stats mensuales, cycling stats (desde Strava)
-      strava/                  OAuth callback
-      workouts/                Toggle completed, mark-cycling-complete
-      weight/                  Pipeline de peso desde n8n
-    routine/week/              Vista semanal con acordeón
-    routine/generate/          Form + preview con loading skeleton
-    routine/pending/           Aprobar/rechazar rutinas generadas
-    workout/today/             Tracking de gym y bici
-    metrics/                   Stats con count-up, Strava integration
-    nutrition/                 Guía de nutrición para ciclismo
+    manifest.ts              PWA manifest
+    layout.tsx               Root layout (viewport, PWA meta, SW registration)
+    page.tsx                 Dashboard
+    auth/                    Login + Register
+    workout/today/           Gym tracker (Hevy-style) + Cycling view
+    routine/                 Week view, Generate, Pending approval, Load JSON
+    metrics/                 Stats dashboard + Personal records
+    nutrition/               Cycling fuel guide
+    help/                    FAQ
+    api/                     All API routes
   components/
-    Header.tsx                 Navbar superior
-    BottomNav.tsx              Bottom nav mobile (fixed)
-    BackLink.tsx               Link "Volver" unificado
-    CountUp.tsx                Animación numérica
-    PageTransition.tsx         Fade entre rutas
-    WeightChart.tsx            Gráfico de peso (recharts)
-    StravaActivities.tsx       Lista de actividades de Strava
+    Providers.tsx            SessionProvider + ThemeProvider + Toaster
+    Header.tsx               Desktop navbar
+    BottomNav.tsx            Mobile bottom nav (4 tabs)
+    BackLink.tsx             Back navigation
+    CountUp.tsx              Animated counter (respects reduced-motion)
   lib/
-    strava.ts                  OAuth + fetch de Strava API
-    telegram.ts                Bot notifications
-    prisma.ts                  Client Prisma
-    auth.ts                    NextAuth config
+    auth.ts, prisma.ts, strava.ts, telegram.ts, internal-auth.ts
+public/
+  sw.js                      Service worker
+  icons/                     PWA icons
+  fondo.png                  Background character
 ```
-
----
-
-## Pendientes
-
-- **Samsung Health / Galaxy Watch 7** — integración para pasos y gym
-- **Dashboard unificado** agregando todas las fuentes
-- **Plan mensual adaptativo** — ajuste de cargas según fatiga y adherencia
-- **Purgar API keys leaked en commits viejos** del git history (las keys ya fueron rotadas)
 
 ---
 
 ## Notas
 
-- Strava re-autoriza keys automáticamente si detecta leaks en repos públicos. Mantené `.env` siempre gitignored.
-- El modelo Gemini usa el alias `gemini-flash-latest` para evitar roturas cuando Google mueve modelos dentro/fuera del free tier.
-- `docker compose restart` NO relee `docker-compose.yml` — usá `docker compose up -d --force-recreate` cuando cambies vars de entorno.
+- **Docker restart**: `docker compose restart` despues de cambios en codigo — HMR no detecta cambios de forma confiable a traves del volume mount.
+- **Docker recreate**: `docker compose up -d --force-recreate` cuando cambies vars de entorno (restart NO relee docker-compose.yml).
+- **Strava**: re-autoriza keys automaticamente si detecta leaks en repos publicos. Mantene `.env` siempre gitignored.
+- **Gemini**: usa el alias `gemini-flash-latest` para evitar roturas cuando Google mueve modelos dentro/fuera del free tier.
+- **Dev indicator**: desactivado en `next.config.ts` (`devIndicators: false`).
+
+---
+
+## Pendientes
+
+- Integracion Samsung Health / Galaxy Watch 7 (pasos, gym)
+- Dashboard unificado agregando todas las fuentes de datos
+- Plan mensual adaptativo — ajuste de cargas segun fatiga y adherencia
+- Purgar API keys viejas del git history (las keys ya estan rotadas pero quedaron en commits)
