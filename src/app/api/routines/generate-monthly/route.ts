@@ -5,6 +5,38 @@ import { sendTelegramMessage } from "@/lib/telegram";
 import { getCurrentWeekStart } from "@/lib/week";
 import { GoogleGenAI, Type } from "@google/genai";
 import { getValidAccessToken, fetchActivities, fetchStats } from "@/lib/strava";
+import hevyPool from "@/data/hevy-template-pool.json";
+import { openCodeMonthlyChat } from "@/lib/opencode";
+
+type HevyPoolEntry = { id: string; title: string; muscle: string; equipment: string };
+
+function buildHevyPoolBlock(): string {
+  const pool = hevyPool as HevyPoolEntry[];
+  const byMuscle = new Map<string, HevyPoolEntry[]>();
+  for (const ex of pool) {
+    const m = ex.muscle || "other";
+    if (!byMuscle.has(m)) byMuscle.set(m, []);
+    byMuscle.get(m)!.push(ex);
+  }
+  const muscleOrder = [
+    "chest","upper_back","lats","traps","shoulders","biceps","triceps","forearms",
+    "quadriceps","hamstrings","glutes","adductors","abductors","calves",
+    "abdominals","lower_back","full_body","cardio",
+  ];
+  const orderedKeys = [
+    ...muscleOrder.filter((m) => byMuscle.has(m)),
+    ...[...byMuscle.keys()].filter((m) => !muscleOrder.includes(m)),
+  ];
+  const lines: string[] = [];
+  for (const m of orderedKeys) {
+    const list = byMuscle.get(m)!;
+    lines.push(`# ${m}`);
+    for (const ex of list) {
+      lines.push(`${ex.id}|${ex.title}|${ex.equipment}`);
+    }
+  }
+  return lines.join("\n");
+}
 
 const monthlyResponseSchema = {
   type: Type.OBJECT,
@@ -22,11 +54,18 @@ const monthlyResponseSchema = {
             items: {
               type: Type.OBJECT,
               properties: {
-                name: { type: Type.STRING },
+                hevy_template_id: {
+                  type: Type.STRING,
+                  description: "MUST be an id from the provided HEVY LIBRARY pool. No made-up IDs, no exercises outside the list.",
+                },
+                name: {
+                  type: Type.STRING,
+                  description: "The title exactly as it appears in the Hevy library for the chosen hevy_template_id.",
+                },
                 targetSets: { type: Type.NUMBER },
                 targetReps: { type: Type.STRING },
               },
-              required: ["name", "targetSets", "targetReps"],
+              required: ["hevy_template_id", "name", "targetSets", "targetReps"],
             },
           },
           notes: { type: Type.STRING },
@@ -183,8 +222,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
-    if (!process.env.GEMINI_API_KEY) {
-      return alertAndRespond("GEMINI_API_KEY not configured", 500);
+    if (!process.env.OPENCODE_API_KEY) {
+      return alertAndRespond("OPENCODE_API_KEY not configured", 500);
     }
 
     const body = await request.json().catch(() => ({}));
@@ -196,10 +235,10 @@ export async function POST(request: Request) {
 
     const mondays = getNextFourMondays();
     const { gymSection, stravaSection } = await gatherAthleteData(auth.userId);
+    const hevyLibraryBlock = buildHevyPoolBlock();
 
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
-    const prompt = `Eres un entrenador personal experto en fuerza y ciclismo. Genera un MESOCICLO DE 4 SEMANAS: la rutina de gym es FIJA y se repite cada semana (el atleta progresa carga manualmente), y el ciclismo PROGRESA semana a semana (mesociclo build/build/build/recovery).
+    const systemPrompt = "Eres un entrenador personal experto en fuerza y ciclismo. Genera un MESOCICLO DE 4 SEMANAS en formato JSON.";
+    const userPrompt = `Genera un MESOCICLO DE 4 SEMANAS: la rutina de gym es FIJA y se repite cada semana (el atleta progresa carga manualmente), y el ciclismo PROGRESA semana a semana (mesociclo build/build/build/recovery).
 
 DATOS DEL ATLETA:
 - Objetivo principal: ${goal}
@@ -346,31 +385,66 @@ PROGRESIÓN MENSUAL DE CICLISMO (para cyclingByWeek):
 - Semana 3 (PEAK): MISMO volumen. Estímulo más duro: reps más largas (hasta 10min con ratio 2:1) O más fuertes (Z4 sostenible con reps de 4'). Elegir UNA de las dos cosas, no ambas.
 - Semana 4 (RECOVERY): -25-30% volumen, todo Z1-Z2. Sin interval day (el Tuesday pasa a Z2 volumen o Rest). Sábado más corto (-20%).
 
+BIBLIOTECA HEVY DE EJERCICIOS (OBLIGATORIO elegir EXCLUSIVAMENTE de esta lista):
+
+Formato de cada línea: \`id|title|equipment\`
+Los títulos están en inglés (es la biblioteca oficial de Hevy). Copialos EXACTOS en el campo "name" — no traduzcas.
+El "hevy_template_id" de cada ejercicio DEBE ser el \`id\` exacto (8 caracteres hex) de la línea elegida.
+
+${hevyLibraryBlock}
+
+REGLAS DE SELECCIÓN DE EJERCICIOS:
+- Cada ejercicio del gymTemplate DEBE incluir "hevy_template_id" (del listado de arriba) y "name" (el title EXACTO en inglés).
+- NO inventes IDs. Si el ID no está en la lista, NO lo uses.
+- Priorizá equipment tipo \`machine\`, \`dumbbell\`, \`barbell\`, \`cable\`. El atleta prefiere ejercicios con máquinas y mancuernas.
+- NO generes ejercicios de movilidad, warmup, stretching. Para calentar, el atleta hace 1-2 sets de approach del primer ejercicio del día (no los incluyas en el output).
+- Elegí variantes estándar de gym (no versiones "Single Leg", "Pause", "Feet Up" salvo que tengan razón específica).
+
 REGLAS ESTRICTAS:
 1. gymTemplate SIEMPRE tiene los 7 días (Monday a Sunday)
 2. Distribuir ${daysPerWeek} días "Gym" y ${cyclingDays} días "Cycling". Resto "Rest". Si día tiene gym Y bici, usar "Gym + Cycling".
-3. Días Gym: 5-8 ejercicios con nombre en ESPAÑOL, targetSets (3-5), targetReps como rango ("8-10", "12-15")
+3. Días Gym: 5-8 ejercicios, cada uno con hevy_template_id + name (del listado), targetSets (3-5), targetReps como rango ("8-10", "12-15")
 4. Días Rest: NO incluir exercises
 5. cyclingByWeek tiene EXACTAMENTE 4 arrays. Cada uno con tantas entries como días Cycling/Gym + Cycling tengas en gymTemplate.
 6. dayOfWeek en cyclingByWeek debe matchear los días Cycling de gymTemplate.
 7. Variar grupos musculares entre días gym (no repetir el mismo grupo seguido)
 8. Ejercicios realistas y progresivos para el objetivo "${goal}"`;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-flash-latest",
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: monthlyResponseSchema,
-      },
-    });
+    const text = await openCodeMonthlyChat([
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt },
+    ]);
 
-    const text = response.text;
     if (!text) {
-      return alertAndRespond("Gemini no devolvió respuesta", 502);
+      return alertAndRespond("OpenCode no devolvió respuesta", 502);
     }
 
-    const generated = JSON.parse(text);
+    let generated: any;
+    // Gemini a veces wrappea en ```json ... ``` pese al MIME type
+    // o incluye texto adicional antes/después del JSON
+    let jsonText = text.trim();
+
+    // Intentar extraer de ```json ... ```
+    const blockMatch = jsonText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+    if (blockMatch) jsonText = blockMatch[1].trim();
+
+    // Si hay texto antes del primer { o después del último }, recortar
+    const firstBrace = jsonText.indexOf("{");
+    const lastBrace = jsonText.lastIndexOf("}");
+    if (firstBrace !== -1 && lastBrace > firstBrace) {
+      jsonText = jsonText.slice(firstBrace, lastBrace + 1);
+    }
+
+    try {
+      generated = JSON.parse(jsonText);
+    } catch (parseErr: any) {
+      console.error("OpenCode raw response (first 1000 chars):", text.slice(0, 1000));
+      console.error("JSON parse error at position:", parseErr.message);
+      return alertAndRespond(
+        `OpenCode devolvió JSON inválido: ${parseErr.message}`,
+        502,
+      );
+    }
     const gymTemplate: any[] = generated.gymTemplate;
     const cyclingByWeek: any[][] = generated.cyclingByWeek;
 
@@ -429,6 +503,7 @@ REGLAS ESTRICTAS:
               name: ex.name,
               targetSets: ex.targetSets,
               targetReps: ex.targetReps ?? null,
+              hevyTemplateId: ex.hevy_template_id ?? null,
             })),
           },
           blocks: {
