@@ -43,15 +43,26 @@ export function CyclingWorkoutClient({ workout }: { workout: any }) {
         />
 
         {workout.blocks?.length > 0 && (
-          <a
-            href={`/api/workouts/${workout.id}/export-fit`}
-            download
-            onClick={() => toast.success("Descargado. Copialo a /Workouts/ de tu iGS", { duration: 5000 })}
-            className="btn-outline-cycling mt-4"
-          >
-            <Download size={16} />
-            Descargar .fit para iGPSPORT
-          </a>
+          <>
+            <a
+              href={`/api/workouts/${workout.id}/export-fit`}
+              download
+              onClick={() => toast.success("Descargado. Copialo a /Workouts/ de tu iGS", { duration: 5000 })}
+              className="btn-outline-cycling mt-4"
+            >
+              <Download size={16} />
+              Descargar .fit para iGPSPORT
+            </a>
+            <a
+              href="/api/workouts/export-all-fit"
+              download
+              onClick={() => toast.success("Descargando todos los entrenamientos de ciclismo...", { duration: 3000 })}
+              className="btn-outline-cycling mt-2 text-xs opacity-70 hover:opacity-100"
+            >
+              <Download size={14} />
+              Descargar todos los entrenamientos (ZIP)
+            </a>
+          </>
         )}
 
         <p style={{ color: "var(--text-secondary)", fontSize: 13, marginTop: 12 }}>
