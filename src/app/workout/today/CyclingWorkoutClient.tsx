@@ -48,7 +48,7 @@ export function CyclingWorkoutClient({ workout }: { workout: any }) {
               href={`/api/workouts/${workout.id}/export-fit`}
               download
               onClick={() => toast.success("Descargado. Copialo a /Workouts/ de tu iGS", { duration: 5000 })}
-              className="btn-outline-cycling mt-4"
+              className="btn-outline-cycling w-full justify-center mt-4"
             >
               <Download size={16} />
               Descargar .fit para iGPSPORT
@@ -57,7 +57,7 @@ export function CyclingWorkoutClient({ workout }: { workout: any }) {
               href="/api/workouts/export-all-fit"
               download
               onClick={() => toast.success("Descargando todos los entrenamientos de ciclismo...", { duration: 3000 })}
-              className="btn-outline-cycling mt-2 text-xs opacity-70 hover:opacity-100"
+              className="btn-outline-cycling w-full justify-center mt-2 py-2.5"
             >
               <Download size={14} />
               Descargar todos los entrenamientos (ZIP)
