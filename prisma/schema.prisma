@@ -47,10 +47,23 @@ model DailyWorkout {
 
   notes          String?
 
+  // Hevy sync: id of the mirror Routine in Hevy (api.hevyapp.com). Populated
+  // after first successful sync; enables UPDATE instead of duplicate CREATE.
+  hevyRoutineId  String?
+
   routine     Routine @relation(fields: [routineId], references: [id], onDelete: Cascade)
   exercises   Exercise[]
   completions WorkoutCompletion[]
   blocks      CyclingBlock[]
+}
+
+model HevyExerciseMapping {
+  id             String   @id @default(cuid())
+  coachiaName    String   @unique
+  hevyTemplateId String
+  hevyTitle      String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 
 // Wiki-style reference for each canonical exercise name. One row per canonical
@@ -106,11 +119,14 @@ model WorkoutCompletion {
 model Exercise {
   id             String   @id @default(cuid())
   dailyWorkoutId String
-  
+
   name           String
   targetSets     Int
-  targetReps     String?  
-  
+  targetReps     String?
+  // Direct Hevy template id when Gemini picked the exercise from Hevy's library.
+  // When null, hevy-sync falls back to the legacy name-based HevyExerciseMapping.
+  hevyTemplateId String?
+
   dailyWorkout   DailyWorkout @relation(fields: [dailyWorkoutId], references: [id], onDelete: Cascade)
   logs           WorkoutLog[]
 }

@@ -17,7 +17,8 @@ export default async function TodayWorkoutPage() {
 
   const weekStart = getCurrentWeekStart();
 
-  const routine = await prisma.routine.findFirst({
+  // First, try to find a routine for the current week or past weeks
+  let routine = await prisma.routine.findFirst({
     where: {
       userId: (session as any).user.id,
       status: "active",
@@ -34,6 +35,28 @@ export default async function TodayWorkoutPage() {
       }
     }
   });
+
+  // If no routine for current/past weeks, look for upcoming ones
+  // (e.g. after approving a monthly mesocycle that starts next week)
+  if (!routine) {
+    routine = await prisma.routine.findFirst({
+      where: {
+        userId: (session as any).user.id,
+        status: "active",
+        weekStart: { gt: weekStart },
+      },
+      orderBy: { weekStart: 'asc' },
+      include: {
+        days: {
+          include: {
+            exercises: { include: { logs: { where: { weekStart } } } },
+            completions: { where: { weekStart } },
+            blocks: { orderBy: { order: 'asc' } },
+          }
+        }
+      }
+    });
+  }
 
   if (!routine) {
     return (

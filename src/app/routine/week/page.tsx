@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { DayCardClient } from "./DayCardClient";
 import { BackLink } from "@/components/BackLink";
+import { ExportCyclingButton } from "@/components/ExportCyclingButton";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
@@ -16,7 +17,8 @@ export default async function WeeklyRoutinePage() {
 
   const weekStart = getCurrentWeekStart();
 
-  const routine = await prisma.routine.findFirst({
+  // First, try to find a routine for the current week or past weeks
+  let routine = await prisma.routine.findFirst({
     where: {
       userId: (session as any).user.id,
       status: "active",
@@ -33,6 +35,28 @@ export default async function WeeklyRoutinePage() {
       }
     }
   });
+
+  // If no active routine for current/past weeks, look for upcoming ones
+  // (e.g. after approving a monthly mesocycle that starts next week)
+  if (!routine) {
+    routine = await prisma.routine.findFirst({
+      where: {
+        userId: (session as any).user.id,
+        status: "active",
+        weekStart: { gt: weekStart },
+      },
+      orderBy: { weekStart: 'asc' },
+      include: {
+        days: {
+          include: {
+            exercises: true,
+            completions: { where: { weekStart } },
+            blocks: { orderBy: { order: 'asc' } },
+          }
+        }
+      }
+    });
+  }
 
   if (!routine) {
     return (
@@ -56,6 +80,10 @@ export default async function WeeklyRoutinePage() {
     creatineTaken: d.completions[0]?.creatineTaken ?? false,
   }));
 
+  const cyclingCount = routine.days.filter(
+    (d: any) => d.targetDuration != null && d.blocks?.length > 0
+  ).length;
+
   return (
     <div className="container py-8 pb-16">
       <BackLink href="/" />
@@ -65,6 +93,12 @@ export default async function WeeklyRoutinePage() {
       {daysForClient.map((day) => (
         <DayCardClient key={day.id} day={day} />
       ))}
+
+      {cyclingCount > 0 && (
+        <div className="mt-8">
+          <ExportCyclingButton cyclingCount={cyclingCount} />
+        </div>
+      )}
     </div>
   );
 }

@@ -1,0 +1,1628 @@
+[
+{
+"id":"CC55119B",
+"title":"Cable Core Palloff Press",
+"muscle":"abdominals",
+"equipment":"machine"
+},
+{
+"id":"23A48484",
+"title":"Cable Crunch",
+"muscle":"abdominals",
+"equipment":"machine"
+},
+{
+"id":"92D858EA",
+"title":"Cable Twist (Down to up)",
+"muscle":"abdominals",
+"equipment":"machine"
+},
+{
+"id":"A2D838BD",
+"title":"Cable Twist (Up to down)",
+"muscle":"abdominals",
+"equipment":"machine"
+},
+{
+"id":"EB43ADD4",
+"title":"Crunch (Machine)",
+"muscle":"abdominals",
+"equipment":"machine"
+},
+{
+"id":"98237BA2",
+"title":"Knee Raise Parallel Bars",
+"muscle":"abdominals",
+"equipment":"machine"
+},
+{
+"id":"923874CA",
+"title":"Landmine 180",
+"muscle":"abdominals",
+"equipment":"barbell"
+},
+{
+"id":"0482DA98",
+"title":"Leg Raise Parallel Bars",
+"muscle":"abdominals",
+"equipment":"machine"
+},
+{
+"id":"026FD047",
+"title":"Side Bend (Dumbbell)",
+"muscle":"abdominals",
+"equipment":"dumbbell"
+},
+{
+"id":"FBB62888",
+"title":"Torso Rotation",
+"muscle":"abdominals",
+"equipment":"machine"
+},
+{
+"id":"F4B4C6EE",
+"title":"Hip Abduction (Machine)",
+"muscle":"abductors",
+"equipment":"machine"
+},
+{
+"id":"8BEBFED6",
+"title":"Hip Adduction (Machine)",
+"muscle":"adductors",
+"equipment":"machine"
+},
+{
+"id":"3BC06AD3",
+"title":"21s Bicep Curl",
+"muscle":"biceps",
+"equipment":"barbell"
+},
+{
+"id":"2DBCA395",
+"title":"Behind the Back Curl (Cable)",
+"muscle":"biceps",
+"equipment":"machine"
+},
+{
+"id":"A5AC6449",
+"title":"Bicep Curl (Barbell)",
+"muscle":"biceps",
+"equipment":"barbell"
+},
+{
+"id":"ADA8623C",
+"title":"Bicep Curl (Cable)",
+"muscle":"biceps",
+"equipment":"machine"
+},
+{
+"id":"37FCC2BB",
+"title":"Bicep Curl (Dumbbell)",
+"muscle":"biceps",
+"equipment":"dumbbell"
+},
+{
+"id":"AF328E3D",
+"title":"Bicep Curl (Machine)",
+"muscle":"biceps",
+"equipment":"machine"
+},
+{
+"id":"724CDE60",
+"title":"Concentration Curl",
+"muscle":"biceps",
+"equipment":"dumbbell"
+},
+{
+"id":"32C4D4A2",
+"title":"Cross Body Hammer Curl",
+"muscle":"biceps",
+"equipment":"dumbbell"
+},
+{
+"id":"D950429E",
+"title":"Drag Curl",
+"muscle":"biceps",
+"equipment":"barbell"
+},
+{
+"id":"01A35BF9",
+"title":"EZ Bar Biceps Curl",
+"muscle":"biceps",
+"equipment":"barbell"
+},
+{
+"id":"36E8F14E",
+"title":"Hammer Curl (Cable)",
+"muscle":"biceps",
+"equipment":"machine"
+},
+{
+"id":"7E3BC8B6",
+"title":"Hammer Curl (Dumbbell)",
+"muscle":"biceps",
+"equipment":"dumbbell"
+},
+{
+"id":"582ADA23",
+"title":"Overhead Curl (Cable)",
+"muscle":"biceps",
+"equipment":"machine"
+},
+{
+"id":"942BAD12",
+"title":"Pinwheel Curl (Dumbbell)",
+"muscle":"biceps",
+"equipment":"dumbbell"
+},
+{
+"id":"4F942934",
+"title":"Preacher Curl (Barbell)",
+"muscle":"biceps",
+"equipment":"barbell"
+},
+{
+"id":"FAB6EB2F",
+"title":"Preacher Curl (Dumbbell)",
+"muscle":"biceps",
+"equipment":"dumbbell"
+},
+{
+"id":"1E9A6B8E",
+"title":"Preacher Curl (Machine)",
+"muscle":"biceps",
+"equipment":"machine"
+},
+{
+"id":"112FC6B7",
+"title":"Reverse Curl (Barbell)",
+"muscle":"biceps",
+"equipment":"barbell"
+},
+{
+"id":"9F48F858",
+"title":"Reverse Curl (Cable)",
+"muscle":"biceps",
+"equipment":"machine"
+},
+{
+"id":"B567DD46",
+"title":"Reverse Curl (Dumbbell)",
+"muscle":"biceps",
+"equipment":"dumbbell"
+},
+{
+"id":"1FF4097B",
+"title":"Reverse Grip Concentration Curl",
+"muscle":"biceps",
+"equipment":"dumbbell"
+},
+{
+"id":"234897AB",
+"title":"Rope Cable Curl",
+"muscle":"biceps",
+"equipment":"machine"
+},
+{
+"id":"8BAB2735",
+"title":"Seated Incline Curl (Dumbbell)",
+"muscle":"biceps",
+"equipment":"dumbbell"
+},
+{
+"id":"B33B526E",
+"title":"Single Arm Curl (Cable)",
+"muscle":"biceps",
+"equipment":"machine"
+},
+{
+"id":"2348AB72",
+"title":"Spider Curl (Barbell)",
+"muscle":"biceps",
+"equipment":"barbell"
+},
+{
+"id":"90427D4A",
+"title":"Spider Curl (Dumbbell)",
+"muscle":"biceps",
+"equipment":"dumbbell"
+},
+{
+"id":"72297E8C",
+"title":"Waiter Curl (Dumbbell)",
+"muscle":"biceps",
+"equipment":"dumbbell"
+},
+{
+"id":"123EE239",
+"title":"Zottman Curl (Dumbbell)",
+"muscle":"biceps",
+"equipment":"dumbbell"
+},
+{
+"id":"47B9DF13",
+"title":"Calf Extension (Machine)",
+"muscle":"calves",
+"equipment":"machine"
+},
+{
+"id":"91237BDD",
+"title":"Calf Press (Machine)",
+"muscle":"calves",
+"equipment":"machine"
+},
+{
+"id":"062AB91A",
+"title":"Seated Calf Raise",
+"muscle":"calves",
+"equipment":"machine"
+},
+{
+"id":"E51CCBE5",
+"title":"Single Leg Standing Calf Raise (Barbell)",
+"muscle":"calves",
+"equipment":"barbell"
+},
+{
+"id":"5DA40761",
+"title":"Single Leg Standing Calf Raise (Dumbbell)",
+"muscle":"calves",
+"equipment":"dumbbell"
+},
+{
+"id":"B05C2C29",
+"title":"Single Leg Standing Calf Raise (Machine)",
+"muscle":"calves",
+"equipment":"machine"
+},
+{
+"id":"E53CCBE5",
+"title":"Standing Calf Raise (Barbell)",
+"muscle":"calves",
+"equipment":"barbell"
+},
+{
+"id":"6DA40660",
+"title":"Standing Calf Raise (Dumbbell)",
+"muscle":"calves",
+"equipment":"dumbbell"
+},
+{
+"id":"E05C2C38",
+"title":"Standing Calf Raise (Machine)",
+"muscle":"calves",
+"equipment":"machine"
+},
+{
+"id":"AA52E8D2",
+"title":"Standing Calf Raise (Smith)",
+"muscle":"calves",
+"equipment":"machine"
+},
+{
+"id":"43573BB8",
+"title":"Air Bike",
+"muscle":"cardio",
+"equipment":"machine"
+},
+{
+"id":"084A67CA",
+"title":"Battle Ropes",
+"muscle":"cardio",
+"equipment":"machine"
+},
+{
+"id":"D8F7F851",
+"title":"Cycling",
+"muscle":"cardio",
+"equipment":"machine"
+},
+{
+"id":"3303376C",
+"title":"Elliptical Trainer",
+"muscle":"cardio",
+"equipment":"machine"
+},
+{
+"id":"0222DB42",
+"title":"Rowing Machine",
+"muscle":"cardio",
+"equipment":"machine"
+},
+{
+"id":"213AB238",
+"title":"Spinning",
+"muscle":"cardio",
+"equipment":"machine"
+},
+{
+"id":"4377A52B",
+"title":"Stair Machine (Floors)",
+"muscle":"cardio",
+"equipment":"machine"
+},
+{
+"id":"4377A52C",
+"title":"Stair Machine (Steps)",
+"muscle":"cardio",
+"equipment":"machine"
+},
+{
+"id":"243710DE",
+"title":"Treadmill",
+"muscle":"cardio",
+"equipment":"machine"
+},
+{
+"id":"D4A2FE7E",
+"title":"Around The World",
+"muscle":"chest",
+"equipment":"dumbbell"
+},
+{
+"id":"79D0BB3A",
+"title":"Bench Press (Barbell)",
+"muscle":"chest",
+"equipment":"barbell"
+},
+{
+"id":"99C1F2AD",
+"title":"Bench Press (Cable)",
+"muscle":"chest",
+"equipment":"machine"
+},
+{
+"id":"3601968B",
+"title":"Bench Press (Dumbbell)",
+"muscle":"chest",
+"equipment":"dumbbell"
+},
+{
+"id":"0FBF7195",
+"title":"Bench Press (Smith Machine)",
+"muscle":"chest",
+"equipment":"machine"
+},
+{
+"id":"E644F828",
+"title":"Bench Press - Wide Grip (Barbell)",
+"muscle":"chest",
+"equipment":"barbell"
+},
+{
+"id":"9DCE2D64",
+"title":"Butterfly (Pec Deck)",
+"muscle":"chest",
+"equipment":"machine"
+},
+{
+"id":"651F844C",
+"title":"Cable Fly Crossovers",
+"muscle":"chest",
+"equipment":"machine"
+},
+{
+"id":"6FCD7755",
+"title":"Chest Dip",
+"muscle":"chest",
+"equipment":"machine"
+},
+{
+"id":"E9E4089F",
+"title":"Chest Dip (Assisted)",
+"muscle":"chest",
+"equipment":"machine"
+},
+{
+"id":"29472BE1",
+"title":"Chest Dip (Weighted)",
+"muscle":"chest",
+"equipment":"machine"
+},
+{
+"id":"12017185",
+"title":"Chest Fly (Dumbbell)",
+"muscle":"chest",
+"equipment":"dumbbell"
+},
+{
+"id":"78683336",
+"title":"Chest Fly (Machine)",
+"muscle":"chest",
+"equipment":"machine"
+},
+{
+"id":"7EB3F7C3",
+"title":"Chest Press (Machine)",
+"muscle":"chest",
+"equipment":"machine"
+},
+{
+"id":"DA0F0470",
+"title":"Decline Bench Press (Barbell)",
+"muscle":"chest",
+"equipment":"barbell"
+},
+{
+"id":"18487FA7",
+"title":"Decline Bench Press (Dumbbell)",
+"muscle":"chest",
+"equipment":"dumbbell"
+},
+{
+"id":"FAF31231",
+"title":"Decline Bench Press (Machine)",
+"muscle":"chest",
+"equipment":"machine"
+},
+{
+"id":"FFC106CB",
+"title":"Decline Bench Press (Smith Machine)",
+"muscle":"chest",
+"equipment":"machine"
+},
+{
+"id":"A351AED7",
+"title":"Decline Chest Fly (Dumbbell)",
+"muscle":"chest",
+"equipment":"dumbbell"
+},
+{
+"id":"F72FA239",
+"title":"Dumbbell Squeeze Press",
+"muscle":"chest",
+"equipment":"dumbbell"
+},
+{
+"id":"867AC3B6",
+"title":"Feet Up Bench Press (Barbell)",
+"muscle":"chest",
+"equipment":"barbell"
+},
+{
+"id":"D53F2886",
+"title":"Floor Press (Barbell)",
+"muscle":"chest",
+"equipment":"barbell"
+},
+{
+"id":"756EE329",
+"title":"Floor Press (Dumbbell)",
+"muscle":"chest",
+"equipment":"dumbbell"
+},
+{
+"id":"BE89C631",
+"title":"Hex Press (Dumbbell)",
+"muscle":"chest",
+"equipment":"dumbbell"
+},
+{
+"id":"50DFDFAB",
+"title":"Incline Bench Press (Barbell)",
+"muscle":"chest",
+"equipment":"barbell"
+},
+{
+"id":"07B38369",
+"title":"Incline Bench Press (Dumbbell)",
+"muscle":"chest",
+"equipment":"dumbbell"
+},
+{
+"id":"3A6FA3D1",
+"title":"Incline Bench Press (Smith Machine)",
+"muscle":"chest",
+"equipment":"machine"
+},
+{
+"id":"D3E2AB55",
+"title":"Incline Chest Fly (Dumbbell)",
+"muscle":"chest",
+"equipment":"dumbbell"
+},
+{
+"id":"FBF92739",
+"title":"Incline Chest Press (Machine)",
+"muscle":"chest",
+"equipment":"machine"
+},
+{
+"id":"24706DCD",
+"title":"Iso-Lateral Chest Press (Machine)",
+"muscle":"chest",
+"equipment":"machine"
+},
+{
+"id":"293483AD",
+"title":"Low Cable Fly Crossovers",
+"muscle":"chest",
+"equipment":"machine"
+},
+{
+"id":"6B4C797E",
+"title":"Seated Chest Flys (Cable)",
+"muscle":"chest",
+"equipment":"machine"
+},
+{
+"id":"8372BBCC",
+"title":"Single Arm Cable Crossover",
+"muscle":"chest",
+"equipment":"machine"
+},
+{
+"id":"DDB29047",
+"title":"Behind the Back Bicep Wrist Curl (Barbell)",
+"muscle":"forearms",
+"equipment":"barbell"
+},
+{
+"id":"1006DF48",
+"title":"Seated Palms Up Wrist Curl",
+"muscle":"forearms",
+"equipment":"dumbbell"
+},
+{
+"id":"9202CC23",
+"title":"Seated Wrist Extension (Barbell)",
+"muscle":"forearms",
+"equipment":"barbell"
+},
+{
+"id":"0E4523F4",
+"title":"Wrist Roller",
+"muscle":"forearms",
+"equipment":"machine"
+},
+{
+"id":"ABB00838",
+"title":"Clean",
+"muscle":"full_body",
+"equipment":"barbell"
+},
+{
+"id":"652FEA39",
+"title":"Clean Pull",
+"muscle":"full_body",
+"equipment":"barbell"
+},
+{
+"id":"9E09CEC3",
+"title":"Clean and Jerk",
+"muscle":"full_body",
+"equipment":"barbell"
+},
+{
+"id":"D3095577",
+"title":"Clean and Press",
+"muscle":"full_body",
+"equipment":"barbell"
+},
+{
+"id":"FA5D0DE1",
+"title":"Deadlift High Pull",
+"muscle":"full_body",
+"equipment":"barbell"
+},
+{
+"id":"F3717B0E",
+"title":"Dumbbell Snatch",
+"muscle":"full_body",
+"equipment":"dumbbell"
+},
+{
+"id":"BD4E7E53",
+"title":"Hang Clean",
+"muscle":"full_body",
+"equipment":"barbell"
+},
+{
+"id":"F4E77594",
+"title":"Hang Snatch",
+"muscle":"full_body",
+"equipment":"barbell"
+},
+{
+"id":"BA3DE542",
+"title":"Jump Shrug",
+"muscle":"full_body",
+"equipment":"barbell"
+},
+{
+"id":"983274DD",
+"title":"Landmine Squat and Press",
+"muscle":"full_body",
+"equipment":"barbell"
+},
+{
+"id":"9F9C164B",
+"title":"Muscle Up",
+"muscle":"full_body",
+"equipment":"machine"
+},
+{
+"id":"2CFED196",
+"title":"Overhead Squat",
+"muscle":"full_body",
+"equipment":"barbell"
+},
+{
+"id":"C628D768",
+"title":"Power Clean",
+"muscle":"full_body",
+"equipment":"barbell"
+},
+{
+"id":"E22F9358",
+"title":"Power Snatch",
+"muscle":"full_body",
+"equipment":"barbell"
+},
+{
+"id":"84A77566",
+"title":"Press Under",
+"muscle":"full_body",
+"equipment":"barbell"
+},
+{
+"id":"FB09C938",
+"title":"Snatch",
+"muscle":"full_body",
+"equipment":"barbell"
+},
+{
+"id":"E764B907",
+"title":"Split Jerk",
+"muscle":"full_body",
+"equipment":"barbell"
+},
+{
+"id":"A8814C06",
+"title":"Squat Row",
+"muscle":"full_body",
+"equipment":"machine"
+},
+{
+"id":"90E506D5",
+"title":"Thruster (Barbell)",
+"muscle":"full_body",
+"equipment":"barbell"
+},
+{
+"id":"8C331CD8",
+"title":"Cable Pull Through",
+"muscle":"glutes",
+"equipment":"machine"
+},
+{
+"id":"C6272009",
+"title":"Deadlift (Barbell)",
+"muscle":"glutes",
+"equipment":"barbell"
+},
+{
+"id":"5F4E6DD3",
+"title":"Deadlift (Dumbbell)",
+"muscle":"glutes",
+"equipment":"dumbbell"
+},
+{
+"id":"20870ED5",
+"title":"Deadlift (Smith Machine)",
+"muscle":"glutes",
+"equipment":"machine"
+},
+{
+"id":"B923B230",
+"title":"Deadlift (Trap bar)",
+"muscle":"glutes",
+"equipment":"barbell"
+},
+{
+"id":"F6948F17",
+"title":"Frog Pumps (Dumbbell)",
+"muscle":"glutes",
+"equipment":"dumbbell"
+},
+{
+"id":"CBA02382",
+"title":"Glute Kickback (Machine)",
+"muscle":"glutes",
+"equipment":"machine"
+},
+{
+"id":"D57C2EC7",
+"title":"Hip Thrust (Barbell)",
+"muscle":"glutes",
+"equipment":"barbell"
+},
+{
+"id":"68CE0B9B",
+"title":"Hip Thrust (Machine)",
+"muscle":"glutes",
+"equipment":"machine"
+},
+{
+"id":"291ABA92",
+"title":"Hip Thrust (Smith Machine)",
+"muscle":"glutes",
+"equipment":"machine"
+},
+{
+"id":"FBEE8279",
+"title":"Partial Glute Bridge (Barbell)",
+"muscle":"glutes",
+"equipment":"barbell"
+},
+{
+"id":"1ADF8723",
+"title":"Rear Kick (Machine)",
+"muscle":"glutes",
+"equipment":"machine"
+},
+{
+"id":"7C0028C3",
+"title":"Reverse Hyperextension",
+"muscle":"glutes",
+"equipment":"machine"
+},
+{
+"id":"D1CD146F",
+"title":"Single Leg Hip Thrust (Dumbbell)",
+"muscle":"glutes",
+"equipment":"dumbbell"
+},
+{
+"id":"ACB2751D",
+"title":"Standing Cable Glute Kickbacks",
+"muscle":"glutes",
+"equipment":"machine"
+},
+{
+"id":"D20D7BBE",
+"title":"Sumo Deadlift",
+"muscle":"glutes",
+"equipment":"barbell"
+},
+{
+"id":"68B83EE0",
+"title":"Glute Ham Raise",
+"muscle":"hamstrings",
+"equipment":"machine"
+},
+{
+"id":"4180C405",
+"title":"Good Morning (Barbell)",
+"muscle":"hamstrings",
+"equipment":"barbell"
+},
+{
+"id":"B8127AD1",
+"title":"Lying Leg Curl (Machine)",
+"muscle":"hamstrings",
+"equipment":"machine"
+},
+{
+"id":"2B4B7310",
+"title":"Romanian Deadlift (Barbell)",
+"muscle":"hamstrings",
+"equipment":"barbell"
+},
+{
+"id":"72CFFAD5",
+"title":"Romanian Deadlift (Dumbbell)",
+"muscle":"hamstrings",
+"equipment":"dumbbell"
+},
+{
+"id":"11A123F3",
+"title":"Seated Leg Curl (Machine)",
+"muscle":"hamstrings",
+"equipment":"machine"
+},
+{
+"id":"93472AC1",
+"title":"Single Leg Romanian Deadlift (Barbell)",
+"muscle":"hamstrings",
+"equipment":"barbell"
+},
+{
+"id":"937292AB",
+"title":"Single Leg Romanian Deadlift (Dumbbell)",
+"muscle":"hamstrings",
+"equipment":"dumbbell"
+},
+{
+"id":"6120CAAB",
+"title":"Standing Leg Curls",
+"muscle":"hamstrings",
+"equipment":"machine"
+},
+{
+"id":"2A48E443",
+"title":"Straight Leg Deadlift",
+"muscle":"hamstrings",
+"equipment":"barbell"
+},
+{
+"id":"29083183",
+"title":"Chin Up",
+"muscle":"lats",
+"equipment":"machine"
+},
+{
+"id":"D23C609B",
+"title":"Chin Up (Assisted)",
+"muscle":"lats",
+"equipment":"machine"
+},
+{
+"id":"023943F1",
+"title":"Chin Up (Weighted)",
+"muscle":"lats",
+"equipment":"machine"
+},
+{
+"id":"F1E57334",
+"title":"Dumbbell Row",
+"muscle":"lats",
+"equipment":"dumbbell"
+},
+{
+"id":"BC3492DA",
+"title":"Iso-Lateral High Row (Machine)",
+"muscle":"lats",
+"equipment":"machine"
+},
+{
+"id":"A91838C0",
+"title":"Kipping Pull Up",
+"muscle":"lats",
+"equipment":"machine"
+},
+{
+"id":"D82EA543",
+"title":"Kneeling Pulldown (band)",
+"muscle":"lats",
+"equipment":"machine"
+},
+{
+"id":"6A6C31A5",
+"title":"Lat Pulldown (Cable)",
+"muscle":"lats",
+"equipment":"machine"
+},
+{
+"id":"473CF5B8",
+"title":"Lat Pulldown (Machine)",
+"muscle":"lats",
+"equipment":"machine"
+},
+{
+"id":"4E5257DE",
+"title":"Lat Pulldown - Close Grip (Cable)",
+"muscle":"lats",
+"equipment":"machine"
+},
+{
+"id":"1B2B1E7C",
+"title":"Pull Up",
+"muscle":"lats",
+"equipment":"machine"
+},
+{
+"id":"2C37EC5E",
+"title":"Pull Up (Assisted)",
+"muscle":"lats",
+"equipment":"machine"
+},
+{
+"id":"729237D1",
+"title":"Pull Up (Weighted)",
+"muscle":"lats",
+"equipment":"machine"
+},
+{
+"id":"67280085",
+"title":"Pullover (Dumbbell)",
+"muscle":"lats",
+"equipment":"dumbbell"
+},
+{
+"id":"B123DD01",
+"title":"Pullover (Machine)",
+"muscle":"lats",
+"equipment":"machine"
+},
+{
+"id":"046E25A2",
+"title":"Reverse Grip Lat Pulldown (Cable)",
+"muscle":"lats",
+"equipment":"machine"
+},
+{
+"id":"9273BA17",
+"title":"Rope Straight Arm Pulldown",
+"muscle":"lats",
+"equipment":"machine"
+},
+{
+"id":"2EE45F81",
+"title":"Single Arm Lat Pulldown",
+"muscle":"lats",
+"equipment":"machine"
+},
+{
+"id":"EE2938D1",
+"title":"Sternum Pull up (Gironda)",
+"muscle":"lats",
+"equipment":"machine"
+},
+{
+"id":"D2387AB1",
+"title":"Straight Arm Lat Pulldown (Cable)",
+"muscle":"lats",
+"equipment":"machine"
+},
+{
+"id":"72880C57",
+"title":"Vertical Traction (Machine)",
+"muscle":"lats",
+"equipment":"machine"
+},
+{
+"id":"7C50F118",
+"title":"Wide Pull Up",
+"muscle":"lats",
+"equipment":"machine"
+},
+{
+"id":"4F5866F8",
+"title":"Back Extension (Hyperextension)",
+"muscle":"lower_back",
+"equipment":"machine"
+},
+{
+"id":"A05C064D",
+"title":"Back Extension (Machine)",
+"muscle":"lower_back",
+"equipment":"machine"
+},
+{
+"id":"091737FA",
+"title":"Back Extension (Weighted Hyperextension)",
+"muscle":"lower_back",
+"equipment":"machine"
+},
+{
+"id":"3D1CDC75",
+"title":"Belt Squat (Machine)",
+"muscle":"quadriceps",
+"equipment":"machine"
+},
+{
+"id":"38FC1AB9",
+"title":"Box Squat (Barbell)",
+"muscle":"quadriceps",
+"equipment":"barbell"
+},
+{
+"id":"B5D3A742",
+"title":"Bulgarian Split Squat",
+"muscle":"quadriceps",
+"equipment":"dumbbell"
+},
+{
+"id":"D39EC9EB",
+"title":"Curtsy Lunge (Dumbbell)",
+"muscle":"quadriceps",
+"equipment":"dumbbell"
+},
+{
+"id":"BF6ECE89",
+"title":"Dumbbell Step Up",
+"muscle":"quadriceps",
+"equipment":"dumbbell"
+},
+{
+"id":"5046D0A9",
+"title":"Front Squat",
+"muscle":"quadriceps",
+"equipment":"barbell"
+},
+{
+"id":"1283BBA6",
+"title":"Full Squat",
+"muscle":"quadriceps",
+"equipment":"barbell"
+},
+{
+"id":"3D0C7C75",
+"title":"Goblet Squat",
+"muscle":"quadriceps",
+"equipment":"dumbbell"
+},
+{
+"id":"AC5A4C58",
+"title":"Hack Squat",
+"muscle":"quadriceps",
+"equipment":"barbell"
+},
+{
+"id":"1E42FD5F",
+"title":"Hack Squat (Machine)",
+"muscle":"quadriceps",
+"equipment":"machine"
+},
+{
+"id":"75A4F6C4",
+"title":"Leg Extension (Machine)",
+"muscle":"quadriceps",
+"equipment":"machine"
+},
+{
+"id":"C7973E0E",
+"title":"Leg Press (Machine)",
+"muscle":"quadriceps",
+"equipment":"machine"
+},
+{
+"id":"0EB695C9",
+"title":"Leg Press Horizontal (Machine)",
+"muscle":"quadriceps",
+"equipment":"machine"
+},
+{
+"id":"6E6EE645",
+"title":"Lunge (Barbell)",
+"muscle":"quadriceps",
+"equipment":"barbell"
+},
+{
+"id":"B537D09F",
+"title":"Lunge (Dumbbell)",
+"muscle":"quadriceps",
+"equipment":"dumbbell"
+},
+{
+"id":"4C6721B9",
+"title":"Overhead Dumbbell Lunge",
+"muscle":"quadriceps",
+"equipment":"dumbbell"
+},
+{
+"id":"CE1054CE",
+"title":"Pause Squat (Barbell)",
+"muscle":"quadriceps",
+"equipment":"barbell"
+},
+{
+"id":"30E293E3",
+"title":"Pendulum Squat (Machine)",
+"muscle":"quadriceps",
+"equipment":"machine"
+},
+{
+"id":"818BA121",
+"title":"Reverse Lunge (Barbell)",
+"muscle":"quadriceps",
+"equipment":"barbell"
+},
+{
+"id":"FFDA283B",
+"title":"Reverse Lunge (Dumbbell)",
+"muscle":"quadriceps",
+"equipment":"dumbbell"
+},
+{
+"id":"629AE73D",
+"title":"Single Leg Extensions",
+"muscle":"quadriceps",
+"equipment":"machine"
+},
+{
+"id":"3FD83744",
+"title":"Single Leg Press (Machine)",
+"muscle":"quadriceps",
+"equipment":"machine"
+},
+{
+"id":"20C1A3CB",
+"title":"Split Squat (Dumbbell)",
+"muscle":"quadriceps",
+"equipment":"dumbbell"
+},
+{
+"id":"D04AC939",
+"title":"Squat (Barbell)",
+"muscle":"quadriceps",
+"equipment":"barbell"
+},
+{
+"id":"DCFF3E9F",
+"title":"Squat (Dumbbell)",
+"muscle":"quadriceps",
+"equipment":"dumbbell"
+},
+{
+"id":"CC35A01F",
+"title":"Squat (Machine)",
+"muscle":"quadriceps",
+"equipment":"machine"
+},
+{
+"id":"DDCC3821",
+"title":"Squat (Smith Machine)",
+"muscle":"quadriceps",
+"equipment":"machine"
+},
+{
+"id":"6622E5A0",
+"title":"Sumo Squat (Barbell)",
+"muscle":"quadriceps",
+"equipment":"barbell"
+},
+{
+"id":"05293BCA",
+"title":"Sumo Squat (Dumbbell)",
+"muscle":"quadriceps",
+"equipment":"dumbbell"
+},
+{
+"id":"A733CC5B",
+"title":"Walking Lunge (Dumbbell)",
+"muscle":"quadriceps",
+"equipment":"dumbbell"
+},
+{
+"id":"40C6A9FC",
+"title":"Zercher Squat",
+"muscle":"quadriceps",
+"equipment":"barbell"
+},
+{
+"id":"A69FF221",
+"title":"Arnold Press (Dumbbell)",
+"muscle":"shoulders",
+"equipment":"dumbbell"
+},
+{
+"id":"B582299E",
+"title":"Chest Supported Reverse Fly (Dumbbell)",
+"muscle":"shoulders",
+"equipment":"dumbbell"
+},
+{
+"id":"F21D5693",
+"title":"Chest Supported Y Raise (Dumbbell)",
+"muscle":"shoulders",
+"equipment":"dumbbell"
+},
+{
+"id":"BE640BA0",
+"title":"Face Pull",
+"muscle":"shoulders",
+"equipment":"machine"
+},
+{
+"id":"BD86EFD5",
+"title":"Front Raise (Barbell)",
+"muscle":"shoulders",
+"equipment":"barbell"
+},
+{
+"id":"DBB91A3C",
+"title":"Front Raise (Cable)",
+"muscle":"shoulders",
+"equipment":"machine"
+},
+{
+"id":"8293E554",
+"title":"Front Raise (Dumbbell)",
+"muscle":"shoulders",
+"equipment":"dumbbell"
+},
+{
+"id":"BE289E45",
+"title":"Lateral Raise (Cable)",
+"muscle":"shoulders",
+"equipment":"machine"
+},
+{
+"id":"422B08F1",
+"title":"Lateral Raise (Dumbbell)",
+"muscle":"shoulders",
+"equipment":"dumbbell"
+},
+{
+"id":"D5D0354D",
+"title":"Lateral Raise (Machine)",
+"muscle":"shoulders",
+"equipment":"machine"
+},
+{
+"id":"7B8D84E8",
+"title":"Overhead Press (Barbell)",
+"muscle":"shoulders",
+"equipment":"barbell"
+},
+{
+"id":"6AC96645",
+"title":"Overhead Press (Dumbbell)",
+"muscle":"shoulders",
+"equipment":"dumbbell"
+},
+{
+"id":"B09A1304",
+"title":"Overhead Press (Smith Machine)",
+"muscle":"shoulders",
+"equipment":"machine"
+},
+{
+"id":"542F3CD5",
+"title":"Push Press",
+"muscle":"shoulders",
+"equipment":"barbell"
+},
+{
+"id":"C315DC2A",
+"title":"Rear Delt Reverse Fly (Cable)",
+"muscle":"shoulders",
+"equipment":"machine"
+},
+{
+"id":"E5988A0A",
+"title":"Rear Delt Reverse Fly (Dumbbell)",
+"muscle":"shoulders",
+"equipment":"dumbbell"
+},
+{
+"id":"D8281C62",
+"title":"Rear Delt Reverse Fly (Machine)",
+"muscle":"shoulders",
+"equipment":"machine"
+},
+{
+"id":"9264ADA1",
+"title":"Reverse Fly Single Arm (Cable)",
+"muscle":"shoulders",
+"equipment":"machine"
+},
+{
+"id":"9372FFAA",
+"title":"Seated Lateral Raise (Dumbbell)",
+"muscle":"shoulders",
+"equipment":"dumbbell"
+},
+{
+"id":"91AF29E0",
+"title":"Seated Overhead Press (Barbell)",
+"muscle":"shoulders",
+"equipment":"barbell"
+},
+{
+"id":"9930DF71",
+"title":"Seated Overhead Press (Dumbbell)",
+"muscle":"shoulders",
+"equipment":"dumbbell"
+},
+{
+"id":"9237BAD1",
+"title":"Seated Shoulder Press (Machine)",
+"muscle":"shoulders",
+"equipment":"machine"
+},
+{
+"id":"878CD1D0",
+"title":"Shoulder Press (Dumbbell)",
+"muscle":"shoulders",
+"equipment":"dumbbell"
+},
+{
+"id":"059E835D",
+"title":"Shoulder Press (Machine Plates)",
+"muscle":"shoulders",
+"equipment":"machine"
+},
+{
+"id":"1837BA23",
+"title":"Single Arm Landmine Press (Barbell)",
+"muscle":"shoulders",
+"equipment":"barbell"
+},
+{
+"id":"DE68C825",
+"title":"Single Arm Lateral Raise (Cable)",
+"muscle":"shoulders",
+"equipment":"machine"
+},
+{
+"id":"073032BB",
+"title":"Standing Military Press (Barbell)",
+"muscle":"shoulders",
+"equipment":"barbell"
+},
+{
+"id":"7AB9A362",
+"title":"Upright Row (Barbell)",
+"muscle":"shoulders",
+"equipment":"barbell"
+},
+{
+"id":"286C1D0B",
+"title":"Upright Row (Cable)",
+"muscle":"shoulders",
+"equipment":"machine"
+},
+{
+"id":"797F0782",
+"title":"Upright Row (Dumbbell)",
+"muscle":"shoulders",
+"equipment":"dumbbell"
+},
+{
+"id":"0B841777",
+"title":"Shrug (Barbell)",
+"muscle":"traps",
+"equipment":"barbell"
+},
+{
+"id":"FFABC123",
+"title":"Shrug (Cable)",
+"muscle":"traps",
+"equipment":"machine"
+},
+{
+"id":"ABEC557F",
+"title":"Shrug (Dumbbell)",
+"muscle":"traps",
+"equipment":"dumbbell"
+},
+{
+"id":"19A38071",
+"title":"Shrug (Machine)",
+"muscle":"traps",
+"equipment":"machine"
+},
+{
+"id":"742E5BD5",
+"title":"Shrug (Smith Machine)",
+"muscle":"traps",
+"equipment":"machine"
+},
+{
+"id":"35B51B87",
+"title":"Bench Press - Close Grip (Barbell)",
+"muscle":"triceps",
+"equipment":"barbell"
+},
+{
+"id":"74103F24",
+"title":"JM Press (Barbell)",
+"muscle":"triceps",
+"equipment":"barbell"
+},
+{
+"id":"B5EFBF9C",
+"title":"Overhead Triceps Extension (Cable)",
+"muscle":"triceps",
+"equipment":"machine"
+},
+{
+"id":"5122E7D9",
+"title":"Seated Dip Machine",
+"muscle":"triceps",
+"equipment":"machine"
+},
+{
+"id":"234BC743",
+"title":"Seated Triceps Press",
+"muscle":"triceps",
+"equipment":"machine"
+},
+{
+"id":"8347DFD1",
+"title":"Single Arm Tricep Extension (Dumbbell)",
+"muscle":"triceps",
+"equipment":"dumbbell"
+},
+{
+"id":"552AB030",
+"title":"Single Arm Triceps Pushdown (Cable)",
+"muscle":"triceps",
+"equipment":"machine"
+},
+{
+"id":"875F585F",
+"title":"Skullcrusher (Barbell)",
+"muscle":"triceps",
+"equipment":"barbell"
+},
+{
+"id":"68F8A292",
+"title":"Skullcrusher (Dumbbell)",
+"muscle":"triceps",
+"equipment":"dumbbell"
+},
+{
+"id":"28BB4A95",
+"title":"Triceps Dip",
+"muscle":"triceps",
+"equipment":"machine"
+},
+{
+"id":"4B4BF8C2",
+"title":"Triceps Dip (Assisted)",
+"muscle":"triceps",
+"equipment":"machine"
+},
+{
+"id":"10347BAC",
+"title":"Triceps Dip (Weighted)",
+"muscle":"triceps",
+"equipment":"machine"
+},
+{
+"id":"2F8D3067",
+"title":"Triceps Extension (Barbell)",
+"muscle":"triceps",
+"equipment":"barbell"
+},
+{
+"id":"21310F5F",
+"title":"Triceps Extension (Cable)",
+"muscle":"triceps",
+"equipment":"machine"
+},
+{
+"id":"3765684D",
+"title":"Triceps Extension (Dumbbell)",
+"muscle":"triceps",
+"equipment":"dumbbell"
+},
+{
+"id":"3092FADD",
+"title":"Triceps Extension (Machine)",
+"muscle":"triceps",
+"equipment":"machine"
+},
+{
+"id":"EC3B69A3",
+"title":"Triceps Kickback (Cable)",
+"muscle":"triceps",
+"equipment":"machine"
+},
+{
+"id":"6127A3AD",
+"title":"Triceps Kickback (Dumbbell)",
+"muscle":"triceps",
+"equipment":"dumbbell"
+},
+{
+"id":"CDC472B1",
+"title":"Triceps Pressdown",
+"muscle":"triceps",
+"equipment":"machine"
+},
+{
+"id":"93A552C6",
+"title":"Triceps Pushdown",
+"muscle":"triceps",
+"equipment":"machine"
+},
+{
+"id":"94B7239B",
+"title":"Triceps Rope Pushdown",
+"muscle":"triceps",
+"equipment":"machine"
+},
+{
+"id":"B31EB524",
+"title":"Wide-Elbow Triceps Press (Dumbbell)",
+"muscle":"triceps",
+"equipment":"dumbbell"
+},
+{
+"id":"55E6546F",
+"title":"Bent Over Row (Barbell)",
+"muscle":"upper_back",
+"equipment":"barbell"
+},
+{
+"id":"23E92538",
+"title":"Bent Over Row (Dumbbell)",
+"muscle":"upper_back",
+"equipment":"dumbbell"
+},
+{
+"id":"914F3A96",
+"title":"Chest Supported Incline Row (Dumbbell)",
+"muscle":"upper_back",
+"equipment":"dumbbell"
+},
+{
+"id":"425805F4",
+"title":"Inverted Row",
+"muscle":"upper_back",
+"equipment":"machine"
+},
+{
+"id":"91FAFBA3",
+"title":"Iso-Lateral Low Row",
+"muscle":"upper_back",
+"equipment":"machine"
+},
+{
+"id":"AA1EB7D8",
+"title":"Iso-Lateral Row (Machine)",
+"muscle":"upper_back",
+"equipment":"machine"
+},
+{
+"id":"D7D7FCCE",
+"title":"Landmine Row",
+"muscle":"upper_back",
+"equipment":"barbell"
+},
+{
+"id":"C732C341",
+"title":"Meadows Rows (Barbell)",
+"muscle":"upper_back",
+"equipment":"barbell"
+},
+{
+"id":"018ADC12",
+"title":"Pendlay Row (Barbell)",
+"muscle":"upper_back",
+"equipment":"barbell"
+},
+{
+"id":"FE389074",
+"title":"Rack Pull",
+"muscle":"upper_back",
+"equipment":"barbell"
+},
+{
+"id":"1B89CA1B",
+"title":"Renegade Row (Dumbbell)",
+"muscle":"upper_back",
+"equipment":"dumbbell"
+},
+{
+"id":"F1D60854",
+"title":"Seated Cable Row - Bar Grip",
+"muscle":"upper_back",
+"equipment":"machine"
+},
+{
+"id":"C3BCABB3",
+"title":"Seated Cable Row - Bar Wide Grip",
+"muscle":"upper_back",
+"equipment":"machine"
+},
+{
+"id":"0393F233",
+"title":"Seated Cable Row - V Grip (Cable)",
+"muscle":"upper_back",
+"equipment":"machine"
+},
+{
+"id":"1DF4A847",
+"title":"Seated Row (Machine)",
+"muscle":"upper_back",
+"equipment":"machine"
+},
+{
+"id":"D0C4A899",
+"title":"Single Arm Cable Row",
+"muscle":"upper_back",
+"equipment":"machine"
+},
+{
+"id":"08A2974E",
+"title":"T Bar Row",
+"muscle":"upper_back",
+"equipment":"barbell"
+}
+]
