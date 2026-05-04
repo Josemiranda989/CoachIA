@@ -25,7 +25,7 @@ export default async function Home() {
   const weekStart = getCurrentWeekStart(now);
   const userId = (session as any).user.id;
 
-  const latestRoutine = await prisma.routine.findFirst({
+  let latestRoutine = await prisma.routine.findFirst({
     where: {
       userId,
       status: "active",
@@ -41,6 +41,25 @@ export default async function Home() {
       },
     },
   });
+
+  if (!latestRoutine) {
+    latestRoutine = await prisma.routine.findFirst({
+      where: {
+        userId,
+        status: "active",
+        weekStart: { gt: weekStart },
+      },
+      orderBy: { weekStart: "asc" },
+      include: {
+        days: {
+          select: {
+            type: true,
+            completions: { where: { weekStart }, select: { completed: true } },
+          },
+        },
+      },
+    });
+  }
 
   const pendingRoutine = await prisma.routine.findFirst({
     where: { userId, status: "pending_approval" },

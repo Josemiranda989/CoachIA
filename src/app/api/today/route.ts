@@ -22,7 +22,8 @@ export async function GET(request: Request) {
   const today = DAY_NAMES[new Date().getDay()];
   const weekStart = getCurrentWeekStart();
 
-  const routine = await prisma.routine.findFirst({
+  // First, try to find a routine for the current week or past weeks
+  let routine = await prisma.routine.findFirst({
     where: {
       userId: auth.userId,
       status: "active",
@@ -39,6 +40,27 @@ export async function GET(request: Request) {
       },
     },
   });
+
+  // If no routine for current/past weeks, look for upcoming ones
+  if (!routine) {
+    routine = await prisma.routine.findFirst({
+      where: {
+        userId: auth.userId,
+        status: "active",
+        weekStart: { gt: weekStart },
+      },
+      orderBy: { weekStart: "asc" },
+      include: {
+        days: {
+          where: { dayOfWeek: today },
+          include: {
+            exercises: true,
+            completions: { where: { weekStart } },
+          },
+        },
+      },
+    });
+  }
 
   if (!routine || routine.days.length === 0) {
     return NextResponse.json({

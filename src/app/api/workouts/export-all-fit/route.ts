@@ -5,6 +5,8 @@ import { resolveAuth } from "@/lib/internal-auth";
 import { prisma } from "@/lib/prisma";
 import { blocksToFitWorkout } from "@/lib/fit-exporter";
 import { createZip } from "@/lib/zip-export";
+import { generateTxtSummary } from "@/lib/erg";
+import type { CyclingDay } from "@/lib/erg";
 
 const DAY_SHORT_ES: Record<string, string> = {
   Monday: "lun",
@@ -14,6 +16,11 @@ const DAY_SHORT_ES: Record<string, string> = {
   Friday: "vie",
   Saturday: "sab",
   Sunday: "dom",
+};
+
+const DAY_NAME_ES: Record<string, string> = {
+  Monday: "Lunes", Tuesday: "Martes", Wednesday: "Miércoles",
+  Thursday: "Jueves", Friday: "Viernes", Saturday: "Sábado", Sunday: "Domingo",
 };
 
 const DAY_OFFSET: Record<string, number> = {
@@ -26,6 +33,29 @@ function addDays(yyyyMmDd: string, days: number): string {
   const date = new Date(Date.UTC(y, m - 1, d));
   date.setUTCDate(date.getUTCDate() + days);
   return date.toISOString().slice(0, 10);
+}
+
+function buildCyclingDay(
+  day: any,
+  routine: any,
+  weekLabel: string,
+): CyclingDay {
+  return {
+    dayOfWeek: day.dayOfWeek,
+    weekLabel,
+    weekStart: routine.weekStart,
+    totalDuration: day.targetDuration ?? 0,
+    totalPower: day.targetPower ?? "",
+    blocks: day.blocks.map((b: any) => ({
+      kind: b.kind,
+      duration: b.duration,
+      targetPower: b.targetPower,
+      repetitions: b.repetitions,
+      recoveryDuration: b.recoveryDuration,
+      recoveryPower: b.recoveryPower,
+      notes: b.notes,
+    })),
+  };
 }
 
 export async function GET(req: NextRequest) {
@@ -64,20 +94,34 @@ export async function GET(req: NextRequest) {
   });
 
   const entries: { name: string; data: Buffer }[] = [];
+  const weekCount = routines.length;
 
-  for (const routine of routines) {
+  for (let wi = 0; wi < routines.length; wi++) {
+    const routine = routines[wi];
+    const weekLabel = weekCount > 1 ? `Semana ${wi + 1}` : "";
+
     for (const day of routine.days) {
       const dayEs = DAY_SHORT_ES[day.dayOfWeek] ?? day.dayOfWeek.toLowerCase();
       const dayDate = addDays(routine.weekStart, DAY_OFFSET[day.dayOfWeek] ?? 0);
-      const filename = `${dayDate}-${dayEs}-coachia.fit`;
-      const wktName = `CoachIA ${dayEs}`;
+      const baseName = `${dayDate}-${dayEs}`;
 
+      // --- .fit file ---
+      const fitName = `${baseName}-coachia.fit`;
+      const wktName = `CoachIA ${dayEs}`;
       try {
         const bytes = blocksToFitWorkout({ name: wktName, blocks: day.blocks });
-        entries.push({ name: filename, data: Buffer.from(bytes) });
+        entries.push({ name: `fit/${fitName}`, data: Buffer.from(bytes) });
       } catch (err: any) {
-        console.error(`Error exporting ${filename}:`, err?.message ?? String(err));
-        // Skip individual failures, continue with others
+        console.error(`Error exporting ${fitName}:`, err?.message ?? String(err));
+      }
+
+      // --- .txt summary ---
+      try {
+        const cyclingDay = buildCyclingDay(day, routine, weekLabel);
+        const txt = generateTxtSummary(cyclingDay);
+        entries.push({ name: `resumen/${baseName}.txt`, data: Buffer.from(txt) });
+      } catch (err: any) {
+        console.error(`Error generating txt for ${baseName}:`, err?.message ?? String(err));
       }
     }
   }
