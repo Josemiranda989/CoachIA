@@ -11,7 +11,7 @@ export function ExportCyclingButton({ cyclingCount }: { cyclingCount: number }) 
   function handleDownload() {
     setLoading(true);
     // Navigate to the export API — the browser sends the session cookie automatically
-    window.location.href = "/api/workouts/export-cycling";
+    window.location.href = "/api/workouts/export-all-fit";
     // Reset loading after a short delay (download may trigger before we reset)
     setTimeout(() => setLoading(false), 3000);
   }
