@@ -57,7 +57,7 @@ export function CyclingWorkoutClient({ workout }: { workout: any }) {
               href="/api/workouts/export-all-fit"
               download
               onClick={() => toast.success("Descargando todos los entrenamientos de ciclismo...", { duration: 3000 })}
-              className="btn-outline-cycling w-full justify-center mt-2 py-2.5"
+              className="btn-outline-cycling w-full justify-center mt-2"
             >
               <Download size={14} />
               Descargar todos los entrenamientos (ZIP)
