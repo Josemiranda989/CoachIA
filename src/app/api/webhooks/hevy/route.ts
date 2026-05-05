@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { sendTelegramMessage } from "@/lib/telegram";
 import { getCurrentWeekStart } from "@/lib/week";
 import hevyPool from "@/data/hevy-template-pool.json";
+import { fetchHevyWorkout } from "@/lib/hevy-api";
 
 type HevyPoolEntry = { id: string; title: string; muscle: string; equipment: string };
 const poolById = new Map<string, HevyPoolEntry>(
@@ -50,8 +51,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "webhook not configured" }, { status: 503 });
   }
 
-  const auth = req.headers.get("authorization") || req.headers.get("x-auth-token") || "";
-  const supplied = auth.startsWith("Bearer ") ? auth.slice(7) : auth;
+  // Hevy no permite headers custom en sus webhooks — aceptamos token via query
+  // string. Mantenemos compat con header para n8n y curl manual.
+  const headerAuth = req.headers.get("authorization") || req.headers.get("x-auth-token") || "";
+  const headerToken = headerAuth.startsWith("Bearer ") ? headerAuth.slice(7) : headerAuth;
+  const queryToken = req.nextUrl.searchParams.get("token") || "";
+  const supplied = queryToken || headerToken;
   if (supplied !== expectedToken) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
@@ -65,10 +70,29 @@ export async function POST(req: NextRequest) {
 
   try {
     const raw = body as Record<string, unknown>;
-    const workout =
+    let workout =
       (raw.workout as HevyWebhookWorkout | undefined) ??
       (((raw.data as Record<string, unknown> | undefined)?.workout) as HevyWebhookWorkout | undefined) ??
       (raw as HevyWebhookWorkout);
+
+    // Hevy real payload is `{ workoutId: "..." }`. Detect that shape and fetch
+    // the full workout from the Hevy API before processing.
+    const inlineHasExercises = workout && Array.isArray(workout.exercises) && workout.exercises.length > 0;
+    if (!inlineHasExercises) {
+      const workoutId =
+        (raw.workoutId as string | undefined) ??
+        (((raw.data as Record<string, unknown> | undefined)?.workoutId) as string | undefined) ??
+        (raw.id as string | undefined);
+      if (workoutId) {
+        try {
+          workout = (await fetchHevyWorkout(workoutId)) as unknown as HevyWebhookWorkout;
+        } catch (e: unknown) {
+          const msg = e instanceof Error ? e.message : String(e);
+          await sendTelegramMessage(`⚠️ Hevy webhook: fetch workout ${workoutId} falló — ${msg}`).catch(() => {});
+          return NextResponse.json({ error: `fetch workout failed: ${msg}` }, { status: 502 });
+        }
+      }
+    }
 
     if (!workout || !Array.isArray(workout.exercises) || workout.exercises.length === 0) {
       return NextResponse.json({ ok: true, skipped: "no workout payload" });
