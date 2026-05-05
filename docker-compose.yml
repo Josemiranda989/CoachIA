@@ -13,6 +13,7 @@ services:
     environment:
       - NODE_ENV=production
       - NEXTAUTH_URL=https://coachia.jmlabs.app
+      - TZ=America/Argentina/Tucuman
     restart: unless-stopped
     networks:
       - inmich_net
