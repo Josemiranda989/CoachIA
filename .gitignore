@@ -53,3 +53,8 @@ skills-lock.json
 *.db-journal
 /prisma/dev.db
 /prisma/dev.db-journal
+
+# debug artifacts (webhook payload dumps, ad-hoc probes)
+/last-payload.json
+/last-workout.json
+/probe-*.mjs
