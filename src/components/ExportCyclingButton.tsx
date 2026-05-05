@@ -20,10 +20,11 @@ export function ExportCyclingButton({ cyclingCount }: { cyclingCount: number }) 
     <button
       onClick={handleDownload}
       disabled={loading}
-      className="flex items-center justify-center gap-2 w-full py-3.5 px-6 rounded-2xl font-bold text-sm transition-all disabled:opacity-50"
+      className="flex items-center justify-center gap-2 w-full rounded-2xl font-bold text-sm transition-all disabled:opacity-50"
       style={{
         background: "linear-gradient(135deg, var(--accent-cycling), #06b6d4)",
         color: "#000",
+        padding: "12px 24px",
       }}
     >
       {loading ? (
