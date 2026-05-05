@@ -3,10 +3,12 @@ import { prisma } from "@/lib/prisma";
 import { resolveAuth } from "@/lib/internal-auth";
 import { sendTelegramMessage } from "@/lib/telegram";
 import { getCurrentWeekStart } from "@/lib/week";
-import { GoogleGenAI, Type } from "@google/genai";
 import { getValidAccessToken, fetchActivities, fetchStats } from "@/lib/strava";
 import hevyPool from "@/data/hevy-template-pool.json";
 import { openCodeMonthlyChat } from "@/lib/opencode";
+
+const VALID_DAY_TYPES = ["Gym", "Cycling", "Rest", "Gym + Cycling"] as const;
+type DayType = (typeof VALID_DAY_TYPES)[number];
 
 type HevyPoolEntry = { id: string; title: string; muscle: string; equipment: string };
 
@@ -37,79 +39,6 @@ function buildHevyPoolBlock(): string {
   }
   return lines.join("\n");
 }
-
-const monthlyResponseSchema = {
-  type: Type.OBJECT,
-  properties: {
-    gymTemplate: {
-      type: Type.ARRAY,
-      description: "7 days (Monday-Sunday). Gym/Rest layout that repeats every week of the month. For Cycling days, leave exercises empty and omit cycling fields here — those are filled per week in cyclingByWeek.",
-      items: {
-        type: Type.OBJECT,
-        properties: {
-          dayOfWeek: { type: Type.STRING },
-          type: { type: Type.STRING, description: "'Gym', 'Cycling', 'Rest', or 'Gym + Cycling'" },
-          exercises: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                hevy_template_id: {
-                  type: Type.STRING,
-                  description: "MUST be an id from the provided HEVY LIBRARY pool. No made-up IDs, no exercises outside the list.",
-                },
-                name: {
-                  type: Type.STRING,
-                  description: "The title exactly as it appears in the Hevy library for the chosen hevy_template_id.",
-                },
-                targetSets: { type: Type.NUMBER },
-                targetReps: { type: Type.STRING },
-              },
-              required: ["hevy_template_id", "name", "targetSets", "targetReps"],
-            },
-          },
-          notes: { type: Type.STRING },
-        },
-        required: ["dayOfWeek", "type"],
-      },
-    },
-    cyclingByWeek: {
-      type: Type.ARRAY,
-      description: "Exactly 4 weeks. Each week is an array of cycling overrides. dayOfWeek must match a Cycling/Gym + Cycling day from gymTemplate. Every cycling day MUST include a structured `blocks` array describing warmup, intervals, and cooldown.",
-      items: {
-        type: Type.ARRAY,
-        items: {
-          type: Type.OBJECT,
-          properties: {
-            dayOfWeek: { type: Type.STRING },
-            totalDuration: { type: Type.NUMBER, description: "Total minutes including warmup + all reps + all recoveries + cooldown" },
-            totalPower: { type: Type.STRING, description: "Short summary label, e.g. 'Z2' or 'Z2 + 4xZ4'" },
-            blocks: {
-              type: Type.ARRAY,
-              description: "Ordered blocks making up the ride. Must sum to totalDuration.",
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  kind: { type: Type.STRING, description: "'warmup' | 'steady' | 'interval' | 'cooldown'" },
-                  duration: { type: Type.NUMBER, description: "Minutes. For kind='interval' this is the duration of EACH rep (not total)." },
-                  targetPower: { type: Type.STRING, description: "'Z1', 'Z2', 'Z3', 'Z4', 'Z5', or '%FTP' notation" },
-                  repetitions: { type: Type.NUMBER, description: "Only for kind='interval'. Number of repeats, e.g. 4 for '4x4min Z4'." },
-                  recoveryDuration: { type: Type.NUMBER, description: "Only for kind='interval'. Recovery minutes between reps." },
-                  recoveryPower: { type: Type.STRING, description: "Only for kind='interval'. Zone for recovery, usually Z1 or Z2." },
-                  notes: { type: Type.STRING },
-                },
-                required: ["kind", "duration", "targetPower"],
-              },
-            },
-            notes: { type: Type.STRING },
-          },
-          required: ["dayOfWeek", "totalDuration", "totalPower", "blocks"],
-        },
-      },
-    },
-  },
-  required: ["gymTemplate", "cyclingByWeek"],
-};
 
 function getNextFourMondays(): string[] {
   const now = new Date();
@@ -237,8 +166,53 @@ export async function POST(request: Request) {
     const { gymSection, stravaSection } = await gatherAthleteData(auth.userId);
     const hevyLibraryBlock = buildHevyPoolBlock();
 
-    const systemPrompt = "Eres un entrenador personal experto en fuerza y ciclismo. Genera un MESOCICLO DE 4 SEMANAS en formato JSON.";
+    const systemPrompt = "Eres un entrenador personal experto en fuerza y ciclismo. Genera un MESOCICLO DE 4 SEMANAS en formato JSON. Devolves EXCLUSIVAMENTE el JSON pedido, sin texto adicional, sin markdown, sin comentarios.";
     const userPrompt = `Genera un MESOCICLO DE 4 SEMANAS: la rutina de gym es FIJA y se repite cada semana (el atleta progresa carga manualmente), y el ciclismo PROGRESA semana a semana (mesociclo build/build/build/recovery).
+
+FORMATO DE RESPUESTA EXACTO — el JSON debe tener EXACTAMENTE esta forma. Todos los campos listados son OBLIGATORIOS:
+
+{
+  "gymTemplate": [
+    {
+      "dayOfWeek": "Monday",
+      "type": "Gym",
+      "exercises": [
+        {"hevy_template_id": "<8 hex chars del listado>", "name": "<Title exacto del listado>", "targetSets": 4, "targetReps": "8-10"}
+      ],
+      "notes": "Empuje/jalón, sin piernas"
+    },
+    {"dayOfWeek": "Tuesday",   "type": "Cycling",         "exercises": [], "notes": null},
+    {"dayOfWeek": "Wednesday", "type": "Gym",             "exercises": [/* 5-8 ej */], "notes": "Leg day"},
+    {"dayOfWeek": "Thursday",  "type": "Cycling",         "exercises": [], "notes": null},
+    {"dayOfWeek": "Friday",    "type": "Gym",             "exercises": [/* 5-8 ej */], "notes": "Empuje/jalón"},
+    {"dayOfWeek": "Saturday",  "type": "Cycling",         "exercises": [], "notes": null},
+    {"dayOfWeek": "Sunday",    "type": "Rest",            "exercises": [], "notes": null}
+  ],
+  "cyclingByWeek": [
+    [ /* semana 1: array de cycling days, uno por cada día Cycling de gymTemplate */
+      {"dayOfWeek": "Tuesday", "totalDuration": 75, "totalPower": "Z2 + 3x3'Z3",
+       "blocks": [
+         {"kind": "warmup",   "duration": 15, "targetPower": "Z1-Z2"},
+         {"kind": "interval", "duration": 3,  "targetPower": "Z3", "repetitions": 3, "recoveryDuration": 3, "recoveryPower": "Z1"},
+         {"kind": "cooldown", "duration": 42, "targetPower": "Z1"}
+       ],
+       "notes": "Sesión clave de la semana"}
+    ],
+    [ /* semana 2 */ ],
+    [ /* semana 3 */ ],
+    [ /* semana 4 — recovery */ ]
+  ]
+}
+
+CAMPOS OBLIGATORIOS — VERIFICÁ ANTES DE RESPONDER:
+- gymTemplate: array de EXACTAMENTE 7 elementos
+- Cada elemento de gymTemplate: {dayOfWeek, type, exercises, notes}. type DEBE ser uno de: "Gym", "Cycling", "Rest", "Gym + Cycling". exercises siempre array (vacío para Rest/Cycling).
+- Cada exercise (en días Gym): {hevy_template_id, name, targetSets, targetReps}
+- cyclingByWeek: array de EXACTAMENTE 4 elementos (uno por semana)
+- Cada elemento de cyclingByWeek es un ARRAY (puede estar vacío en semana de recovery, pero el slot debe existir).
+- Cada cycling day: {dayOfWeek, totalDuration, totalPower, blocks, notes}
+
+CONTEXTO Y REGLAS:
 
 DATOS DEL ATLETA:
 - Objetivo principal: ${goal}
@@ -410,18 +384,21 @@ REGLAS ESTRICTAS:
 7. Variar grupos musculares entre días gym (no repetir el mismo grupo seguido)
 8. Ejercicios realistas y progresivos para el objetivo "${goal}"`;
 
-    const text = await openCodeMonthlyChat([
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt },
-    ]);
+    const text = await openCodeMonthlyChat(
+      [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      { temperature: 0.3 },
+    );
 
     if (!text) {
       return alertAndRespond("OpenCode no devolvió respuesta", 502);
     }
 
     let generated: any;
-    // Gemini a veces wrappea en ```json ... ``` pese al MIME type
-    // o incluye texto adicional antes/después del JSON
+    // Algunos modelos (incluso con response_format json_object) wrappean en
+    // ```json ... ``` o agregan texto antes/después. Recortamos defensivamente.
     let jsonText = text.trim();
 
     // Intentar extraer de ```json ... ```
@@ -449,89 +426,122 @@ REGLAS ESTRICTAS:
     const cyclingByWeek: any[][] = generated.cyclingByWeek;
 
     if (!Array.isArray(gymTemplate) || gymTemplate.length !== 7) {
-      return alertAndRespond("gymTemplate must have exactly 7 days", 502);
+      console.error("Invalid gymTemplate shape:", JSON.stringify(generated).slice(0, 800));
+      return alertAndRespond(
+        `gymTemplate inválido: esperaba array de 7, recibí ${Array.isArray(gymTemplate) ? `array de ${gymTemplate.length}` : typeof gymTemplate}`,
+        502,
+      );
     }
     if (!Array.isArray(cyclingByWeek) || cyclingByWeek.length !== 4) {
-      return alertAndRespond("cyclingByWeek must have exactly 4 weeks", 502);
+      console.error("Invalid cyclingByWeek shape:", JSON.stringify(generated).slice(0, 800));
+      return alertAndRespond(
+        `cyclingByWeek inválido: esperaba array de 4, recibí ${Array.isArray(cyclingByWeek) ? `array de ${cyclingByWeek.length}` : typeof cyclingByWeek}`,
+        502,
+      );
     }
 
-    const firstNewMonday = mondays[0];
+    // Per-day validation: each day must have dayOfWeek + valid type. Missing fields
+    // are the failure mode after losing Gemini's responseSchema enforcement.
+    for (let i = 0; i < gymTemplate.length; i++) {
+      const d = gymTemplate[i];
+      if (!d || typeof d !== "object") {
+        console.error("gymTemplate day is not object:", JSON.stringify(gymTemplate).slice(0, 800));
+        return alertAndRespond(`gymTemplate[${i}] no es un objeto`, 502);
+      }
+      if (!d.dayOfWeek || typeof d.dayOfWeek !== "string") {
+        console.error("Day missing dayOfWeek:", JSON.stringify(d).slice(0, 400));
+        return alertAndRespond(`gymTemplate[${i}] sin dayOfWeek`, 502);
+      }
+      if (!d.type || !VALID_DAY_TYPES.includes(d.type as DayType)) {
+        console.error("Day with invalid type:", JSON.stringify(d).slice(0, 400));
+        return alertAndRespond(
+          `gymTemplate[${i}] (${d.dayOfWeek}) type inválido: "${d.type}". Válidos: ${VALID_DAY_TYPES.join(", ")}`,
+          502,
+        );
+      }
+      if (d.type === "Gym" || d.type === "Gym + Cycling") {
+        if (!Array.isArray(d.exercises) || d.exercises.length === 0) {
+          console.error("Gym day without exercises:", JSON.stringify(d).slice(0, 400));
+          return alertAndRespond(`gymTemplate[${i}] (${d.dayOfWeek}) es ${d.type} pero sin ejercicios`, 502);
+        }
+      }
+    }
 
-    // Archive active routines whose week has strictly passed. The in-progress week
-    // survives until it naturally ends, so there is no gap between generation day
-    // and the first new week of the mesocycle.
+    // Archive previous routines + create the 4 new ones atomically. If any
+    // routine fails, the whole batch rolls back — no zombie routines in DB.
     const currentWeekMonday = getCurrentWeekStart();
-    await prisma.routine.updateMany({
-      where: {
-        userId: auth.userId,
-        status: "active",
-        weekStart: { lt: currentWeekMonday },
-      },
-      data: { status: "archived" },
-    });
-
-    // Archive any stale pending_approval (both older ones and ones that overlap with
-    // the new mesocycle range) to avoid duplicates after the user approves.
-    await prisma.routine.updateMany({
-      where: {
-        userId: auth.userId,
-        status: "pending_approval",
-      },
-      data: { status: "archived" },
-    });
-
-    const created: { id: string; weekStart: string }[] = [];
-
-    for (let weekIdx = 0; weekIdx < 4; weekIdx++) {
-      const weekStart = mondays[weekIdx];
-      const cyclingForWeek = cyclingByWeek[weekIdx] ?? [];
-      const cyclingByDay: Record<string, any> = {};
-      for (const c of cyclingForWeek) cyclingByDay[c.dayOfWeek] = c;
-
-      const days = gymTemplate.map((d: any) => {
-        const cycling = cyclingByDay[d.dayOfWeek];
-        const blocksRaw: any[] = Array.isArray(cycling?.blocks) ? cycling.blocks : [];
-
-        return {
-          dayOfWeek: d.dayOfWeek,
-          type: d.type,
-          notes: cycling?.notes ?? d.notes ?? null,
-          targetDuration: cycling?.totalDuration ?? cycling?.targetDuration ?? null,
-          targetPower: cycling?.totalPower ?? cycling?.targetPower ?? null,
-          exercises: {
-            create: (d.exercises ?? []).map((ex: any) => ({
-              name: ex.name,
-              targetSets: ex.targetSets,
-              targetReps: ex.targetReps ?? null,
-              hevyTemplateId: ex.hevy_template_id ?? null,
-            })),
-          },
-          blocks: {
-            create: blocksRaw.map((b: any, idx: number) => ({
-              order: idx,
-              kind: b.kind,
-              duration: b.duration,
-              targetPower: b.targetPower,
-              repetitions: b.repetitions ?? null,
-              recoveryDuration: b.recoveryDuration ?? null,
-              recoveryPower: b.recoveryPower ?? null,
-              notes: b.notes ?? null,
-            })),
-          },
-        };
-      });
-
-      const saved = await prisma.routine.create({
-        data: {
+    const created = await prisma.$transaction(async (tx) => {
+      // Archive active routines whose week has strictly passed. The in-progress
+      // week survives until it naturally ends, so there is no gap between
+      // generation day and the first new week of the mesocycle.
+      await tx.routine.updateMany({
+        where: {
           userId: auth.userId,
-          weekStart,
-          status: "pending_approval",
-          days: { create: days },
+          status: "active",
+          weekStart: { lt: currentWeekMonday },
         },
+        data: { status: "archived" },
       });
 
-      created.push({ id: saved.id, weekStart });
-    }
+      // Archive any stale pending_approval to avoid duplicates after approval.
+      await tx.routine.updateMany({
+        where: { userId: auth.userId, status: "pending_approval" },
+        data: { status: "archived" },
+      });
+
+      const acc: { id: string; weekStart: string }[] = [];
+      for (let weekIdx = 0; weekIdx < 4; weekIdx++) {
+        const weekStart = mondays[weekIdx];
+        const cyclingForWeek = cyclingByWeek[weekIdx] ?? [];
+        const cyclingByDay: Record<string, any> = {};
+        for (const c of cyclingForWeek) cyclingByDay[c.dayOfWeek] = c;
+
+        const days = gymTemplate.map((d: any) => {
+          const cycling = cyclingByDay[d.dayOfWeek];
+          const blocksRaw: any[] = Array.isArray(cycling?.blocks) ? cycling.blocks : [];
+
+          return {
+            dayOfWeek: d.dayOfWeek,
+            type: d.type,
+            notes: cycling?.notes ?? d.notes ?? null,
+            targetDuration: cycling?.totalDuration ?? cycling?.targetDuration ?? null,
+            targetPower: cycling?.totalPower ?? cycling?.targetPower ?? null,
+            exercises: {
+              create: (d.exercises ?? []).map((ex: any) => ({
+                name: ex.name,
+                targetSets: ex.targetSets,
+                targetReps: ex.targetReps ?? null,
+                hevyTemplateId: ex.hevy_template_id ?? null,
+              })),
+            },
+            blocks: {
+              create: blocksRaw.map((b: any, idx: number) => ({
+                order: idx,
+                kind: b.kind,
+                duration: b.duration,
+                targetPower: b.targetPower,
+                repetitions: b.repetitions ?? null,
+                recoveryDuration: b.recoveryDuration ?? null,
+                recoveryPower: b.recoveryPower ?? null,
+                notes: b.notes ?? null,
+              })),
+            },
+          };
+        });
+
+        const saved = await tx.routine.create({
+          data: {
+            userId: auth.userId,
+            weekStart,
+            status: "pending_approval",
+            days: { create: days },
+          },
+        });
+
+        acc.push({ id: saved.id, weekStart });
+      }
+      return acc;
+    }, { timeout: 30_000 });
 
     // Telegram summary: gym template once + cycling progression per week
     const dayNames: Record<string, string> = {
