@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import Link from "next/link";
 import { ArrowRight, Dumbbell, Trophy, Clock, TrendingUp, Bike, Mountain, Route, Timer } from "lucide-react";
+import { redirect } from "next/navigation";
 import { StravaActivities } from "@/components/StravaActivities";
 import { isStravaConfigured, getStravaAuthUrl, getValidAccessToken, fetchStats } from "@/lib/strava";
 import { WeightChart } from "./WeightChart";
@@ -14,14 +15,21 @@ export default async function MetricsPage() {
   const session = await getServerSession(authOptions);
   const userId = (session as any)?.user?.id as string | undefined;
 
+  if (!userId) {
+    redirect("/auth/login");
+  }
+
   const stravaConfigured = isStravaConfigured();
   const stravaAuthUrl = stravaConfigured ? getStravaAuthUrl() : null;
 
-  const stravaConnected = userId && stravaConfigured
+  const stravaConnected = stravaConfigured
     ? !!(await prisma.user.findUnique({ where: { id: userId }, select: { stravaAthleteId: true } }))?.stravaAthleteId
     : false;
 
   const allLogs = await prisma.workoutLog.findMany({
+    where: {
+      exercise: { dailyWorkout: { routine: { userId } } },
+    },
     include: {
       exercise: {
         include: {
@@ -47,7 +55,7 @@ export default async function MetricsPage() {
   let longestRideKm = 0;
   let totalElevationM = 0;
   let cyclingAvailable = false;
-  if (userId && stravaConnected) {
+  if (stravaConnected) {
     try {
       const token = await getValidAccessToken(userId);
       const athlete = token

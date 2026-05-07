@@ -1,9 +1,19 @@
 export const dynamic = 'force-dynamic';
 import { prisma } from "@/lib/prisma";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import { BackLink } from "@/components/BackLink";
 
 export default async function RecordsPage() {
+  const session = await getServerSession(authOptions);
+  const userId = (session as any)?.user?.id as string | undefined;
+
+  if (!userId) {
+    redirect("/auth/login");
+  }
+
   const allLogs = await prisma.workoutLog.findMany({
     include: {
       exercise: {
@@ -11,7 +21,12 @@ export default async function RecordsPage() {
       }
     },
     where: {
-      exercise: { dailyWorkout: { completions: { some: { completed: true } } } }
+      exercise: {
+        dailyWorkout: {
+          routine: { userId },
+          completions: { some: { completed: true } },
+        },
+      },
     }
   });
 
