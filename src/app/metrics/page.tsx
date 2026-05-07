@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import Link from "next/link";
-import { ArrowRight, Dumbbell, Trophy, Clock, TrendingUp, Bike } from "lucide-react";
+import { ArrowRight, Dumbbell, Trophy, Clock, TrendingUp, Bike, type LucideIcon } from "lucide-react";
 import { redirect } from "next/navigation";
 import { StravaActivities, StravaActivitiesSkeleton } from "@/components/StravaActivities";
 import { isStravaConfigured, getStravaAuthUrl } from "@/lib/strava";
@@ -67,7 +67,7 @@ export default async function MetricsPage() {
     displayFallback?: string;
     unit: string;
     description: string;
-    icon: typeof Dumbbell;
+    icon: LucideIcon;
     decimals?: number;
   };
 
