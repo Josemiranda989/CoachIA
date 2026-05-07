@@ -15,7 +15,7 @@ export default async function TodayWorkoutPage() {
     redirect("/auth/login");
   }
 
-  const userId = (session as any).user.id;
+  const userId = session.user.id;
   const weekStart = getCurrentWeekStart();
 
   // First, try to find a routine for the current week or past weeks

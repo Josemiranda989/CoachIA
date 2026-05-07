@@ -20,7 +20,7 @@ export default async function WeeklyRoutinePage() {
   // First, try to find a routine for the current week or past weeks
   let routine = await prisma.routine.findFirst({
     where: {
-      userId: (session as any).user.id,
+      userId: session.user.id,
       status: "active",
       weekStart: { lte: weekStart },
     },
@@ -41,7 +41,7 @@ export default async function WeeklyRoutinePage() {
   if (!routine) {
     routine = await prisma.routine.findFirst({
       where: {
-        userId: (session as any).user.id,
+        userId: session.user.id,
         status: "active",
         weekStart: { gt: weekStart },
       },

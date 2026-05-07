@@ -70,7 +70,7 @@ export async function GET(req: NextRequest) {
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    userId = (session as any).user.id;
+    userId = session.user.id;
   }
 
   // Obtener rutinas activas + pendientes de aprobación
