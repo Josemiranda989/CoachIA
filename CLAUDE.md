@@ -27,6 +27,7 @@ docker compose up -d
 
 - **Language**: UI in Spanish (Rioplatense). Code in English.
 - **Styling**: CSS custom properties in `globals.css` (--accent-primary, --accent-gym, --accent-cycling, --bg-card, etc.). Glassmorphism cards. Dark mode default, light mode supported.
+- **Theming**: CSS custom properties only. **Do NOT use Tailwind's `dark:` modifier.** Light mode is implemented via the `.light` class on `<html>` (set by `next-themes` with `attribute="class"`), which redefines the CSS vars in `globals.css`. To add a themed token, add it to both `:root` and `.light` blocks; do not introduce `dark:` utility classes. New utility classes that need theme awareness should follow the `.bg-surface-low` pattern (one rule for dark, a `.light X` override for light).
 - **Components**: Client components use `"use client"` directive. Server components for data fetching in page.tsx files.
 - **Notifications**: Use `toast.success()` / `toast.error()` from react-hot-toast. **Never use `alert()`**.
 - **Auth**: Browser sessions via NextAuth JWT. Internal API calls (n8n, cron) use `X-Internal-Key` header. Helper: `src/lib/internal-auth.ts`.
