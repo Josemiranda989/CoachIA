@@ -139,44 +139,46 @@
 
 ---
 
-## 🔵 Sprint 4 — A11y nice-to-have (estimado 2-3 hs)
+## 🔵 Sprint 4 — A11y nice-to-have (estimado 2-3 hs) ✅ MAYORÍA COMPLETADA (#29 diferido)
 
-### [ ] #23 `.input:focus-visible` sin estilos
+### [x] #23 `.input:focus-visible` sin estilos
 - **Dónde**: `src/app/globals.css:286-296`
 - **Problema**: `.input` no define `:focus-visible`. El estilo global de `a, button` no incluye `input`. Foco invisible en formularios.
 - **Fix**: `.input:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }`.
 
-### [ ] #24 Salto de jerarquía de headings
+### [x] #24 Salto de jerarquía de headings
 - **Dónde**: `src/app/wiki/page.tsx:32, 68`
 - **Problema**: `h1` → `h3` (no hay `h2`).
 - **Fix**: cambiar `h3` por `h2`.
 
-### [ ] #25 Logo "CoachIA" partido en dos `<span>`
+### [x] #25 Logo "CoachIA" partido en dos `<span>`
 - **Dónde**: `src/components/Header.tsx:50`
 - **Problema**: SR lee "Coach. IA".
 - **Fix**: envolver con `aria-label="CoachIA"` o usar un solo span.
 
-### [ ] #26 Loading states sin `aria-live`
+### [x] #26 Loading states sin `aria-live`
 - **Dónde**: `src/components/StravaActivities.tsx:75-81` y otros loaders
 - **Fix**: `<div role="status" aria-live="polite">Cargando…</div>`.
 
-### [ ] #27 Toggle de tema con label genérico
+### [x] #27 Toggle de tema con label genérico
 - **Dónde**: `src/components/Header.tsx:94-110`
 - **Fix**: `aria-label={theme === 'dark' ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'}` y `aria-pressed`.
 
-### [ ] #28 Iconos `lucide-react` sin `aria-hidden`
+### [x] #28 Iconos `lucide-react` sin `aria-hidden` (parcial)
 - **Problema**: la mayoría son decorativos junto a texto. SR los lee duplicado.
 - **Fix**: agregar `aria-hidden="true"` a iconos decorativos.
 
-### [ ] #29 `confirm()` bloqueante sin alternativa accesible
+### [ ] #29 `confirm()` bloqueante sin alternativa accesible — DIFERIDO
+
+> Requiere refactor del flow del listener de click en anchor: el `<dialog>` accesible es async, pero el `confirm()` corre síncrono dentro del listener (necesita preventDefault inmediato). Se ataca en otro PR convirtiendo el navigation a un guard pattern.
 - **Dónde**: `src/app/workout/today/GymWorkoutClient.tsx:297` ("Tenés sets sin guardar…")
 - **Fix**: usar elemento `<dialog>` accesible con focus trap.
 
-### [ ] #30 Skip link "Saltar al contenido"
+### [x] #30 Skip link "Saltar al contenido"
 - **Problema**: Header sticky sin opción de skip. WCAG 2.4.1.
 - **Fix**: agregar `<a href="#main" class="sr-only focus:not-sr-only">Saltar al contenido</a>` antes del Header.
 
-### [ ] #31 `prefers-reduced-motion` solo aplicado a `.page-transition`
+### [x] #31 `prefers-reduced-motion` solo aplicado a `.page-transition`
 - **Problema**: `animate-fade-up`, `badge-pulse`, `card-hover-lift` siguen animando.
 - **Fix**: extender el `@media (prefers-reduced-motion: reduce)` para todas las animations.
 
