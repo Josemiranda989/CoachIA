@@ -43,7 +43,10 @@ next-env.d.ts
 # claude code
 .agents/
 skills-lock.json
-.claude/worktrees/
+.claude/
+
+# playwright mcp (test console logs)
+.playwright-mcp/
 
 # ide
 .vscode/
