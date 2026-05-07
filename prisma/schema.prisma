@@ -31,7 +31,7 @@ model BodyWeight {
 
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, scaleId])
+  @@unique([userId, date])
 }
 
 model DailyWorkout {
