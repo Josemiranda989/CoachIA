@@ -11,13 +11,13 @@ docker compose up -d
 # Public: https://gym.homelab989.duckdns.org
 ```
 
-**After any code change**: `docker compose restart` — HMR doesn't reliably detect changes through Docker volume mounts.
+**After any code change**: `docker compose up -d --build` — the compose runs `NODE_ENV=production` with no source volume mount, so the image must be rebuilt to pick up changes. Plain `docker compose restart` only restarts the existing image and **will not** apply your edits.
 
 **After schema changes**: `docker exec coachia-coach-ia-1 npx prisma db push`
 
 ## Stack
 
-- Next.js 16 (App Router, Turbopack, dev mode)
+- Next.js 16 (App Router, Turbopack build) — runs in production mode inside Docker (no HMR)
 - React 19, Tailwind 4, lucide-react, recharts, react-hot-toast
 - SQLite + Prisma, NextAuth (CredentialsProvider)
 - Google Gemini (routine generation)
