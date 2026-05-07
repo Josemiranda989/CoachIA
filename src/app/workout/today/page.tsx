@@ -15,12 +15,13 @@ export default async function TodayWorkoutPage() {
     redirect("/auth/login");
   }
 
+  const userId = (session as any).user.id;
   const weekStart = getCurrentWeekStart();
 
   // First, try to find a routine for the current week or past weeks
   let routine = await prisma.routine.findFirst({
     where: {
-      userId: (session as any).user.id,
+      userId,
       status: "active",
       weekStart: { lte: weekStart },
     },
@@ -41,7 +42,7 @@ export default async function TodayWorkoutPage() {
   if (!routine) {
     routine = await prisma.routine.findFirst({
       where: {
-        userId: (session as any).user.id,
+        userId,
         status: "active",
         weekStart: { gt: weekStart },
       },
@@ -111,19 +112,32 @@ export default async function TodayWorkoutPage() {
   else if (isGym) title = `${todayWorkout.type} 🏋️‍♂️`;
   else if (isCycling) title = `${todayWorkout.type} 🚴‍♂️`;
 
-  // Prefill last weight from the most recent PAST week (not current) for each exercise name
-  const exercisesWithLastWeight = await Promise.all(
-    todayWorkout.exercises.map(async (ex: any) => {
-      const lastLog = await prisma.workoutLog.findFirst({
-        where: {
-          exercise: { name: ex.name },
-          weekStart: { lt: weekStart },
-        },
-        orderBy: [{ weekStart: 'desc' }, { id: 'desc' }],
-      });
-      return { ...ex, lastWeight: lastLog?.weight || "" };
-    })
-  );
+  // Prefill last weight from the most recent PAST week (not current) for each exercise name.
+  // Single query scoped to the current user (prevents reading other users' logs that share an exercise name).
+  const exerciseNames = todayWorkout.exercises.map((ex: any) => ex.name);
+  const pastLogs = exerciseNames.length === 0 ? [] : await prisma.workoutLog.findMany({
+    where: {
+      exercise: {
+        name: { in: exerciseNames },
+        dailyWorkout: { routine: { userId } },
+      },
+      weekStart: { lt: weekStart },
+    },
+    orderBy: [{ weekStart: 'desc' }, { id: 'desc' }],
+    select: { weight: true, exercise: { select: { name: true } } },
+  });
+
+  const lastWeightByName = new Map<string, number>();
+  for (const log of pastLogs) {
+    if (!lastWeightByName.has(log.exercise.name)) {
+      lastWeightByName.set(log.exercise.name, log.weight);
+    }
+  }
+
+  const exercisesWithLastWeight = todayWorkout.exercises.map((ex: any) => ({
+    ...ex,
+    lastWeight: lastWeightByName.get(ex.name) ?? "",
+  }));
 
   const todayCompletion = todayWorkout.completions[0];
   const workoutWithLastWeights = {
