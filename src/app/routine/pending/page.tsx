@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { getServerSession } from "next-auth";
@@ -6,6 +7,8 @@ import { redirect } from "next/navigation";
 import { PendingRoutineActions } from "./PendingRoutineActions";
 import { BackLink } from "@/components/BackLink";
 import { CyclingBlocks } from "@/components/CyclingBlocks";
+
+export const metadata: Metadata = { title: "Rutina pendiente" };
 
 const dayOrder: Record<string, number> = {
   Monday: 1,

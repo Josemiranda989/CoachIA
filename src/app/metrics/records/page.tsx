@@ -1,9 +1,12 @@
+import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { BackLink } from "@/components/BackLink";
+
+export const metadata: Metadata = { title: "Récords" };
 
 export default async function RecordsPage() {
   const session = await getServerSession(authOptions);
