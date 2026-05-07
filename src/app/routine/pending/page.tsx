@@ -40,7 +40,7 @@ export default async function PendingRoutinePage() {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/auth/login");
 
-  const userId = (session as any).user.id;
+  const userId = session.user.id;
 
   const routines = await prisma.routine.findMany({
     where: { userId, status: "pending_approval" },

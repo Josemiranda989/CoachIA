@@ -16,14 +16,14 @@ export default async function Home() {
     redirect("/auth/login");
   }
 
-  const userName = (session as any).user.name || "Atleta";
+  const userName = session.user.name || "Atleta";
   const now = new Date();
   const today = now.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" });
   const hour = now.getHours();
   const greeting = hour < 12 ? "Buenos días" : hour < 19 ? "Buenas tardes" : "Buenas noches";
 
   const weekStart = getCurrentWeekStart(now);
-  const userId = (session as any).user.id;
+  const userId = session.user.id;
 
   let latestRoutine = await prisma.routine.findFirst({
     where: {

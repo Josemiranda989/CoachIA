@@ -15,7 +15,7 @@ export async function POST(
   const { id } = await context.params;
 
   const routine = await prisma.routine.findUnique({ where: { id } });
-  if (!routine || routine.userId !== (session as any).user.id) {
+  if (!routine || routine.userId !== session.user.id) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }
 

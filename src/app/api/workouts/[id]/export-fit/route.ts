@@ -48,7 +48,7 @@ export async function GET(
   if (!day) {
     return NextResponse.json({ error: "Workout not found" }, { status: 404 });
   }
-  if (day.routine.userId !== (session as any).user.id) {
+  if (day.routine.userId !== session.user.id) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   if (day.blocks.length === 0) {

@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     const data = await exchangeCode(code);
 
     await prisma.user.update({
-      where: { id: (session as any).user.id },
+      where: { id: session.user.id },
       data: {
         stravaAthleteId: data.athlete.id.toString(),
         stravaAccessToken: data.access_token,
