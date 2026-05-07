@@ -25,7 +25,6 @@ model BodyWeight {
   weight    Float    // kg
   bodyFat   Float?   // porcentaje
   muscle    Float?   // porcentaje
-  scaleId   Int?
   notes     String?
   createdAt DateTime @default(now())
 

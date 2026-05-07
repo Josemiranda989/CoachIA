@@ -226,8 +226,8 @@
 
 ## Decisiones pendientes
 
-- [ ] **Dark mode strategy**: seguir con CSS vars + `.light` override (como ahora), o migrar a `dark:` de Tailwind. Hoy no se usa NINGÚN `dark:` en JSX. Funciona, pero rompe convención. Decidí y documentá en CLAUDE.md.
-- [ ] **¿Dejar `scaleId` en `BodyWeight`?** Después del fix de dedupe ya no se usa para uniqueness, queda como informativo. Considerar removerlo en una migración posterior.
+- [x] **Dark mode strategy** — RESUELTA: CSS vars + `.light` override. NO usar `dark:` de Tailwind. Convención lockeada en `CLAUDE.md` (sección Conventions, bullet "Theming").
+- [x] **`scaleId` en `BodyWeight`** — RESUELTA: removido. Migration `20260507_drop_bodyweight_scaleid.sql` aplica `ALTER TABLE DROP COLUMN`. Razón documentada en la migration y reforzada en el comment de la migration anterior (openScale-sync siempre manda `id=0`, nunca tuvo valor real). Después de mergear, correr `docker exec coachia-coach-ia-1 npx prisma db push` para aplicar.
 
 ---
 

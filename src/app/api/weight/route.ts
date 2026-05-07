@@ -9,7 +9,7 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const { weight, bodyFat, muscle, notes, date, scaleId } = body;
+  const { weight, bodyFat, muscle, notes, date } = body;
 
   if (!weight || typeof weight !== "number" || weight <= 0) {
     return NextResponse.json(
@@ -31,7 +31,6 @@ export async function POST(request: Request) {
         weight,
         bodyFat: bodyFat ?? existing.bodyFat,
         muscle: muscle ?? existing.muscle,
-        scaleId: scaleId ?? existing.scaleId,
         notes: notes ?? existing.notes,
       },
     });
@@ -45,7 +44,6 @@ export async function POST(request: Request) {
       weight,
       bodyFat: bodyFat ?? null,
       muscle: muscle ?? null,
-      scaleId: scaleId ?? null,
       notes: notes ?? null,
     },
   });
