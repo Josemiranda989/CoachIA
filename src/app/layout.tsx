@@ -7,8 +7,12 @@ import { PageTransition } from "@/components/PageTransition";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "CoachIA - Entreno",
-  description: "Plataforma de entrenamiento ciclismo y gym con IA",
+  metadataBase: new URL("https://coachia.jmlabs.app"),
+  title: {
+    default: "CoachIA",
+    template: "%s · CoachIA",
+  },
+  description: "Plataforma personal de entrenamiento de ciclismo y gym con IA",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
@@ -16,6 +20,21 @@ export const metadata: Metadata = {
   },
   formatDetection: {
     telephone: false,
+  },
+  openGraph: {
+    title: "CoachIA",
+    description: "Plataforma personal de entrenamiento de ciclismo y gym con IA",
+    url: "/",
+    siteName: "CoachIA",
+    images: [{ url: "/icons/icon-512.png", width: 512, height: 512, alt: "CoachIA" }],
+    locale: "es_AR",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "CoachIA",
+    description: "Plataforma personal de entrenamiento de ciclismo y gym con IA",
+    images: ["/icons/icon-512.png"],
   },
 };
 
