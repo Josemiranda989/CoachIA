@@ -76,15 +76,17 @@
   Después eliminá los `as any` con un find/replace.
 - **Done**: creado `src/types/next-auth.d.ts` con augmentation de `Session.user.id` (`& DefaultSession["user"]`) y `JWT.id`. 19 ocurrencias de `(session as any)` eliminadas en 17 archivos. Bonus: detectó un bug latente en `routines/route.ts:127` (usaba `session.user.id` cuando había un fallback a `firstUser` — el `as any` lo silenciaba; ahora usa el `userId` del `let`).
 
-### [ ] #11 Listener `focusin/focusout` con closure stale
+### [x] #11 Listener `focusin/focusout` con closure stale
 - **Dónde**: `src/app/workout/today/GymWorkoutClient.tsx:287-304`
 - **Problema**: el `useEffect` de tracking de "click en `<a>`" tiene closure stale sobre `logs`. Re-monta el listener en cada cambio de logs (= cada keystroke).
 - **Fix**: sacar `hasUnsaved` afuera como `useRef` para tracking transient.
+- **Done**: introduje `hasUnsavedRef` y `loadingRef`. Los listeners de `beforeunload` y de click en anchors ahora se montan **una sola vez** (deps `[]`); leen el estado actual via refs. Antes se desmontaban/remountaban en cada keystroke.
 
-### [ ] #12 Derived state en useEffect (anti-pattern)
+### [x] #12 Derived state en useEffect (anti-pattern)
 - **Dónde**: `src/app/workout/today/GymWorkoutClient.tsx:323-331`
 - **Problema**: calcula "primer ejercicio incompleto" en `useEffect` con `eslint-disable exhaustive-deps`. Render extra garantizado.
 - **Fix**: computar en el initializer del `useState`.
+- **Done**: `exIdx` ahora se inicializa con el primer ejercicio incompleto via `useState(() => ...)` (corre solo una vez en mount). Eliminado el `useEffect` con `exhaustive-deps disabled` y el render extra que causaba.
 
 ### [ ] #13 `force-dynamic` por todos lados
 - **Dónde**: `metrics`, `metrics/records`, `wiki`, `wiki/[slug]`, `routine/pending`
