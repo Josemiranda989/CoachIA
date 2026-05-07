@@ -7,9 +7,9 @@
 
 ---
 
-## 🔴 Sprint 1 — Críticos (estimado 2-3 hs)
+## 🔴 Sprint 1 — Críticos (estimado 2-3 hs) ✅ COMPLETADO (PR #2 — merge `ae9e290`)
 
-### [ ] #1 Data leak entre usuarios en métricas (SECURITY BUG)
+### [x] #1 Data leak entre usuarios en métricas (SECURITY BUG)
 - **Dónde**: `src/app/metrics/page.tsx:24-34` y `src/app/metrics/records/page.tsx:7-16`
 - **Problema**: `prisma.workoutLog.findMany()` se llama sin filtrar por `userId`. Hoy es app de un solo usuario, pero apenas haya un segundo usuario, todos ven los PRs y volumen total de todos.
 - **Fix**:
@@ -18,27 +18,27 @@
   ```
 - **Severidad**: CRITICAL (security latente).
 
-### [ ] #2 Zoom del viewport bloqueado (WCAG 1.4.4)
+### [x] #2 Zoom del viewport bloqueado (WCAG 1.4.4)
 - **Dónde**: `src/app/layout.tsx:27`
 - **Problema**: `maximumScale: 1, userScalable: false` bloquea zoom. Bloqueante para gente con baja visión.
 - **Fix**: eliminar ambas propiedades del `viewport`. El "PWA feel" no justifica romper a11y.
 
-### [ ] #3 Forms con labels rotos (a11y)
+### [x] #3 Forms con labels rotos (a11y)
 - **Dónde**: `src/app/auth/login/page.tsx:47-92`, `src/app/auth/register/page.tsx:55-124`, `src/app/auth/forgot-password/page.tsx:93-108`, `src/app/auth/reset-password/page.tsx`, `src/components/ProfileClient.tsx:113-183`
 - **Problema**: `<label>` está como hermano del `<input>` sin `htmlFor`/`id`. Screen readers no anuncian el campo al enfocarlo.
 - **Fix**: `<label htmlFor="email">Email</label><input id="email" ...>` o envolver el input dentro del label.
 
-### [ ] #4 Errores de auth no anunciados
+### [x] #4 Errores de auth no anunciados
 - **Dónde**: `src/app/auth/login/page.tsx:48-52`, `src/app/auth/register/page.tsx:56-60`
 - **Problema**: el `<div>` con error aparece sin `role="alert"` ni `aria-live`. SR no se entera de que falló el submit.
 - **Fix**: `<div role="alert" aria-live="assertive">{error}</div>` y enfocar programáticamente el primer campo inválido.
 
-### [ ] #5 Header dropdown sin keyboard handling
+### [x] #5 Header dropdown sin keyboard handling
 - **Dónde**: `src/components/Header.tsx:157-236`
 - **Problema**: dropdown con `role="menu"` no cierra con `Escape`, no enfoca el primer `menuitem` al abrir, no maneja `ArrowUp/Down`. Quien navega con teclado queda atrapado.
 - **Fix**: agregar `onKeyDown` con `Escape → setMenuOpen(false)` + return focus al trigger; manejar arrows entre items; cerrar también en `focusout` fuera del menú.
 
-### [ ] #6 `aria-current="page"` faltante en navegación
+### [x] #6 `aria-current="page"` faltante en navegación
 - **Dónde**: `src/components/BottomNav.tsx:38-69`, `src/components/Header.tsx:65-86`
 - **Problema**: hay color visual del item activo, pero asistencias no perciben "estás acá". WCAG 2.4.8.
 - **Fix**: `aria-current={isActive ? "page" : undefined}` en cada link.
@@ -47,20 +47,23 @@
 
 ## 🟡 Sprint 2 — Performance + arquitectura (estimado 3-4 hs)
 
-### [ ] #7 N+1 queries en workout/today
+### [x] #7 N+1 queries en workout/today
 - **Dónde**: `src/app/workout/today/page.tsx:115-126`
 - **Problema**: `Promise.all(todayWorkout.exercises.map(async ex => prisma.workoutLog.findFirst(...)))`. 8 ejercicios = 8 queries.
 - **Fix**: una sola query con `where: { exercise: { name: { in: names } }, weekStart: { lt: weekStart } }` agrupando in-memory, o usar el include `logs` ya hidratado.
+- **Bonus**: el query original NO filtraba por usuario (mismo bug latente que #1). Se scopeó con `dailyWorkout: { routine: { userId } }`.
 
-### [ ] #8 Strava bloquea toda la página de métricas
+### [x] #8 Strava bloquea toda la página de métricas
 - **Dónde**: `src/app/metrics/page.tsx:57` (fetchStats) + 5 queries en serie con `force-dynamic`
 - **Problema**: si Strava está lento, la página entera espera. Sin streaming.
 - **Fix**: envolver `<StravaActivities>` y otras secciones independientes en `<Suspense>`. Mover el fetch de Strava a un Server Component que se streamee.
+- **Done**: extraída lógica de cycling cards a `<CyclingCards>` (server async), `<StravaActivities>` ahora server async, ambas envueltas en `<Suspense>` separadas. Las 4 cards de gym + records link son síncronas y se ven al instante; cycling/strava se streamean.
 
-### [ ] #9 useEffect para data fetching en componentes que deberían ser Server Components
+### [x] #9 useEffect para data fetching en componentes que deberían ser Server Components
 - **Dónde**: `src/app/metrics/WeightChart.tsx:34-56`, `src/components/StravaActivities.tsx:61-73`
 - **Problema**: ambos hacen `fetch("/api/...")` desde cliente. El padre `metrics/page.tsx` ya es Server Component con sesión. Genera doble waterfall (SSR → hydrate → fetch) y flash de "Cargando…".
 - **Fix**: convertir a async Server Components y pasar data por props. O Server Component padre + Client Component hijo con `use(promise)` (React 19).
+- **Done**: `WeightChart` ahora es server (fetch a Prisma) + `WeightChartView` cliente (recharts). `StravaActivities` server async, recibe `userId` y hace el fetch directo. Eliminada la doble fetch de Strava (antes pegaba 2 veces: una para cycling cards desde server, otra para activities desde cliente). Ahora `getStravaStats`/`getStravaActivities` están memoizadas con `React.cache()` en `src/lib/strava-cached.ts` — `<CyclingCards>` y `<StravaActivities>` comparten el resultado dentro del mismo render.
 
 ### [ ] #10 `(session as any).user.id` en 14 archivos
 - **Problema**: TypeScript hack repetido por todo el codebase.
