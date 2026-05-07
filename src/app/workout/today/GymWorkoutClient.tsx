@@ -225,7 +225,6 @@ export function GymWorkoutClient({ workout }: { workout: any }) {
   const router = useRouter();
   const exercises: Exercise[] = workout.exercises;
   const [loading, setLoading] = useState(false);
-  const [exIdx, setExIdx] = useState(0);
   const [resting, setResting] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
   const restDoneRef = useRef<(() => void) | undefined>(undefined);
@@ -264,31 +263,49 @@ export function GymWorkoutClient({ workout }: { workout: any }) {
     return initial;
   });
 
-  // Persist logs to localStorage on every change
+  // Start at the first incomplete exercise — computed once at mount via initializer (no derived useEffect)
+  const [exIdx, setExIdx] = useState(() => {
+    const firstIncomplete = exercises.findIndex((ex) => {
+      for (let i = 1; i <= ex.targetSets; i++) {
+        const log = logs[`${ex.id}_${i}`];
+        if (!log?.done) return true;
+      }
+      return false;
+    });
+    return firstIncomplete >= 0 ? firstIncomplete : 0;
+  });
+
+  // Refs let beforeunload/click listeners read the latest state without remounting on every keystroke.
+  const hasUnsavedRef = useRef(false);
+  const loadingRef = useRef(false);
+
+  // Persist logs to localStorage and refresh transient flags on every change
   useEffect(() => {
+    hasUnsavedRef.current = Object.values(logs).some((l) => l.done);
     try {
       localStorage.setItem(LS_KEY, JSON.stringify({ workoutId: workout.id, logs }));
     } catch { /* storage full or unavailable */ }
   }, [logs, workout.id]);
 
-  // Warn before leaving with unsaved data
   useEffect(() => {
-    const hasUnsaved = Object.values(logs).some((l) => l.done) && !loading;
+    loadingRef.current = loading;
+  }, [loading]);
+
+  // Warn before leaving with unsaved data — listener stays mounted for the whole session
+  useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
-      if (hasUnsaved) {
+      if (hasUnsavedRef.current && !loadingRef.current) {
         e.preventDefault();
       }
     };
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
-  }, [logs, loading]);
+  }, []);
 
   // Intercept in-app navigation when there's unsaved data
   useEffect(() => {
-    const hasUnsaved = Object.values(logs).some((l) => l.done);
-    if (!hasUnsaved) return;
-
     const handler = (e: MouseEvent) => {
+      if (!hasUnsavedRef.current) return;
       const anchor = (e.target as HTMLElement).closest("a");
       if (!anchor || !anchor.href) return;
       const url = new URL(anchor.href, window.location.origin);
@@ -301,7 +318,7 @@ export function GymWorkoutClient({ workout }: { workout: any }) {
     };
     document.addEventListener("click", handler, true);
     return () => document.removeEventListener("click", handler, true);
-  }, [logs]);
+  }, []);
 
   // Track input focus to hide FAB when keyboard is open
   useEffect(() => {
@@ -318,17 +335,6 @@ export function GymWorkoutClient({ workout }: { workout: any }) {
       document.removeEventListener("focusout", onBlur);
     };
   }, []);
-
-  // Find first incomplete exercise on mount
-  useEffect(() => {
-    const firstIncomplete = exercises.findIndex((ex) => {
-      for (let i = 1; i <= ex.targetSets; i++) {
-        if (!logs[`${ex.id}_${i}`]?.done) return true;
-      }
-      return false;
-    });
-    if (firstIncomplete >= 0) setExIdx(firstIncomplete);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const currentEx = exercises[exIdx];
   const nextEx = exercises[exIdx + 1];
