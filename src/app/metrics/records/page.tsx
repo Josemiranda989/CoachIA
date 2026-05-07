@@ -8,7 +8,7 @@ import { BackLink } from "@/components/BackLink";
 
 export default async function RecordsPage() {
   const session = await getServerSession(authOptions);
-  const userId = (session as any)?.user?.id as string | undefined;
+  const userId = session?.user?.id as string | undefined;
 
   if (!userId) {
     redirect("/auth/login");

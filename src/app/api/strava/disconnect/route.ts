@@ -10,7 +10,7 @@ export async function POST() {
   }
 
   await prisma.user.update({
-    where: { id: (session as any).user.id },
+    where: { id: session.user.id },
     data: {
       stravaAthleteId: null,
       stravaAccessToken: null,

@@ -24,7 +24,7 @@ export async function resolveAuth(
 
   // 2. Check session (normal browser auth)
   const session = await getServerSession(authOptions);
-  const userId = (session as any)?.user?.id;
+  const userId = session?.user?.id;
 
   if (!userId) {
     return { authenticated: false, error: "Unauthorized", status: 401 };

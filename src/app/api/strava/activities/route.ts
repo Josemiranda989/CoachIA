@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   }
 
-  const userId = (session as any).user.id;
+  const userId = session.user.id;
 
   try {
     const accessToken = await getValidAccessToken(userId);
