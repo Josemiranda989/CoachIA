@@ -4,10 +4,83 @@ import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentWeekStart } from "@/lib/week";
+import { getActiveRoutineLight } from "@/lib/queries/getActiveRoutine";
+import { DashboardCard, type DashboardCardProps } from "@/components/DashboardCard";
 import {
   Sparkles, Calendar, BarChart3, HelpCircle,
   ArrowRight, Bot, Upload, Zap, Bell, Apple, BookOpen,
 } from "lucide-react";
+
+const dashboardCards: Omit<DashboardCardProps, "delayMs">[] = [
+  {
+    href: "/routine/generate",
+    icon: Bot,
+    iconBgClass: "bg-accent-primary-soft",
+    iconColorClass: "text-accent-primary",
+    hoverBorderClass: "hover:border-blue-500/50",
+    title: "Generar con IA",
+    description: "Describí tus objetivos y la IA genera tu rutina semanal completa.",
+    badge: {
+      label: "Nuevo",
+      textClass: "text-accent-primary",
+      bgStyle: { background: "color-mix(in srgb, var(--accent-primary) 20%, transparent)" },
+    },
+  },
+  {
+    href: "/routine/week",
+    icon: Calendar,
+    iconBgClass: "bg-accent-gym-soft",
+    iconColorClass: "text-accent-gym",
+    hoverBorderClass: "hover:border-amber-500/50",
+    title: "Toda la Semana",
+    description: "Resumen completo de tu rutina planificada y objetivos semanales.",
+  },
+  {
+    href: "/metrics",
+    icon: BarChart3,
+    iconBgClass: "bg-accent-cycling-soft",
+    iconColorClass: "text-accent-cycling",
+    hoverBorderClass: "hover:border-emerald-500/50",
+    title: "Métricas",
+    description: "Evolución de carga, fatiga en bici, récords personales y más.",
+  },
+  {
+    href: "/routine/load",
+    icon: Upload,
+    iconBgClass: "bg-violet-500/20 group-hover:bg-violet-500/30 transition-colors",
+    iconColorClass: "text-violet-400",
+    hoverBorderClass: "hover:border-violet-500/50",
+    title: "Cargar JSON",
+    description: "Pegá manualmente un JSON de rutina generado por cualquier IA.",
+  },
+  {
+    href: "/help",
+    icon: HelpCircle,
+    iconBgClass: "bg-indigo-500/20 group-hover:bg-indigo-500/30 transition-colors",
+    iconColorClass: "text-indigo-400",
+    hoverBorderClass: "hover:border-indigo-500/50",
+    title: "Ayuda / FAQs",
+    description: "Guías de uso, estructura JSON y preguntas frecuentes.",
+  },
+  {
+    href: "/nutrition",
+    icon: Apple,
+    iconBgClass: "bg-emerald-500/20 group-hover:bg-emerald-500/30 transition-colors",
+    iconColorClass: "text-emerald-400",
+    hoverBorderClass: "hover:border-emerald-500/50",
+    title: "Nutrición Bici",
+    description: "Guía de combustible: qué comer, cuánto y cuándo en tus salidas.",
+  },
+  {
+    href: "/wiki",
+    icon: BookOpen,
+    iconBgClass: "bg-sky-500/20 group-hover:bg-sky-500/30 transition-colors",
+    iconColorClass: "text-sky-400",
+    hoverBorderClass: "hover:border-sky-500/50",
+    title: "Wiki de Ejercicios",
+    description: "Referencia visual: descripción, ejecución y tips para cada ejercicio.",
+  },
+];
 
 export default async function Home() {
   const session = await getServerSession(authOptions);
@@ -25,41 +98,7 @@ export default async function Home() {
   const weekStart = getCurrentWeekStart(now);
   const userId = session.user.id;
 
-  let latestRoutine = await prisma.routine.findFirst({
-    where: {
-      userId,
-      status: "active",
-      weekStart: { lte: weekStart },
-    },
-    orderBy: { weekStart: "desc" },
-    include: {
-      days: {
-        select: {
-          type: true,
-          completions: { where: { weekStart }, select: { completed: true } },
-        },
-      },
-    },
-  });
-
-  if (!latestRoutine) {
-    latestRoutine = await prisma.routine.findFirst({
-      where: {
-        userId,
-        status: "active",
-        weekStart: { gt: weekStart },
-      },
-      orderBy: { weekStart: "asc" },
-      include: {
-        days: {
-          select: {
-            type: true,
-            completions: { where: { weekStart }, select: { completed: true } },
-          },
-        },
-      },
-    });
-  }
+  const latestRoutine = await getActiveRoutineLight(userId, weekStart);
 
   const pendingRoutine = await prisma.routine.findFirst({
     where: { userId, status: "pending_approval" },
@@ -187,143 +226,13 @@ export default async function Home() {
 
       {/* ── Grid de accesos ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
-
-        {/* Generar con IA */}
-        <Link
-          href="/routine/generate"
-          className="card group relative overflow-hidden hover:border-blue-500/50 card-hover-lift animate-fade-up"
-          style={{ animationDelay: "120ms" }}
-        >
-          <div
-            className="absolute top-3 right-3 badge-pulse text-accent-primary font-bold uppercase tracking-widest rounded-full"
-            style={{
-              background: "color-mix(in srgb, var(--accent-primary) 20%, transparent)",
-              fontSize: 10,
-              padding: "4px 8px",
-            }}
-          >
-            Nuevo
-          </div>
-          <div className="mb-4 p-3 bg-accent-primary-soft rounded-xl w-fit">
-            <Bot aria-hidden="true" className="text-accent-primary" size={26} />
-          </div>
-          <h2 className="text-lg md:text-xl font-bold mb-2 flex items-center justify-between">
-            Generar con IA
-            <ArrowRight aria-hidden="true" className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" size={18} />
-          </h2>
-          <p className="text-text-secondary text-sm leading-relaxed hidden sm:block">
-            Describí tus objetivos y la IA genera tu rutina semanal completa.
-          </p>
-        </Link>
-
-        {/* Toda la Semana */}
-        <Link
-          href="/routine/week"
-          className="card group hover:border-amber-500/50 card-hover-lift animate-fade-up"
-          style={{ animationDelay: "180ms" }}
-        >
-          <div className="mb-4 p-3 bg-accent-gym-soft rounded-xl w-fit">
-            <Calendar aria-hidden="true" className="text-accent-gym" size={26} />
-          </div>
-          <h2 className="text-lg md:text-xl font-bold mb-2 flex items-center justify-between">
-            Toda la Semana
-            <ArrowRight aria-hidden="true" className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" size={18} />
-          </h2>
-          <p className="text-text-secondary text-sm leading-relaxed hidden sm:block">
-            Resumen completo de tu rutina planificada y objetivos semanales.
-          </p>
-        </Link>
-
-        {/* Métricas */}
-        <Link
-          href="/metrics"
-          className="card group hover:border-emerald-500/50 card-hover-lift animate-fade-up"
-          style={{ animationDelay: "240ms" }}
-        >
-          <div className="mb-4 p-3 bg-accent-cycling-soft rounded-xl w-fit">
-            <BarChart3 aria-hidden="true" className="text-accent-cycling" size={26} />
-          </div>
-          <h2 className="text-lg md:text-xl font-bold mb-2 flex items-center justify-between">
-            Métricas
-            <ArrowRight aria-hidden="true" className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" size={18} />
-          </h2>
-          <p className="text-text-secondary text-sm leading-relaxed hidden sm:block">
-            Evolución de carga, fatiga en bici, récords personales y más.
-          </p>
-        </Link>
-
-        {/* Cargar JSON */}
-        <Link
-          href="/routine/load"
-          className="card group hover:border-violet-500/50 card-hover-lift animate-fade-up"
-          style={{ animationDelay: "300ms" }}
-        >
-          <div className="mb-4 p-3 bg-violet-500/20 rounded-xl w-fit group-hover:bg-violet-500/30 transition-colors">
-            <Upload aria-hidden="true" className="text-violet-400" size={26} />
-          </div>
-          <h2 className="text-lg md:text-xl font-bold mb-2 flex items-center justify-between">
-            Cargar JSON
-            <ArrowRight aria-hidden="true" className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" size={18} />
-          </h2>
-          <p className="text-text-secondary text-sm leading-relaxed hidden sm:block">
-            Pegá manualmente un JSON de rutina generado por cualquier IA.
-          </p>
-        </Link>
-
-        {/* Ayuda */}
-        <Link
-          href="/help"
-          className="card group hover:border-indigo-500/50 card-hover-lift animate-fade-up"
-          style={{ animationDelay: "360ms" }}
-        >
-          <div className="mb-4 p-3 bg-indigo-500/20 rounded-xl w-fit group-hover:bg-indigo-500/30 transition-colors">
-            <HelpCircle aria-hidden="true" className="text-indigo-400" size={26} />
-          </div>
-          <h2 className="text-lg md:text-xl font-bold mb-2 flex items-center justify-between">
-            Ayuda / FAQs
-            <ArrowRight aria-hidden="true" className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" size={18} />
-          </h2>
-          <p className="text-text-secondary text-sm leading-relaxed hidden sm:block">
-            Guías de uso, estructura JSON y preguntas frecuentes.
-          </p>
-        </Link>
-
-        {/* Nutrición Ciclismo */}
-        <Link
-          href="/nutrition"
-          className="card group hover:border-emerald-500/50 card-hover-lift animate-fade-up"
-          style={{ animationDelay: "420ms" }}
-        >
-          <div className="mb-4 p-3 bg-emerald-500/20 rounded-xl w-fit group-hover:bg-emerald-500/30 transition-colors">
-            <Apple aria-hidden="true" className="text-emerald-400" size={26} />
-          </div>
-          <h2 className="text-lg md:text-xl font-bold mb-2 flex items-center justify-between">
-            Nutrición Bici
-            <ArrowRight aria-hidden="true" className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" size={18} />
-          </h2>
-          <p className="text-text-secondary text-sm leading-relaxed hidden sm:block">
-            Guía de combustible: qué comer, cuánto y cuándo en tus salidas.
-          </p>
-        </Link>
-
-        {/* Wiki de Ejercicios */}
-        <Link
-          href="/wiki"
-          className="card group hover:border-sky-500/50 card-hover-lift animate-fade-up"
-          style={{ animationDelay: "480ms" }}
-        >
-          <div className="mb-4 p-3 bg-sky-500/20 rounded-xl w-fit group-hover:bg-sky-500/30 transition-colors">
-            <BookOpen aria-hidden="true" className="text-sky-400" size={26} />
-          </div>
-          <h2 className="text-lg md:text-xl font-bold mb-2 flex items-center justify-between">
-            Wiki de Ejercicios
-            <ArrowRight aria-hidden="true" className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" size={18} />
-          </h2>
-          <p className="text-text-secondary text-sm leading-relaxed hidden sm:block">
-            Referencia visual: descripción, ejecución y tips para cada ejercicio.
-          </p>
-        </Link>
-
+        {dashboardCards.map((card, idx) => (
+          <DashboardCard
+            key={card.href}
+            {...card}
+            delayMs={120 + idx * 60}
+          />
+        ))}
       </div>
     </div>
   );

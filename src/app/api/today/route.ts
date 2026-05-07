@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { resolveAuth } from "@/lib/internal-auth";
 import { getCurrentWeekStart } from "@/lib/week";
+import { getActiveRoutineDay } from "@/lib/queries/getActiveRoutine";
 
 const DAY_NAMES = [
   "Sunday",
@@ -21,46 +21,7 @@ export async function GET(request: Request) {
 
   const today = DAY_NAMES[new Date().getDay()];
   const weekStart = getCurrentWeekStart();
-
-  // First, try to find a routine for the current week or past weeks
-  let routine = await prisma.routine.findFirst({
-    where: {
-      userId: auth.userId,
-      status: "active",
-      weekStart: { lte: weekStart },
-    },
-    orderBy: { weekStart: "desc" },
-    include: {
-      days: {
-        where: { dayOfWeek: today },
-        include: {
-          exercises: true,
-          completions: { where: { weekStart } },
-        },
-      },
-    },
-  });
-
-  // If no routine for current/past weeks, look for upcoming ones
-  if (!routine) {
-    routine = await prisma.routine.findFirst({
-      where: {
-        userId: auth.userId,
-        status: "active",
-        weekStart: { gt: weekStart },
-      },
-      orderBy: { weekStart: "asc" },
-      include: {
-        days: {
-          where: { dayOfWeek: today },
-          include: {
-            exercises: true,
-            completions: { where: { weekStart } },
-          },
-        },
-      },
-    });
-  }
+  const routine = await getActiveRoutineDay(auth.userId, weekStart, today);
 
   if (!routine || routine.days.length === 0) {
     return NextResponse.json({

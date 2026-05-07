@@ -4,6 +4,12 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { ChevronDown, Download } from "lucide-react";
 import { CyclingBlocks } from "@/components/CyclingBlocks";
+import type { DayWithBlocks } from "@/lib/queries/getActiveRoutine";
+
+export type DayCardData = DayWithBlocks & {
+  completed: boolean;
+  creatineTaken: boolean;
+};
 
 const DAY_ES: Record<string, string> = {
   Monday: "Lunes",
@@ -15,7 +21,7 @@ const DAY_ES: Record<string, string> = {
   Sunday: "Domingo",
 };
 
-export function DayCardClient({ day }: { day: any }) {
+export function DayCardClient({ day }: { day: DayCardData }) {
   const router = useRouter();
   const [completed, setCompleted] = useState(day.completed || false);
   const [creatine, setCreatine] = useState(day.creatineTaken || false);
@@ -72,7 +78,7 @@ export function DayCardClient({ day }: { day: any }) {
         boxShadow: "0 0 0 3px rgba(245,158,11,0.1)",
       } : {}}
     >
-      <div className="flex justify-between items-start flex-wrap gap-3">
+      <div className="flex justify-between items-start flex-wrap gap-4">
         {/* Left: toggle + day label + summary */}
         <button
           type="button"
@@ -125,7 +131,7 @@ export function DayCardClient({ day }: { day: any }) {
         </button>
 
         {/* Right: checkboxes */}
-        <div className="flex gap-5 items-center" onClick={(e) => e.stopPropagation()}>
+        <div className="flex gap-4 items-center" onClick={(e) => e.stopPropagation()}>
           <label
             className="flex items-center gap-2 cursor-pointer select-none"
             style={{ color: creatine ? "var(--accent-gym)" : "var(--text-secondary)" }}
@@ -196,12 +202,12 @@ export function DayCardClient({ day }: { day: any }) {
             <p className="text-text-secondary text-sm italic mb-3">&ldquo;{day.notes}&rdquo;</p>
           )}
 
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-4">
             {hasGym && day.exercises?.length > 0 && (
               <div>
                 <strong className="text-accent-gym text-sm">Gym:</strong>
                 <ul className="list-none ml-3 text-sm text-text-secondary mt-1 space-y-0.5">
-                  {day.exercises.map((ex: any) => (
+                  {day.exercises.map((ex) => (
                     <li key={ex.id}>· {ex.name} ({ex.targetSets}×{ex.targetReps || "?"})</li>
                   ))}
                 </ul>

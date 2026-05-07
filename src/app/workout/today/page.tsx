@@ -8,6 +8,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getCurrentWeekStart } from "@/lib/week";
+import { getActiveRoutineWithLogs } from "@/lib/queries/getActiveRoutine";
 
 export const metadata: Metadata = { title: "Entrenamiento de hoy" };
 
@@ -20,47 +21,7 @@ export default async function TodayWorkoutPage() {
 
   const userId = session.user.id;
   const weekStart = getCurrentWeekStart();
-
-  // First, try to find a routine for the current week or past weeks
-  let routine = await prisma.routine.findFirst({
-    where: {
-      userId,
-      status: "active",
-      weekStart: { lte: weekStart },
-    },
-    orderBy: { weekStart: 'desc' },
-    include: {
-      days: {
-        include: {
-          exercises: { include: { logs: { where: { weekStart } } } },
-          completions: { where: { weekStart } },
-          blocks: { orderBy: { order: 'asc' } },
-        }
-      }
-    }
-  });
-
-  // If no routine for current/past weeks, look for upcoming ones
-  // (e.g. after approving a monthly mesocycle that starts next week)
-  if (!routine) {
-    routine = await prisma.routine.findFirst({
-      where: {
-        userId,
-        status: "active",
-        weekStart: { gt: weekStart },
-      },
-      orderBy: { weekStart: 'asc' },
-      include: {
-        days: {
-          include: {
-            exercises: { include: { logs: { where: { weekStart } } } },
-            completions: { where: { weekStart } },
-            blocks: { orderBy: { order: 'asc' } },
-          }
-        }
-      }
-    });
-  }
+  const routine = await getActiveRoutineWithLogs(userId, weekStart);
 
   if (!routine) {
     return (
@@ -82,15 +43,14 @@ export default async function TodayWorkoutPage() {
     weekday: 'long',
   }).format(new Date());
 
-  const todayWorkout = routine.days.find(d => d.dayOfWeek === todayName) || routine.days.find(d => d.dayOfWeek === "Monday"); 
+  const todayWorkout = routine.days.find(d => d.dayOfWeek === todayName) || routine.days.find(d => d.dayOfWeek === "Monday");
   // Fallback to Monday for demonstration purposes if today finds nothing, useful for the user checking the app.
 
   // Inferir comportamiento por datos, no por el texto del tipo
   const hasExercises = (todayWorkout?.exercises?.length ?? 0) > 0;
   const hasCyclingData = !!(todayWorkout?.targetDuration);
-  const isRestLike = !todayWorkout || (!hasExercises && !hasCyclingData);
 
-  if (isRestLike) {
+  if (!todayWorkout || (!hasExercises && !hasCyclingData)) {
     return (
       <div className="app-container py-8">
         <BackLink href="/" />
@@ -117,7 +77,7 @@ export default async function TodayWorkoutPage() {
 
   // Prefill last weight from the most recent PAST week (not current) for each exercise name.
   // Single query scoped to the current user (prevents reading other users' logs that share an exercise name).
-  const exerciseNames = todayWorkout.exercises.map((ex: any) => ex.name);
+  const exerciseNames = todayWorkout.exercises.map((ex) => ex.name);
   const pastLogs = exerciseNames.length === 0 ? [] : await prisma.workoutLog.findMany({
     where: {
       exercise: {
@@ -137,9 +97,9 @@ export default async function TodayWorkoutPage() {
     }
   }
 
-  const exercisesWithLastWeight = todayWorkout.exercises.map((ex: any) => ({
+  const exercisesWithLastWeight = todayWorkout.exercises.map((ex) => ({
     ...ex,
-    lastWeight: lastWeightByName.get(ex.name) ?? "",
+    lastWeight: lastWeightByName.get(ex.name),
   }));
 
   const todayCompletion = todayWorkout.completions[0];

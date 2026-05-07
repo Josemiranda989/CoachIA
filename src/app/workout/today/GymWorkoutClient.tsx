@@ -10,6 +10,10 @@ import {
   Trophy,
   Dumbbell,
 } from "lucide-react";
+import type {
+  DayWithLogs,
+  ExerciseWithLogs,
+} from "@/lib/queries/getActiveRoutine";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -21,14 +25,12 @@ interface SetLog {
   done: boolean;
 }
 
-interface Exercise {
-  id: string;
-  name: string;
-  targetSets: number;
-  targetReps: string;
-  lastWeight?: number;
-  logs?: { setNumber: number; weight: number; reps: number }[];
-}
+type Exercise = ExerciseWithLogs & { lastWeight?: number };
+
+export type GymWorkoutData = Omit<DayWithLogs, "exercises"> & {
+  completed: boolean;
+  exercises: Exercise[];
+};
 
 /* ------------------------------------------------------------------ */
 /*  NumericInput                                                       */
@@ -56,8 +58,8 @@ function NumericInput({
     <div className="flex items-center gap-1">
       {label && (
         <span
-          className="text-xs font-semibold shrink-0"
-          style={{ color: "var(--text-secondary)", minWidth: "20px" }}
+          className="text-xs font-semibold shrink-0 text-text-secondary"
+          style={{ minWidth: "20px" }}
         >
           {label}
         </span>
@@ -145,7 +147,7 @@ function RestTimer({ seconds, onDone }: { seconds: number; onDone: () => void })
       }}
     >
       <Timer size={24} style={{ color: "var(--accent-gym)" }} />
-      <span className="text-xs uppercase font-bold tracking-widest" style={{ color: "var(--text-secondary)" }}>
+      <span className="text-xs uppercase font-bold tracking-widest text-text-secondary">
         Descanso
       </span>
       <span style={{ fontSize: "48px", fontWeight: 900, color: "var(--accent-gym)", lineHeight: 1 }}>
@@ -196,10 +198,10 @@ function WorkoutComplete({ totalSets, onSave, loading }: { totalSets: number; on
       >
         <Trophy size={40} style={{ color: "var(--accent-cycling)" }} />
       </div>
-      <h2 style={{ fontSize: 24, fontWeight: 800, color: "var(--text-primary)" }}>
+      <h2 className="text-text-primary" style={{ fontSize: 24, fontWeight: 800 }}>
         Sesión Completa
       </h2>
-      <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>
+      <p className="text-text-secondary" style={{ fontSize: 14 }}>
         {totalSets} series completadas
       </p>
       <button
@@ -221,9 +223,9 @@ function WorkoutComplete({ totalSets, onSave, loading }: { totalSets: number; on
 const REST_SECONDS = 90;
 const LS_KEY = "coachia-gym-session";
 
-export function GymWorkoutClient({ workout }: { workout: any }) {
+export function GymWorkoutClient({ workout }: { workout: GymWorkoutData }) {
   const router = useRouter();
-  const exercises: Exercise[] = workout.exercises;
+  const exercises = workout.exercises;
   const [loading, setLoading] = useState(false);
   const [resting, setResting] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
@@ -453,7 +455,7 @@ export function GymWorkoutClient({ workout }: { workout: any }) {
         >
           <ChevronLeft size={20} />
         </button>
-        <span className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--text-secondary)" }}>
+        <span className="text-xs font-bold uppercase tracking-widest text-text-secondary">
           Ejercicio {exIdx + 1} de {exercises.length}
         </span>
         <button
@@ -478,11 +480,11 @@ export function GymWorkoutClient({ workout }: { workout: any }) {
         {/* Exercise header */}
         <div className="flex items-center gap-3 mb-1">
           <Dumbbell size={20} style={{ color: "var(--accent-gym)" }} />
-          <h2 style={{ fontSize: 22, fontWeight: 800, color: "var(--text-primary)" }}>
+          <h2 className="text-text-primary" style={{ fontSize: 22, fontWeight: 800 }}>
             {currentEx.name}
           </h2>
         </div>
-        <p style={{ color: "var(--text-secondary)", fontSize: 13, marginBottom: 20 }}>
+        <p className="text-text-secondary" style={{ fontSize: 13, marginBottom: 20 }}>
           {currentEx.targetSets} series × {currentEx.targetReps || "?"} reps
           {currentEx.lastWeight ? (
             <span style={{ marginLeft: 8, color: "var(--accent-gym)", opacity: 0.7 }}>
@@ -508,7 +510,7 @@ export function GymWorkoutClient({ workout }: { workout: any }) {
                   }}
                 >
                   <CheckCircle2 size={16} style={{ color: "var(--accent-cycling)", flexShrink: 0 }} />
-                  <span style={{ color: "var(--text-secondary)", fontSize: 13 }}>Set {sn}</span>
+                  <span className="text-text-secondary" style={{ fontSize: 13 }}>Set {sn}</span>
                   <span style={{ color: "var(--accent-cycling)", fontWeight: 700, fontSize: 14 }}>
                     {log.weight} kg × {log.reps}
                   </span>
@@ -560,7 +562,7 @@ export function GymWorkoutClient({ workout }: { workout: any }) {
               <span style={{ color: "var(--accent-gym)", fontWeight: 800, fontSize: 16 }}>
                 Set {currentSetNum} de {currentEx.targetSets}
               </span>
-              <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
+              <span className="text-xs text-text-secondary">
                 Objetivo: {currentEx.targetReps} reps
               </span>
             </div>
@@ -573,7 +575,7 @@ export function GymWorkoutClient({ workout }: { workout: any }) {
                 label="kg"
                 step={2.5}
               />
-              <span style={{ color: "var(--text-secondary)", fontSize: 14, fontWeight: 700 }}>×</span>
+              <span className="text-text-secondary" style={{ fontSize: 14, fontWeight: 700 }}>×</span>
               <NumericInput
                 value={currentLog?.reps || ""}
                 onChange={(v) => handleChange("reps", v)}
@@ -610,13 +612,13 @@ export function GymWorkoutClient({ workout }: { workout: any }) {
             border: "1px solid var(--glass-border)",
           }}
         >
-          <span className="text-xs uppercase font-bold" style={{ color: "var(--text-secondary)" }}>
+          <span className="text-xs uppercase font-bold text-text-secondary">
             Siguiente:
           </span>
-          <span className="text-sm" style={{ color: "var(--text-primary)" }}>
+          <span className="text-sm text-text-primary">
             {nextEx.name}
           </span>
-          <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
+          <span className="text-xs text-text-secondary">
             {nextEx.targetSets}×{nextEx.targetReps}
           </span>
         </div>
@@ -664,7 +666,7 @@ function ProgressBar({ pct, completed, total }: { pct: number; completed: number
   return (
     <div className="mb-6">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--text-secondary)" }}>
+        <span className="text-xs font-bold uppercase tracking-widest text-text-secondary">
           Progreso
         </span>
         <span className="text-xs font-bold" style={{ color: "var(--accent-gym)" }}>

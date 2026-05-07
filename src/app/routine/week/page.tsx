@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { DayCardClient } from "./DayCardClient";
 import { BackLink } from "@/components/BackLink";
@@ -8,6 +7,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getCurrentWeekStart } from "@/lib/week";
+import { getActiveRoutineWithBlocks } from "@/lib/queries/getActiveRoutine";
 
 export const metadata: Metadata = { title: "Rutina semanal" };
 
@@ -19,47 +19,7 @@ export default async function WeeklyRoutinePage() {
   }
 
   const weekStart = getCurrentWeekStart();
-
-  // First, try to find a routine for the current week or past weeks
-  let routine = await prisma.routine.findFirst({
-    where: {
-      userId: session.user.id,
-      status: "active",
-      weekStart: { lte: weekStart },
-    },
-    orderBy: { weekStart: 'desc' },
-    include: {
-      days: {
-        include: {
-          exercises: true,
-          completions: { where: { weekStart } },
-          blocks: { orderBy: { order: 'asc' } },
-        }
-      }
-    }
-  });
-
-  // If no active routine for current/past weeks, look for upcoming ones
-  // (e.g. after approving a monthly mesocycle that starts next week)
-  if (!routine) {
-    routine = await prisma.routine.findFirst({
-      where: {
-        userId: session.user.id,
-        status: "active",
-        weekStart: { gt: weekStart },
-      },
-      orderBy: { weekStart: 'asc' },
-      include: {
-        days: {
-          include: {
-            exercises: true,
-            completions: { where: { weekStart } },
-            blocks: { orderBy: { order: 'asc' } },
-          }
-        }
-      }
-    });
-  }
+  const routine = await getActiveRoutineWithBlocks(session.user.id, weekStart);
 
   if (!routine) {
     return (
@@ -84,7 +44,7 @@ export default async function WeeklyRoutinePage() {
   }));
 
   const cyclingCount = routine.days.filter(
-    (d: any) => d.targetDuration != null && d.blocks?.length > 0
+    (d) => d.targetDuration != null && d.blocks?.length > 0
   ).length;
 
   return (
