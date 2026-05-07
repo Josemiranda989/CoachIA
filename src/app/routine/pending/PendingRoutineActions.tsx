@@ -3,13 +3,52 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { Check, X, Loader2 } from "lucide-react";
+import { Check, X, Loader2, type LucideIcon } from "lucide-react";
+
+type ActionVariant = "approve" | "reject";
+
+function ActionButton({
+  variant,
+  label,
+  loading,
+  disabled,
+  onClick,
+}: {
+  variant: ActionVariant;
+  label: string;
+  loading: boolean;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  const Icon: LucideIcon = variant === "approve" ? Check : X;
+  const baseClass =
+    "flex-1 py-4 rounded-2xl font-bold text-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2";
+  const variantClass =
+    variant === "approve"
+      ? "text-black"
+      : "border border-red-500/30 text-red-400 hover:bg-red-500/10";
+  const variantStyle =
+    variant === "approve"
+      ? { background: "linear-gradient(135deg, var(--accent-gym), #fcd34d)" }
+      : undefined;
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`${baseClass} ${variantClass}`}
+      style={variantStyle}
+    >
+      {loading ? <Loader2 className="animate-spin" size={20} aria-hidden="true" /> : <Icon size={20} aria-hidden="true" />}
+      {label}
+    </button>
+  );
+}
 
 export function PendingRoutineActions({ count }: { count: number }) {
   const router = useRouter();
-  const [loading, setLoading] = useState<"approve" | "reject" | null>(null);
+  const [loading, setLoading] = useState<ActionVariant | null>(null);
 
-  async function handleAction(action: "approve" | "reject") {
+  async function handleAction(action: ActionVariant) {
     setLoading(action);
     try {
       const res = await fetch(`/api/routines/pending-action`, {
@@ -51,33 +90,20 @@ export function PendingRoutineActions({ count }: { count: number }) {
       }}
     >
       <div className="app-container flex gap-3">
-        <button
+        <ActionButton
+          variant="reject"
+          label={rejectLabel}
+          loading={loading === "reject"}
+          disabled={loading !== null}
           onClick={() => handleAction("reject")}
+        />
+        <ActionButton
+          variant="approve"
+          label={approveLabel}
+          loading={loading === "approve"}
           disabled={loading !== null}
-          className="flex-1 py-4 rounded-2xl font-bold text-lg border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-        >
-          {loading === "reject" ? (
-            <Loader2 className="animate-spin" size={20} />
-          ) : (
-            <X size={20} />
-          )}
-          {rejectLabel}
-        </button>
-        <button
           onClick={() => handleAction("approve")}
-          disabled={loading !== null}
-          className="flex-1 py-4 rounded-2xl font-bold text-lg text-black transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-          style={{
-            background: "linear-gradient(135deg, var(--accent-gym), #fcd34d)",
-          }}
-        >
-          {loading === "approve" ? (
-            <Loader2 className="animate-spin" size={20} />
-          ) : (
-            <Check size={20} />
-          )}
-          {approveLabel}
-        </button>
+        />
       </div>
     </div>
   );
