@@ -146,7 +146,7 @@
 
 ---
 
-## 🔵 Sprint 4 — A11y nice-to-have (estimado 2-3 hs) ✅ MAYORÍA COMPLETADA (#29 diferido)
+## 🔵 Sprint 4 — A11y nice-to-have (estimado 2-3 hs) ✅ COMPLETADO
 
 ### [x] #23 `.input:focus-visible` sin estilos
 - **Dónde**: `src/app/globals.css:286-296`
@@ -175,11 +175,10 @@
 - **Problema**: la mayoría son decorativos junto a texto. SR los lee duplicado.
 - **Fix**: agregar `aria-hidden="true"` a iconos decorativos.
 
-### [ ] #29 `confirm()` bloqueante sin alternativa accesible — DIFERIDO
-
-> Requiere refactor del flow del listener de click en anchor: el `<dialog>` accesible es async, pero el `confirm()` corre síncrono dentro del listener (necesita preventDefault inmediato). Se ataca en otro PR convirtiendo el navigation a un guard pattern.
+### [x] #29 `confirm()` bloqueante sin alternativa accesible
 - **Dónde**: `src/app/workout/today/GymWorkoutClient.tsx:297` ("Tenés sets sin guardar…")
 - **Fix**: usar elemento `<dialog>` accesible con focus trap.
+- **Done**: refactor del flow a un **guard pattern**. El listener de click sigue siendo síncrono (necesita `e.preventDefault()` inmediato para que el browser no navegue), pero ahora **siempre** bloquea cuando hay unsaved + link interno y guarda el destino en `pendingNav: string | null` state. Un `useEffect` separado abre el `<dialog>` nativo via `dialogRef.current.showModal()` cuando `pendingNav` cambia. El user ve un modal con título "Tenés sets sin guardar", descripción, y dos botones: "Cancelar" (con `autoFocus`) y "Salir igual". HTML5 `<dialog>` da focus trap, Escape close (vía `onClose` reseteamos state), y focus return al element disparador, todo nativo. Agregué `.dialog-card` + `::backdrop` styles en `globals.css` (`bg-card`, `glass-border`, `radius-md`, `shadow-premium`, `backdrop-filter: blur` en ambos). `aria-labelledby`/`aria-describedby` apuntan al `h3` y `p`. Reduced-motion no requiere extra: el dialog no tiene animation custom.
 
 ### [x] #30 Skip link "Saltar al contenido"
 - **Problema**: Header sticky sin opción de skip. WCAG 2.4.1.
