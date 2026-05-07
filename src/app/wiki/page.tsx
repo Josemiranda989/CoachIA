@@ -1,28 +1,16 @@
-import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import Image from "next/image";
 import { BackLink } from "@/components/BackLink";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
-
-export const dynamic = "force-dynamic";
+import { getAllExerciseDefinitions } from "@/lib/exercise-cache";
 
 export default async function WikiPage() {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/auth/login");
 
-  const exercises = await prisma.exerciseDefinition.findMany({
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-      muscleGroups: true,
-      equipment: true,
-      imagePath: true,
-    },
-    orderBy: { name: "asc" },
-  });
+  const exercises = await getAllExerciseDefinitions();
 
   return (
     <div className="app-container py-10">
