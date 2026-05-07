@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { BackLink } from "@/components/BackLink";
@@ -5,6 +6,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getAllExerciseDefinitions } from "@/lib/exercise-cache";
+
+export const metadata: Metadata = { title: "Wiki de ejercicios" };
 
 export default async function WikiPage() {
   const session = await getServerSession(authOptions);
@@ -45,7 +48,6 @@ export default async function WikiPage() {
                     height={72}
                     className="object-cover"
                     style={{ width: 72, height: 72 }}
-                    unoptimized
                   />
                 ) : (
                   <span className="text-3xl">🏋️</span>
