@@ -65,7 +65,7 @@
 - **Fix**: convertir a async Server Components y pasar data por props. O Server Component padre + Client Component hijo con `use(promise)` (React 19).
 - **Done**: `WeightChart` ahora es server (fetch a Prisma) + `WeightChartView` cliente (recharts). `StravaActivities` server async, recibe `userId` y hace el fetch directo. Eliminada la doble fetch de Strava (antes pegaba 2 veces: una para cycling cards desde server, otra para activities desde cliente). Ahora `getStravaStats`/`getStravaActivities` están memoizadas con `React.cache()` en `src/lib/strava-cached.ts` — `<CyclingCards>` y `<StravaActivities>` comparten el resultado dentro del mismo render.
 
-### [ ] #10 `(session as any).user.id` en 14 archivos
+### [x] #10 `(session as any).user.id` en 14 archivos
 - **Problema**: TypeScript hack repetido por todo el codebase.
 - **Fix**: tipá la session una vez en `src/types/next-auth.d.ts`:
   ```ts
@@ -74,6 +74,7 @@
   }
   ```
   Después eliminá los `as any` con un find/replace.
+- **Done**: creado `src/types/next-auth.d.ts` con augmentation de `Session.user.id` (`& DefaultSession["user"]`) y `JWT.id`. 19 ocurrencias de `(session as any)` eliminadas en 17 archivos. Bonus: detectó un bug latente en `routines/route.ts:127` (usaba `session.user.id` cuando había un fallback a `firstUser` — el `as any` lo silenciaba; ahora usa el `userId` del `let`).
 
 ### [ ] #11 Listener `focusin/focusout` con closure stale
 - **Dónde**: `src/app/workout/today/GymWorkoutClient.tsx:287-304`
