@@ -1,0 +1,89 @@
+{
+  "name": "CoachIA — openScale → Weight Sync",
+  "nodes": [
+    {
+      "parameters": {
+        "topics": "openScaleSync/measurements/last",
+        "options": {
+          "jsonParseBody": true,
+          "parallelProcessing": false
+        }
+      },
+      "id": "8c3a3b6e-5b2e-4f7e-9a1b-1e2b3c4d5e6f",
+      "name": "MQTT Trigger — openScale",
+      "type": "n8n-nodes-base.mqttTrigger",
+      "typeVersion": 1,
+      "position": [
+        260,
+        300
+      ],
+      "credentials": {
+        "mqtt": {
+          "id": "gH7mg4gdcPsUVkCu",
+          "name": "MQTT account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://coach-ia:3000/api/weight",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-internal-key",
+              "value": "__REPLACE_WITH_INTERNAL_API_KEY__"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"weight\": {{ $json.weight }},\n  \"bodyFat\": {{ $json.fat ?? 'null' }},\n  \"muscle\": {{ $json.muscle ?? 'null' }},\n  \"scaleId\": {{ $json.id ?? 'null' }},\n  \"date\": \"{{ $json.date }}\",\n  \"notes\": \"Auto: openScale Sync\"\n}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "9d4b4c7f-6c3f-5a8f-0b2c-2f3c4d5e6f70",
+      "name": "POST /api/weight",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        540,
+        300
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "MQTT Trigger — openScale": {
+      "main": [
+        [
+          {
+            "node": "POST /api/weight",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": []
+}
