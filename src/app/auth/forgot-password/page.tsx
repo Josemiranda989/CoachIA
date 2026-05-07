@@ -90,13 +90,14 @@ export default function ForgotPasswordPage() {
           </p>
         </header>
 
-        <form onSubmit={handleSubmit} className="card space-y-6">
+        <form onSubmit={handleSubmit} className="card space-y-6" noValidate>
           <div className="space-y-2">
-            <label className="flex items-center gap-2 text-sm font-medium text-text-secondary">
-              <Mail size={16} />
+            <label htmlFor="forgot-email" className="flex items-center gap-2 text-sm font-medium text-text-secondary">
+              <Mail size={16} aria-hidden="true" />
               <span>Email</span>
             </label>
             <input
+              id="forgot-email"
               type="email"
               placeholder="atleta@ejemplo.com"
               value={email}

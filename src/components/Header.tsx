@@ -12,6 +12,8 @@ export function Header() {
   const [mounted, setMounted] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuItemsRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -32,6 +34,45 @@ export function Header() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [menuOpen]);
+
+  // Focus first menuitem when menu opens
+  useEffect(() => {
+    if (!menuOpen) return;
+    const first = menuItemsRef.current?.querySelector<HTMLElement>('[role="menuitem"]');
+    first?.focus();
+  }, [menuOpen]);
+
+  const closeMenuAndRestoreFocus = () => {
+    setMenuOpen(false);
+    triggerRef.current?.focus();
+  };
+
+  const handleMenuKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      closeMenuAndRestoreFocus();
+      return;
+    }
+    if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+    e.preventDefault();
+    const items = Array.from(
+      menuItemsRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []
+    );
+    if (items.length === 0) return;
+    const currentIndex = items.indexOf(document.activeElement as HTMLElement);
+    const delta = e.key === "ArrowDown" ? 1 : -1;
+    const nextIndex = (currentIndex + delta + items.length) % items.length;
+    items[nextIndex]?.focus();
+  };
+
+  const handleTriggerKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") {
+      if (!menuOpen) {
+        e.preventDefault();
+        setMenuOpen(true);
+      }
+    }
+  };
 
   const navLinks = [
     { href: "/", label: "Dashboard", icon: Home },
@@ -65,6 +106,7 @@ export function Header() {
               <Link
                 key={link.href}
                 href={link.href}
+                aria-current={isActive ? "page" : undefined}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -80,7 +122,7 @@ export function Header() {
                   boxShadow: isActive ? "0 4px 12px rgba(220, 38, 38, 0.25)" : "none",
                 }}
               >
-                <Icon size={16} />
+                <Icon size={16} aria-hidden="true" />
                 <span>{link.label}</span>
               </Link>
             );
@@ -92,7 +134,8 @@ export function Header() {
           {/* Theme toggle */}
           <button
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            aria-label="Toggle theme"
+            aria-label={mounted ? (theme === "dark" ? "Cambiar a tema claro" : "Cambiar a tema oscuro") : "Cambiar tema"}
+            aria-pressed={mounted ? theme === "dark" : undefined}
             style={{
               display: "flex",
               alignItems: "center",
@@ -107,14 +150,16 @@ export function Header() {
               transition: "all 0.2s ease",
             }}
           >
-            {mounted && (theme === "dark" ? <Sun size={18} /> : <Moon size={18} />)}
+            {mounted && (theme === "dark" ? <Sun size={18} aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />)}
           </button>
 
           {/* Auth area */}
           {session ? (
             <div ref={menuRef} style={{ position: "relative" }}>
               <button
+                ref={triggerRef}
                 onClick={() => setMenuOpen((v) => !v)}
+                onKeyDown={handleTriggerKeyDown}
                 aria-label="Menú de usuario"
                 aria-expanded={menuOpen}
                 aria-haspopup="menu"
@@ -146,6 +191,7 @@ export function Header() {
                 </div>
                 <ChevronDown
                   size={14}
+                  aria-hidden="true"
                   style={{
                     color: "var(--text-secondary)",
                     transition: "transform 0.2s ease",
@@ -156,7 +202,9 @@ export function Header() {
 
               {menuOpen && (
                 <div
+                  ref={menuItemsRef}
                   role="menu"
+                  onKeyDown={handleMenuKeyDown}
                   style={{
                     position: "absolute",
                     top: "calc(100% + 8px)",

@@ -38,7 +38,7 @@ export function BottomNav() {
             <Link
               key={link.href}
               href={link.href}
-              aria-label={link.label}
+              aria-current={isActive ? "page" : undefined}
               style={{
                 display: "flex",
                 flexDirection: "column",
@@ -55,7 +55,7 @@ export function BottomNav() {
                 background: isActive ? "rgba(220, 38, 38, 0.1)" : "transparent",
               }}
             >
-              <Icon size={22} />
+              <Icon size={22} aria-hidden="true" />
               <span
                 style={{
                   fontSize: 10,
