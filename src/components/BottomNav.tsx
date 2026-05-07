@@ -1,14 +1,9 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Calendar, Dumbbell, BarChart3 } from "lucide-react";
+import { navLinks } from "@/lib/nav";
 
-const navLinks = [
-  { href: "/", label: "Dashboard", icon: Home },
-  { href: "/routine/week", label: "Rutina", icon: Calendar },
-  { href: "/workout/today", label: "Hoy", icon: Dumbbell },
-  { href: "/metrics", label: "Métricas", icon: BarChart3 },
-];
+const mobileLinks = navLinks.filter((link) => link.mobile);
 
 export function BottomNav() {
   const pathname = usePathname();
@@ -31,9 +26,10 @@ export function BottomNav() {
       }}
     >
       <div style={{ display: "flex", justifyContent: "space-around", padding: "6px 4px" }}>
-        {navLinks.map((link) => {
+        {mobileLinks.map((link) => {
           const Icon = link.icon;
           const isActive = pathname === link.href;
+          const label = link.shortLabel ?? link.label;
           return (
             <Link
               key={link.href}
@@ -64,7 +60,7 @@ export function BottomNav() {
                   letterSpacing: "0.05em",
                 }}
               >
-                {link.label}
+                {label}
               </span>
             </Link>
           );

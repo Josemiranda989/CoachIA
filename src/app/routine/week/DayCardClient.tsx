@@ -15,18 +15,19 @@ const DAY_ES: Record<string, string> = {
   Sunday: "Domingo",
 };
 
-const TODAY_EN = new Intl.DateTimeFormat('en-US', {
-  timeZone: 'America/Argentina/Tucuman',
-  weekday: 'long',
-}).format(new Date());
-
 export function DayCardClient({ day }: { day: any }) {
   const router = useRouter();
   const [completed, setCompleted] = useState(day.completed || false);
   const [creatine, setCreatine] = useState(day.creatineTaken || false);
   const [loading, setLoading] = useState(false);
 
-  const isToday = day.dayOfWeek === TODAY_EN;
+  // Computed per render so a tab left open overnight still highlights the right day.
+  const todayEn = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Argentina/Tucuman',
+    weekday: 'long',
+  }).format(new Date());
+
+  const isToday = day.dayOfWeek === todayEn;
   const [expanded, setExpanded] = useState(isToday);
 
   const hasGym = (day.exercises?.length ?? 0) > 0;
