@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -7,6 +8,16 @@ import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { getAllExerciseSlugs, getExerciseBySlug } from "@/lib/exercise-cache";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const exercise = await getExerciseBySlug(slug);
+  return { title: exercise?.name ?? "Ejercicio" };
+}
 
 export default async function ExerciseDetailPage({
   params,
@@ -110,7 +121,6 @@ export default async function ExerciseDetailPage({
               height={480}
               className="object-cover w-full h-full"
               priority
-              unoptimized
             />
           </div>
         </div>

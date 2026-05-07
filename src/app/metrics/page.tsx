@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
@@ -12,6 +13,8 @@ import { WeightChartSkeleton } from "./WeightChartView";
 import { CyclingCards, CyclingCardsSkeleton } from "./CyclingCards";
 import { CountUp } from "@/components/CountUp";
 import { BackLink } from "@/components/BackLink";
+
+export const metadata: Metadata = { title: "Métricas" };
 
 export default async function MetricsPage() {
   const session = await getServerSession(authOptions);

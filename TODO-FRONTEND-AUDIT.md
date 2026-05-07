@@ -182,9 +182,9 @@
 
 ---
 
-## ⚪ Sprint 5 — SEO básico (estimado 1 h)
+## ⚪ Sprint 5 — SEO básico (estimado 1 h) ✅ COMPLETADO
 
-### [ ] #32 Falta `robots.ts` con `Disallow: /` (PRIVATE APP)
+### [x] #32 Falta `robots.ts` con `Disallow: /` (PRIVATE APP)
 - **Dónde**: crear `src/app/robots.ts`
 - **Por qué**: app privada de un solo usuario expuesta a internet. NO querés que se indexe.
 - **Fix**:
@@ -195,20 +195,20 @@
   }
   ```
 
-### [ ] #33 Falta `metadataBase` en root layout
+### [x] #33 Falta `metadataBase` en root layout
 - **Dónde**: `src/app/layout.tsx:9`
 - **Problema**: sin esto, `openGraph.url` y rutas relativas en metadata generan warnings.
 - **Fix**: `metadataBase: new URL("https://coachia.jmlabs.app")` en el `metadata` export.
 
-### [ ] #34 Pages internas heredan title genérico
+### [x] #34 Pages internas heredan title genérico
 - **Problema**: `/metrics`, `/wiki`, `/nutrition`, `/help`, `/profile`, `/auth/*` muestran "CoachIA - Entreno" en la pestaña.
 - **Fix**: en root layout `title: { default: "CoachIA", template: "%s · CoachIA" }`. Después en cada page: `export const metadata = { title: "Métricas" }`.
 
-### [ ] #35 OG/Twitter cards genéricas
+### [x] #35 OG/Twitter cards genéricas
 - **Problema**: si pegás `coachia.jmlabs.app` en WhatsApp/Telegram queda feo.
 - **Fix**: agregar `openGraph` y `twitter` en root layout con `images` apuntando a `/icons/icon-512.png`.
 
-### [ ] #36 `next/image` con `unoptimized` en wiki
+### [x] #36 `next/image` con `unoptimized` en wiki
 - **Dónde**: `src/app/wiki/[slug]/page.tsx:120`, `src/app/wiki/page.tsx:60`
 - **Problema**: perdés conversión automática a WebP/AVIF.
 - **Fix**: sacar `unoptimized` si las imágenes son locales.

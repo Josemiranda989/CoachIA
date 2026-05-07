@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { DayCardClient } from "./DayCardClient";
@@ -7,6 +8,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getCurrentWeekStart } from "@/lib/week";
+
+export const metadata: Metadata = { title: "Rutina semanal" };
 
 export default async function WeeklyRoutinePage() {
   const session = await getServerSession(authOptions);
