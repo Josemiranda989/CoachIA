@@ -52,19 +52,24 @@ export default function RegisterPage() {
           <p className="subtitle">Únete a la comunidad de CoachIA y optimiza tus entrenamientos.</p>
         </header>
 
-        <form onSubmit={handleSubmit} className="card space-y-5">
+        <form onSubmit={handleSubmit} className="card space-y-5" noValidate>
           {error && (
-            <div className="bg-red-500/10 border border-red-500/50 text-red-400 p-4 rounded-lg text-sm mb-4">
+            <div
+              role="alert"
+              aria-live="assertive"
+              className="bg-red-500/10 border border-red-500/50 text-red-400 p-4 rounded-lg text-sm mb-4"
+            >
               {error}
             </div>
           )}
-          
+
           <div className="space-y-2">
-            <label className="flex items-center gap-2 text-sm font-medium text-text-secondary">
-              <User size={16} />
+            <label htmlFor="register-name" className="flex items-center gap-2 text-sm font-medium text-text-secondary">
+              <User size={16} aria-hidden="true" />
               <span>Nombre Completo</span>
             </label>
             <input
+              id="register-name"
               type="text"
               placeholder="Tu nombre"
               value={name}
@@ -76,11 +81,12 @@ export default function RegisterPage() {
           </div>
 
           <div className="space-y-2">
-            <label className="flex items-center gap-2 text-sm font-medium text-text-secondary">
-              <Mail size={16} />
+            <label htmlFor="register-email" className="flex items-center gap-2 text-sm font-medium text-text-secondary">
+              <Mail size={16} aria-hidden="true" />
               <span>Email</span>
             </label>
             <input
+              id="register-email"
               type="email"
               placeholder="atleta@ejemplo.com"
               value={email}
@@ -92,11 +98,12 @@ export default function RegisterPage() {
           </div>
 
           <div className="space-y-2">
-            <label className="flex items-center gap-2 text-sm font-medium text-text-secondary">
-              <Lock size={16} />
+            <label htmlFor="register-password" className="flex items-center gap-2 text-sm font-medium text-text-secondary">
+              <Lock size={16} aria-hidden="true" />
               <span>Contraseña</span>
             </label>
             <input
+              id="register-password"
               type="password"
               placeholder="••••••••"
               value={password}
@@ -108,11 +115,12 @@ export default function RegisterPage() {
           </div>
 
           <div className="space-y-2">
-            <label className="flex items-center gap-2 text-sm font-medium text-text-secondary">
-              <Lock size={16} />
+            <label htmlFor="register-confirm-password" className="flex items-center gap-2 text-sm font-medium text-text-secondary">
+              <Lock size={16} aria-hidden="true" />
               <span>Confirmar Contraseña</span>
             </label>
             <input
+              id="register-confirm-password"
               type="password"
               placeholder="••••••••"
               value={confirmPassword}
