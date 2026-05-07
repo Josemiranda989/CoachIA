@@ -2,9 +2,10 @@
 import Link from "next/link";
 import { useTheme } from "next-themes";
 import { useSession, signOut } from "next-auth/react";
-import { Home, Calendar, Dumbbell, BarChart3, Apple, Sun, Moon, LogOut, LogIn, User, ChevronDown } from "lucide-react";
+import { Sun, Moon, LogOut, LogIn, User, ChevronDown } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
+import { navLinks } from "@/lib/nav";
 
 export function Header() {
   const { theme, setTheme } = useTheme();
@@ -73,14 +74,6 @@ export function Header() {
       }
     }
   };
-
-  const navLinks = [
-    { href: "/", label: "Dashboard", icon: Home },
-    { href: "/routine/week", label: "Rutina", icon: Calendar },
-    { href: "/workout/today", label: "Entrenamiento", icon: Dumbbell },
-    { href: "/metrics", label: "Métricas", icon: BarChart3 },
-    { href: "/nutrition", label: "Nutrición", icon: Apple },
-  ];
 
   const userInitial = session?.user?.name?.charAt(0)?.toUpperCase() || "U";
 

@@ -102,7 +102,7 @@
 - **Dónde**: `src/app/page.tsx:28-67`, `src/app/routine/week/page.tsx:21-59`, `src/app/workout/today/page.tsx:21-59`
 - **Fix**: extraer a `src/lib/queries/getActiveRoutine.ts` y envolver con `cache()` de React para deduplicar entre componentes en el mismo request.
 
-### [ ] #15 `TODAY_EN` calculado a nivel de módulo
+### [x] #15 `TODAY_EN` calculado a nivel de módulo
 - **Dónde**: `src/app/routine/week/DayCardClient.tsx:18-22`
 - **Problema**: `new Date()` a nivel de módulo se evalúa al import-time del bundle. El "hoy" puede quedar congelado.
 - **Fix**: mover dentro del componente o pasarlo como prop desde el Server Component padre.
@@ -112,7 +112,7 @@
 - **Problema**: misma estructura repetida 7 veces (`mb-4 p-3 bg-X-soft rounded-xl w-fit` + título + descripción + ArrowRight).
 - **Fix**: `<DashboardCard href icon iconBg accentColor title description delay>` — ahorrás 100+ líneas.
 
-### [ ] #17 Botones idénticos sin extraer
+### [x] #17 Botones idénticos sin extraer
 - **Dónde**: `src/app/routine/pending/PendingRoutineActions.tsx:57,69`
 - **Problema**: dos botones full-width con misma estructura (solo cambia color). Y la clase `.btn` ya existe en `globals.css:196` pero no se usa.
 - **Fix**: `<ActionButton variant="approve" | "reject">` o usar `.btn-approve` / `.btn-reject` en CSS.
@@ -130,8 +130,9 @@
 - **Problema**: `gap-2/3/4/5` mezclados en mismo componente (ej. `routine/week/DayCardClient.tsx`). `rounded-*`: 28× xl, 17× lg, 10× 2xl, 2× md. `--radius-sm/md/lg` en CSS vars (`globals.css:90-92`) pero nadie los usa.
 - **Fix**: definir 2-3 tokens (gap-2 inline, gap-4 cards, gap-6 secciones) y respetarlos. O eliminar las CSS vars muertas.
 
-### [ ] #21 `navLinks` duplicado en Header y BottomNav
+### [x] #21 `navLinks` duplicado en Header y BottomNav
 - **Fix**: extraer a `src/lib/nav.ts` y reusar.
+- **Done**: creado `src/lib/nav.ts` con shape `{ href, label, shortLabel?, icon, mobile }`. Header consume todos los items, BottomNav filtra por `mobile: true` y usa `shortLabel ?? label` para el label corto ("Hoy" vs "Entrenamiento").
 
 ### [ ] #22 Tipos `any` en data shapes
 - **Dónde**: `routine/pending/page.tsx:160` (`(day as any).blocks`), `metrics/page.tsx:84-95` (`icon: any` en `Metric`), Client Components con `workout: any`, `day: any`, `ex: any`.
