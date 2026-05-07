@@ -88,11 +88,15 @@ export function Header() {
     <header className="sticky top-0 z-50" style={{ background: "var(--bg-card)", borderBottom: "1px solid var(--glass-border)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)" }}>
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 16px", display: "flex", alignItems: "center", height: 56 }}>
         {/* Logo */}
-        <Link href="/" style={{ display: "flex", alignItems: "center", gap: 2, textDecoration: "none", marginRight: 32 }}>
-          <span style={{ fontSize: 24, fontWeight: 900, letterSpacing: "-0.04em", color: "var(--text-primary)" }}>
+        <Link
+          href="/"
+          aria-label="CoachIA — ir al Dashboard"
+          style={{ display: "flex", alignItems: "center", gap: 2, textDecoration: "none", marginRight: 32 }}
+        >
+          <span aria-hidden="true" style={{ fontSize: 24, fontWeight: 900, letterSpacing: "-0.04em", color: "var(--text-primary)" }}>
             Coach
           </span>
-          <span style={{ fontSize: 24, fontWeight: 900, letterSpacing: "-0.04em", color: "var(--accent-primary)" }}>
+          <span aria-hidden="true" style={{ fontSize: 24, fontWeight: 900, letterSpacing: "-0.04em", color: "var(--accent-primary)" }}>
             IA
           </span>
         </Link>

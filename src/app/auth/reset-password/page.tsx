@@ -223,7 +223,7 @@ export default function ResetPasswordPage() {
   return (
     <div className="container py-20 flex flex-col items-center justify-center min-h-[calc(100vh-80px)]">
       <div className="w-full max-w-md">
-        <Suspense fallback={<div className="card text-center" style={{ padding: 40 }}>Cargando...</div>}>
+        <Suspense fallback={<div role="status" aria-live="polite" className="card text-center" style={{ padding: 40 }}>Cargando…</div>}>
           <ResetPasswordForm />
         </Suspense>
       </div>

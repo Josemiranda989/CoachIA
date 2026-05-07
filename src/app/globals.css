@@ -302,6 +302,11 @@ body {
   box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.15);
 }
 
+.input:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
 .light .input {
   background: rgba(0, 0, 0, 0.04);
 }
@@ -327,9 +332,46 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .page-transition {
+  .page-transition,
+  .animate-fade-up,
+  .badge-pulse {
     animation: none;
   }
+  .card-hover-lift,
+  .card-hover-lift:hover,
+  .card-hover-lift:active {
+    transition: none;
+    transform: none;
+  }
+  .card,
+  .card:hover {
+    transition: none;
+    transform: none;
+  }
+}
+
+/* Skip link — visually hidden until focused. Lets keyboard users jump past
+   the sticky Header straight to the main content. */
+.skip-link {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 12px 16px;
+  background: var(--accent-primary);
+  color: #fff;
+  font-weight: 700;
+  border-radius: 0 0 8px 0;
+  text-decoration: none;
+  z-index: 100;
+  transform: translateY(-110%);
+  transition: transform 0.15s ease;
+}
+
+.skip-link:focus,
+.skip-link:focus-visible {
+  transform: translateY(0);
+  outline: 2px solid #fff;
+  outline-offset: -4px;
 }
 
 /* Back link — unified across all sub-pages */
