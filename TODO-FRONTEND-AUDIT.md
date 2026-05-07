@@ -98,45 +98,51 @@
 
 ## 🟢 Sprint 3 — Refactor DRY / consistencia (estimado 4-6 hs)
 
-### [ ] #14 Patrón "buscar rutina activa" duplicado 3 veces
+### [x] #14 Patrón "buscar rutina activa" duplicado 3 veces
 - **Dónde**: `src/app/page.tsx:28-67`, `src/app/routine/week/page.tsx:21-59`, `src/app/workout/today/page.tsx:21-59`
 - **Fix**: extraer a `src/lib/queries/getActiveRoutine.ts` y envolver con `cache()` de React para deduplicar entre componentes en el mismo request.
+- **Done**: creado `src/lib/queries/getActiveRoutine.ts` con un `findActiveRoutine<T>` interno (genérico tipado vía `Prisma.RoutineInclude`) que encapsula el patrón "lte weekStart → fallback gt weekStart", más 4 presets envueltos con `React.cache()`: `getActiveRoutineLight` (home — solo `type` + `completions`), `getActiveRoutineWithBlocks` (week — full days + blocks), `getActiveRoutineWithLogs` (today — full days + per-week logs), y `getActiveRoutineDay` (descubierto durante el refactor: misma lógica también estaba en `src/app/api/today/route.ts` filtrando por `dayOfWeek`). 4 call sites unificados, ~150 líneas de duplicación eliminadas. Tipos derivados exportados (`ActiveRoutineLight`, `ActiveRoutineWithBlocks`, `ActiveRoutineWithLogs`) listos para alimentar el #22.
 
 ### [x] #15 `TODAY_EN` calculado a nivel de módulo
 - **Dónde**: `src/app/routine/week/DayCardClient.tsx:18-22`
 - **Problema**: `new Date()` a nivel de módulo se evalúa al import-time del bundle. El "hoy" puede quedar congelado.
 - **Fix**: mover dentro del componente o pasarlo como prop desde el Server Component padre.
 
-### [ ] #16 7 cards repetidas en home
+### [x] #16 7 cards repetidas en home
 - **Dónde**: `src/app/page.tsx:187-323`
 - **Problema**: misma estructura repetida 7 veces (`mb-4 p-3 bg-X-soft rounded-xl w-fit` + título + descripción + ArrowRight).
 - **Fix**: `<DashboardCard href icon iconBg accentColor title description delay>` — ahorrás 100+ líneas.
+- **Done**: creado `src/components/DashboardCard.tsx` (Server Component) con props `href`, `icon: LucideIcon`, `iconBgClass`, `iconColorClass`, `hoverBorderClass`, `title`, `description`, `delayMs` y `badge?` opcional (para la card "Generar con IA" que tiene la badge "Nuevo"). Las 7 cards inline se convirtieron en un array `dashboardCards` + `.map()` con `delayMs = 120 + idx * 60` (mantiene la cascada de animación 120/180/240/300/360/420/480ms idéntica). Decisión clave: paso las `className` tal cual como props, no inferí semántica de los colores — fidelidad visual exacta sin cambiar UX. `page.tsx`: -172 / +81 líneas (neto −91 en el archivo). Las 4 cards "secundarias" siguen con su patrón `bg-X-500/20 group-hover:bg-X-500/30 transition-colors`; las 3 "principales" siguen con tokens `bg-accent-X-soft`. Los hovers de border independientes del iconBg (ej. Métricas usa `text-accent-cycling` con `hover:border-emerald-500/50`) se respetan literal.
 
 ### [x] #17 Botones idénticos sin extraer
 - **Dónde**: `src/app/routine/pending/PendingRoutineActions.tsx:57,69`
 - **Problema**: dos botones full-width con misma estructura (solo cambia color). Y la clase `.btn` ya existe en `globals.css:196` pero no se usa.
 - **Fix**: `<ActionButton variant="approve" | "reject">` o usar `.btn-approve` / `.btn-reject` en CSS.
 
-### [ ] #18 347 `style={{...}}` inline
+### [x] #18 347 `style={{...}}` inline
 - **Concentración**: `nutrition/page.tsx` (70), `workout/today/GymWorkoutClient.tsx` (48), `help/page.tsx` (43).
 - **Problema**: la mayoría son `color-mix()`, gradientes, `var(--accent-*)`, `animationDelay`. Inline performance OK pero rompe consistencia.
 - **Fix**: registrá los gradientes y soft-bgs como utilidades en `@theme` o `globals.css` (siguiendo el patrón de `bg-accent-*-soft` que ya tenés).
+- **Done**: el patrón más repetido (con largo) era `style={{ color: "var(--text-primary)" }}` / `var(--text-secondary)` — 75 ocurrencias en los 3 archivos calientes. Esos colors ya estaban registrados como tokens en `@theme inline` (`text-text-primary`, `text-text-secondary`) pero nadie los usaba en JSX. Migré los 75 a utility classes existentes; quedan solo 3 casos legítimos (1 en `nutrition` que es `accent-gym`, 2 en `GymWorkoutClient` que son ternarios condicionales `exIdx === 0 ? "var(--glass-border)" : "var(--text-primary)"` — esos tienen que ser inline). Agregué `.bg-surface-low { background: rgba(255,255,255,0.04); }` con override `.light` para reemplazar el `rgba(255,255,255,0.04)` repetido 7+ veces en `nutrition` (subtle stat tiles, hydration cards, pre-ride options). NO toqué los **gradientes hero específicos** (`linear-gradient(135deg, rgba(X,Y,Z,0.12) 0%, rgba(24,24,27,0.7) 60%)`) — son contenido-específicos por sección y registrarlos como 6 utilities (gym, red, blue, cyan, violet, emerald) sería más ruido que beneficio. Tampoco toqué `animationDelay: ${i * 80}ms` y otros inline dinámicos legítimos. Reducción real medida: `var(--text-X)` inline pasó de 75 → 3 (96% reducción del problema específico que causaba ruido visual en JSX).
 
-### [ ] #19 `routine/generate/page.tsx` todo `"use client"` (425 líneas)
+### [x] #19 `routine/generate/page.tsx` todo `"use client"` (425 líneas)
 - **Problema**: `GOALS`, `FOCUS_AREAS`, `DAY_LABELS`, `DayTypeIcon`, `TypeBadge` son puramente estáticos pero corren en el cliente.
 - **Fix**: page como Server Component que renderice `<GenerateRoutineForm>` cliente, y los componentes de preview (sin estado) como Server Components compuestos vía children.
+- **Done**: split en 5 archivos. `page.tsx` ahora es Server Component (24 líneas, header + `<GenerateRoutineForm/>` + `<Link>` Volver + metadata `{ title: "Generar rutina" }`). `GenerateRoutineForm.tsx` (client) tiene todo el state/handlers y renderiza condicionalmente loading/form/preview. Los componentes puros viven sin `"use client"` y son shared/server-compatible: `constants.ts` (GOALS, FOCUS_AREAS, DAY_LABELS, types `DayType`/`GeneratedRoutine`), `PreviewCards.tsx` (`DayTypeIcon`, `TypeBadge`, `DayPreviewCard` — extraído también el render de cada day porque era estático), `LoadingSkeleton.tsx`. Resultado: page.tsx pasó de 425 → 24 líneas (−401). El bundle del cliente ya no incluye el header, el botón "Volver" ni las constantes redundantes; el form sigue en cliente porque tiene state, pero los componentes de preview pueden reusarse desde un Server Component si en el futuro se decide pre-renderizar la preview en server. Decisión: NO tomé el patrón "compose via children" para el preview porque la preview depende de `routine` (state cliente); solo se renderiza cuando existe — pasarla como children desde el server la fija al render inicial.
 
-### [ ] #20 Tokens de spacing/border inconsistentes
+### [x] #20 Tokens de spacing/border inconsistentes
 - **Problema**: `gap-2/3/4/5` mezclados en mismo componente (ej. `routine/week/DayCardClient.tsx`). `rounded-*`: 28× xl, 17× lg, 10× 2xl, 2× md. `--radius-sm/md/lg` en CSS vars (`globals.css:90-92`) pero nadie los usa.
 - **Fix**: definir 2-3 tokens (gap-2 inline, gap-4 cards, gap-6 secciones) y respetarlos. O eliminar las CSS vars muertas.
+- **Done**: convención adoptada: `gap-2` para items inline (icon+texto, label+input), `gap-4` para containers (header rows, vertical content stacks), `gap-6` para secciones grandes. Aplicado en `DayCardClient.tsx`: `gap-3` outer header → `gap-4`, `gap-5` checkboxes → `gap-4`, `flex flex-col gap-3` content stack → `gap-4`. Los `gap-2` inline (icon+texto, checkbox+label) se mantienen, son tight intra-row. Sobre `--radius-*`: el TODO decía "nadie los usa" pero no es verdad — `.card` usa `var(--radius-md)`, `.btn`/`.input`/`.btn-outline-cycling` usan `var(--radius-sm)`. NO son CSS vars muertas. La inconsistencia REAL es entre las clases Tailwind (`rounded-xl/lg/2xl/md` por todo el JSX) y las CSS vars de los componentes base — son universos distintos. Mass-refactor de los `rounded-X` por todo el codebase es scope grande con riesgo cosmético; NO lo ataco en este pase. Si en el futuro se decide unificarlos, el camino limpio sería extender `@theme` para que `rounded-card` y `rounded-input` usen las CSS vars existentes.
 
 ### [x] #21 `navLinks` duplicado en Header y BottomNav
 - **Fix**: extraer a `src/lib/nav.ts` y reusar.
 - **Done**: creado `src/lib/nav.ts` con shape `{ href, label, shortLabel?, icon, mobile }`. Header consume todos los items, BottomNav filtra por `mobile: true` y usa `shortLabel ?? label` para el label corto ("Hoy" vs "Entrenamiento").
 
-### [ ] #22 Tipos `any` en data shapes
+### [x] #22 Tipos `any` en data shapes
 - **Dónde**: `routine/pending/page.tsx:160` (`(day as any).blocks`), `metrics/page.tsx:84-95` (`icon: any` en `Metric`), Client Components con `workout: any`, `day: any`, `ex: any`.
 - **Fix**: exportar tipos desde Prisma con `Prisma.RoutineGetPayload<typeof include>`. Usar `LucideIcon` de `lucide-react` para iconos.
+- **Done**: el #14 ya había dejado el helper genérico tipado; acá lo aproveché. En `src/lib/queries/getActiveRoutine.ts` exporté tipos derivados `DayWithBlocks`, `DayWithLogs`, `ExerciseWithLogs` (vía `Prisma.RoutineGetPayload<{ include: T }>` + indexed access). Eliminé `any` en data shapes de routine/day/exercise: `workout/today/page.tsx` (2 maps + narrowing limpio en `isRestLike`), `routine/week/page.tsx` (filter), `GymWorkoutClient.tsx` (export `GymWorkoutData = Omit<DayWithLogs, "exercises"> & { completed; exercises: (ExerciseWithLogs & { lastWeight? })[] }`), `CyclingWorkoutClient.tsx` (export `CyclingWorkoutData = DayWithLogs & { completed }`), `DayCardClient.tsx` (export `DayCardData = DayWithBlocks & { completed; creatineTaken }` + map sin cast), `routine/pending/page.tsx` (`(day as any).blocks` → `day.blocks`, ya estaba en el include), `metrics/page.tsx` (`icon: typeof Dumbbell` → `LucideIcon` importado de `lucide-react`). Fuera de scope: `catch (err: any)` y shapes de Strava activities (otro item, no el modelo Prisma de la app). El `findActiveRoutine<T>` interno tiene anotación de retorno explícita `Promise<Prisma.RoutineGetPayload<{ include: T }> | null>` para que el genérico no pierda inferencia en los presets.
 
 ---
 

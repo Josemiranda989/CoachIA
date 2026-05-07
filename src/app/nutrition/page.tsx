@@ -296,13 +296,13 @@ export default function NutritionPage() {
             <h2 className="text-lg font-bold mb-2" style={{ color: "var(--accent-gym)" }}>
               La regla de oro
             </h2>
-            <p className="text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-              <strong style={{ color: "var(--text-primary)" }}>60-90g de carbohidratos por hora</strong> en
+            <p className="text-sm leading-relaxed text-text-secondary">
+              <strong className="text-text-primary">60-90g de carbohidratos por hora</strong> en
               esfuerzos de mas de 90 minutos. Empeza a comer desde el minuto 30, luego cada 30-40 minutos.
               Cuando tenes hambre arriba de la bici, ya llegaste tarde.
             </p>
-            <p className="text-sm mt-2 leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-              La clave es: <strong style={{ color: "var(--text-primary)" }}>alto en carbohidratos simples, bajo en grasa y fibra</strong>.
+            <p className="text-sm mt-2 leading-relaxed text-text-secondary">
+              La clave es: <strong className="text-text-primary">alto en carbohidratos simples, bajo en grasa y fibra</strong>.
               La grasa y la fibra enlentecen la digestion y te generan malestar en esfuerzo.
             </p>
           </div>
@@ -330,11 +330,11 @@ export default function NutritionPage() {
             >
               <div className="flex items-start justify-between mb-3">
                 <div>
-                  <h3 className="font-bold text-base" style={{ color: "var(--text-primary)" }}>
+                  <h3 className="font-bold text-base text-text-primary">
                     {item.name}
                   </h3>
                   {item.brand && (
-                    <p className="text-xs mt-1" style={{ color: "var(--text-secondary)" }}>
+                    <p className="text-xs mt-1 text-text-secondary">
                       {item.brand}
                     </p>
                   )}
@@ -344,24 +344,24 @@ export default function NutritionPage() {
 
               {/* Stats */}
               <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-3">
-                <div className="rounded-xl p-2 sm:p-3 text-center" style={{ background: "rgba(255,255,255,0.04)" }}>
-                  <p className="text-xxs uppercase tracking-wider mb-1" style={{ color: "var(--text-secondary)" }}>
+                <div className="rounded-xl p-2 sm:p-3 text-center bg-surface-low">
+                  <p className="text-xxs uppercase tracking-wider mb-1 text-text-secondary">
                     Carbos/100g
                   </p>
                   <p className="text-xs sm:text-sm font-bold" style={{ color: "var(--accent-gym)" }}>
                     {item.carbsPer}
                   </p>
                 </div>
-                <div className="rounded-xl p-2 sm:p-3 text-center" style={{ background: "rgba(255,255,255,0.04)" }}>
-                  <p className="text-xxs uppercase tracking-wider mb-1" style={{ color: "var(--text-secondary)" }}>
+                <div className="rounded-xl p-2 sm:p-3 text-center bg-surface-low">
+                  <p className="text-xxs uppercase tracking-wider mb-1 text-text-secondary">
                     Porcion
                   </p>
-                  <p className="text-xs sm:text-sm font-bold" style={{ color: "var(--text-primary)" }}>
+                  <p className="text-xs sm:text-sm font-bold text-text-primary">
                     {item.portion}
                   </p>
                 </div>
                 <div className="rounded-xl p-2 sm:p-3 text-center" style={{ background: "color-mix(in srgb, var(--accent-cycling) 8%, transparent)" }}>
-                  <p className="text-xxs uppercase tracking-wider mb-1" style={{ color: "var(--text-secondary)" }}>
+                  <p className="text-xxs uppercase tracking-wider mb-1 text-text-secondary">
                     Carbos
                   </p>
                   <p className="text-xs sm:text-sm font-bold" style={{ color: "var(--accent-cycling)" }}>
@@ -371,7 +371,7 @@ export default function NutritionPage() {
               </div>
 
               {item.tip && (
-                <p className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+                <p className="text-xs leading-relaxed text-text-secondary">
                   {item.tip}
                 </p>
               )}
@@ -402,10 +402,10 @@ export default function NutritionPage() {
             >
               <AlertTriangle className="text-red-400 shrink-0 mt-1" size={16} />
               <div>
-                <h3 className="font-bold text-sm mb-1" style={{ color: "var(--text-primary)" }}>
+                <h3 className="font-bold text-sm mb-1 text-text-primary">
                   {item.name}
                 </h3>
-                <p className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+                <p className="text-xs leading-relaxed text-text-secondary">
                   {item.reason}
                 </p>
               </div>
@@ -434,7 +434,7 @@ export default function NutritionPage() {
               }}
             >
               <div className="flex flex-col md:flex-row md:items-center gap-3 mb-4">
-                <h3 className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>
+                <h3 className="text-lg font-bold text-text-primary">
                   {plan.duration}
                 </h3>
                 <div className="flex gap-2 flex-wrap">
@@ -455,7 +455,7 @@ export default function NutritionPage() {
 
               <ul className="space-y-2">
                 {plan.plan.map((step, j) => (
-                  <li key={j} className="flex items-start gap-3 text-sm" style={{ color: "var(--text-secondary)" }}>
+                  <li key={j} className="flex items-start gap-3 text-sm text-text-secondary">
                     <span
                       className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xxs font-bold mt-1"
                       style={{ background: "rgba(16,185,129,0.15)", color: "#10b981" }}
@@ -483,47 +483,47 @@ export default function NutritionPage() {
         <div className="card animate-fade-up" style={{ background: "linear-gradient(135deg, rgba(6,182,212,0.08) 0%, rgba(24,24,27,0.7) 60%)" }}>
           <div className="space-y-4">
             <div>
-              <h3 className="font-bold text-sm mb-2" style={{ color: "var(--text-primary)" }}>Cuanto tomar</h3>
-              <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-                <strong style={{ color: "var(--text-primary)" }}>500-750ml por hora</strong> dependiendo del calor
+              <h3 className="font-bold text-sm mb-2 text-text-primary">Cuanto tomar</h3>
+              <p className="text-sm text-text-secondary">
+                <strong className="text-text-primary">500-750ml por hora</strong> dependiendo del calor
                 y la intensidad. En verano argentino podes necesitar hasta 1L/h.
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div className="rounded-xl p-4" style={{ background: "rgba(255,255,255,0.04)" }}>
+              <div className="rounded-xl p-4 bg-surface-low">
                 <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: "#06b6d4" }}>
                   Salida corta (&lt;1.5h)
                 </p>
-                <p className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>500ml - 750ml</p>
-                <p className="text-xs mt-1" style={{ color: "var(--text-secondary)" }}>
+                <p className="text-lg font-bold text-text-primary">500ml - 750ml</p>
+                <p className="text-xs mt-1 text-text-secondary">
                   1 bidon. Agua sola o con electrolitos.
                 </p>
               </div>
-              <div className="rounded-xl p-4" style={{ background: "rgba(255,255,255,0.04)" }}>
+              <div className="rounded-xl p-4 bg-surface-low">
                 <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: "#06b6d4" }}>
                   Salida media (2-3h)
                 </p>
-                <p className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>1.5L - 2L</p>
-                <p className="text-xs mt-1" style={{ color: "var(--text-secondary)" }}>
+                <p className="text-lg font-bold text-text-primary">1.5L - 2L</p>
+                <p className="text-xs mt-1 text-text-secondary">
                   2 bidones. Al menos 1 con Hidromax o electrolitos.
                 </p>
               </div>
-              <div className="rounded-xl p-4" style={{ background: "rgba(255,255,255,0.04)" }}>
+              <div className="rounded-xl p-4 bg-surface-low">
                 <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: "#06b6d4" }}>
                   Fondo (3h+)
                 </p>
-                <p className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>2L - 2.5L+</p>
-                <p className="text-xs mt-1" style={{ color: "var(--text-secondary)" }}>
+                <p className="text-lg font-bold text-text-primary">2L - 2.5L+</p>
+                <p className="text-xs mt-1 text-text-secondary">
                   2 bidones + parar a recargar. Ambos con electrolitos.
                 </p>
               </div>
             </div>
 
             <div>
-              <h3 className="font-bold text-sm mb-2" style={{ color: "var(--text-primary)" }}>Electrolitos</h3>
-              <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-                <strong style={{ color: "var(--text-primary)" }}>Hidromax</strong> en el bidon aporta sodio, potasio
+              <h3 className="font-bold text-sm mb-2 text-text-primary">Electrolitos</h3>
+              <p className="text-sm text-text-secondary">
+                <strong className="text-text-primary">Hidromax</strong> en el bidon aporta sodio, potasio
                 y ~20-25g de carbos extra por litro. Es suficiente para salidas de hasta 2 horas.
                 Para fondos mas largos, combina bidon de electrolitos + comida solida.
               </p>
@@ -536,7 +536,7 @@ export default function NutritionPage() {
               <p className="text-sm font-semibold mb-1" style={{ color: "var(--accent-gym)" }}>
                 Senal de deshidratacion
               </p>
-              <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
+              <p className="text-xs text-text-secondary">
                 Si tu orina post-salida es amarilla oscura, tomaste poco.
                 El objetivo es que sea amarilla clara o transparente. Si te duele la cabeza o sentis mareo,
                 para inmediatamente y toma agua.
@@ -557,7 +557,7 @@ export default function NutritionPage() {
 
         <div className="card animate-fade-up" style={{ background: "var(--bg-card)" }}>
           <div className="space-y-3">
-            <p className="text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+            <p className="text-sm leading-relaxed text-text-secondary">
               La cafeina mejora el rendimiento y reduce la percepcion de esfuerzo, pero hay que usarla bien:
             </p>
             <ul className="space-y-2">
@@ -567,7 +567,7 @@ export default function NutritionPage() {
                 "No combines gel con cafeina + cafe previo a la salida si no estas acostumbrado. Puede generar malestar gastrointestinal.",
                 "Si salis temprano con cafe en el desayuno, el gel con cafeina esta bien para las ultimas horas.",
               ].map((text, i) => (
-                <li key={i} className="flex items-start gap-3 text-sm" style={{ color: "var(--text-secondary)" }}>
+                <li key={i} className="flex items-start gap-3 text-sm text-text-secondary">
                   <span
                     className="shrink-0 w-1.5 h-1.5 rounded-full mt-2"
                     style={{ background: "var(--accent-gym)" }}
@@ -591,13 +591,13 @@ export default function NutritionPage() {
 
         <div className="card animate-fade-up" style={{ background: "linear-gradient(135deg, rgba(139,92,246,0.08) 0%, rgba(24,24,27,0.7) 60%)" }}>
           <div className="space-y-4">
-            <p className="text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-              Come <strong style={{ color: "var(--text-primary)" }}>2-3 horas antes</strong> de subirte a la bici.
+            <p className="text-sm leading-relaxed text-text-secondary">
+              Come <strong className="text-text-primary">2-3 horas antes</strong> de subirte a la bici.
               El objetivo: cargar glucogeno sin que el estomago este lleno.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div className="rounded-xl p-4" style={{ background: "rgba(255,255,255,0.04)" }}>
+              <div className="rounded-xl p-4 bg-surface-low">
                 <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "#a78bfa" }}>
                   Opciones ideales
                 </p>
@@ -609,14 +609,14 @@ export default function NutritionPage() {
                     "Arroz blanco con mermelada (si salis muy temprano)",
                     "Granola con leche + fruta",
                   ].map((item, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm" style={{ color: "var(--text-secondary)" }}>
+                    <li key={i} className="flex items-start gap-2 text-sm text-text-secondary">
                       <span className="text-emerald-400 shrink-0">+</span>
                       {item}
                     </li>
                   ))}
                 </ul>
               </div>
-              <div className="rounded-xl p-4" style={{ background: "rgba(255,255,255,0.04)" }}>
+              <div className="rounded-xl p-4 bg-surface-low">
                 <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "#a78bfa" }}>
                   Evitar antes de salir
                 </p>
@@ -628,7 +628,7 @@ export default function NutritionPage() {
                     "Lacteos en exceso (si te generan hinchazón)",
                     "Nada nuevo el dia de un fondo largo",
                   ].map((item, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm" style={{ color: "var(--text-secondary)" }}>
+                    <li key={i} className="flex items-start gap-2 text-sm text-text-secondary">
                       <span className="text-red-400 shrink-0">-</span>
                       {item}
                     </li>
@@ -644,7 +644,7 @@ export default function NutritionPage() {
               <p className="text-sm font-semibold mb-1" style={{ color: "#a78bfa" }}>
                 Regla del dia de fondo
               </p>
-              <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
+              <p className="text-xs text-text-secondary">
                 NUNCA pruebes comida nueva el dia de una salida larga. Proba todo en entrenamientos cortos primero.
                 Lo que le funciona a otro ciclista puede generarte malestar a vos.
               </p>

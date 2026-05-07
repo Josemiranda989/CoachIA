@@ -4,8 +4,11 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { Download } from "lucide-react";
 import { CyclingBlocks } from "@/components/CyclingBlocks";
+import type { DayWithLogs } from "@/lib/queries/getActiveRoutine";
 
-export function CyclingWorkoutClient({ workout }: { workout: any }) {
+export type CyclingWorkoutData = DayWithLogs & { completed: boolean };
+
+export function CyclingWorkoutClient({ workout }: { workout: CyclingWorkoutData }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [completed, setCompleted] = useState<boolean>(!!workout.completed);

@@ -37,6 +37,12 @@
 .border-accent-gym-soft     { border-color: color-mix(in srgb, var(--accent-gym) 30%, transparent); }
 .border-accent-cycling-soft { border-color: color-mix(in srgb, var(--accent-cycling) 30%, transparent); }
 
+/* Subtle surface for nested boxes inside cards (stat tiles, pre-ride options,
+ * hydration cards). Theme-aware: dark = light alpha on dark, light = dark alpha
+ * on light. Replaces ad-hoc `rgba(255,255,255,0.04)` inline styles. */
+.bg-surface-low { background: rgba(255, 255, 255, 0.04); }
+.light .bg-surface-low { background: rgba(0, 0, 0, 0.04); }
+
 /* Reusable utilities — Tailwind v4 + Turbopack scanner misses classes with
  * `.` or arbitrary values like `text-[10px]`, `active:scale-95`, and variants
  * built on custom keyframes. Easier to ship these as real CSS. */
