@@ -1,4 +1,3 @@
-import { prisma } from "@/lib/prisma";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -7,8 +6,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-
-export const dynamic = "force-dynamic";
+import { getAllExerciseSlugs, getExerciseBySlug } from "@/lib/exercise-cache";
 
 export default async function ExerciseDetailPage({
   params,
@@ -20,17 +18,12 @@ export default async function ExerciseDetailPage({
 
   const { slug } = await params;
 
-  const allSlugs = await prisma.exerciseDefinition.findMany({
-    select: { slug: true, name: true },
-    orderBy: { name: "asc" },
-  });
+  const allSlugs = await getAllExerciseSlugs();
 
   const idx = allSlugs.findIndex((e) => e.slug === slug);
   if (idx === -1) notFound();
 
-  const exercise = await prisma.exerciseDefinition.findUnique({
-    where: { slug: allSlugs[idx].slug },
-  });
+  const exercise = await getExerciseBySlug(allSlugs[idx].slug);
   if (!exercise) notFound();
 
   // Wrap-around navigation
