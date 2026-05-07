@@ -158,7 +158,7 @@ export default async function PendingRoutinePage() {
                           {day.targetPower && ` — ${day.targetPower}`}
                         </div>
                         <CyclingBlocks
-                          blocks={(day as any).blocks}
+                          blocks={day.blocks}
                           variant="detailed"
                           fallbackDuration={null}
                           fallbackPower={null}
