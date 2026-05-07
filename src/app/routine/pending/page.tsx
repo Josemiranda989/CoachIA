@@ -7,8 +7,6 @@ import { PendingRoutineActions } from "./PendingRoutineActions";
 import { BackLink } from "@/components/BackLink";
 import { CyclingBlocks } from "@/components/CyclingBlocks";
 
-export const dynamic = "force-dynamic";
-
 const dayOrder: Record<string, number> = {
   Monday: 1,
   Tuesday: 2,
