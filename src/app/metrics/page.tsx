@@ -1,13 +1,15 @@
-export const dynamic = 'force-dynamic';
+import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import Link from "next/link";
-import { ArrowRight, Dumbbell, Trophy, Clock, TrendingUp, Bike, Mountain, Route, Timer } from "lucide-react";
+import { ArrowRight, Dumbbell, Trophy, Clock, TrendingUp, Bike } from "lucide-react";
 import { redirect } from "next/navigation";
-import { StravaActivities } from "@/components/StravaActivities";
-import { isStravaConfigured, getStravaAuthUrl, getValidAccessToken, fetchStats } from "@/lib/strava";
+import { StravaActivities, StravaActivitiesSkeleton } from "@/components/StravaActivities";
+import { isStravaConfigured, getStravaAuthUrl } from "@/lib/strava";
 import { WeightChart } from "./WeightChart";
+import { WeightChartSkeleton } from "./WeightChartView";
+import { CyclingCards, CyclingCardsSkeleton } from "./CyclingCards";
 import { CountUp } from "@/components/CountUp";
 import { BackLink } from "@/components/BackLink";
 
@@ -26,67 +28,34 @@ export default async function MetricsPage() {
     ? !!(await prisma.user.findUnique({ where: { id: userId }, select: { stravaAthleteId: true } }))?.stravaAthleteId
     : false;
 
+  // Gym stats — always synchronous, scoped to current user
   const allLogs = await prisma.workoutLog.findMany({
     where: {
       exercise: { dailyWorkout: { routine: { userId } } },
     },
-    include: {
+    select: {
+      reps: true,
+      weight: true,
       exercise: {
-        include: {
-          dailyWorkout: {
-            include: { routine: true }
-          }
-        }
-      }
-    }
+        select: {
+          name: true,
+          dailyWorkout: { select: { id: true } },
+        },
+      },
+    },
   });
 
   const totalVolume = allLogs.reduce((acc, log) => acc + (log.reps * log.weight), 0);
   const maxSquat = allLogs
     .filter(l => l.exercise.name.toLowerCase().includes("sentadilla") || l.exercise.name.toLowerCase().includes("squat"))
     .reduce((max, log) => log.weight > max ? log.weight : max, 0);
-
   const totalSets = allLogs.length;
   const totalWorkouts = new Set(allLogs.map(l => l.exercise.dailyWorkout.id)).size;
-
-  // Cycling stats from Strava (source of truth)
-  let cyclingYtdKm = 0;
-  let cyclingYtdHours = 0;
-  let longestRideKm = 0;
-  let totalElevationM = 0;
-  let cyclingAvailable = false;
-  if (stravaConnected) {
-    try {
-      const token = await getValidAccessToken(userId);
-      const athlete = token
-        ? await prisma.user.findUnique({ where: { id: userId }, select: { stravaAthleteId: true } })
-        : null;
-      if (token && athlete?.stravaAthleteId) {
-        const stats = await fetchStats(token, athlete.stravaAthleteId);
-        const ytd = stats?.ytd_ride_totals;
-        if (ytd) {
-          cyclingYtdKm = ytd.distance / 1000;
-          cyclingYtdHours = ytd.moving_time / 3600;
-          totalElevationM = ytd.elevation_gain || 0;
-        }
-        longestRideKm = (stats?.biggest_ride_distance || 0) / 1000;
-        cyclingAvailable = true;
-      }
-    } catch {
-      // Strava fetch failed (expired token, network) — skip cycling cards silently
-    }
-  }
 
   const gymColor = {
     color: "var(--accent-gym)",
     bg: "color-mix(in srgb, var(--accent-gym) 8%, transparent)",
     border: "color-mix(in srgb, var(--accent-gym) 20%, transparent)",
-  };
-
-  const cyclingColor = {
-    color: "var(--accent-cycling)",
-    bg: "color-mix(in srgb, var(--accent-cycling) 8%, transparent)",
-    border: "color-mix(in srgb, var(--accent-cycling) 20%, transparent)",
   };
 
   type Metric = {
@@ -95,11 +64,8 @@ export default async function MetricsPage() {
     displayFallback?: string;
     unit: string;
     description: string;
-    icon: any;
+    icon: typeof Dumbbell;
     decimals?: number;
-    color: string;
-    bg: string;
-    border: string;
   };
 
   const gymMetrics: Metric[] = [
@@ -109,7 +75,6 @@ export default async function MetricsPage() {
       unit: "kg",
       description: "Peso total levantado sumando todos tus sets",
       icon: TrendingUp,
-      ...gymColor,
     },
     {
       label: "Récord Sentadilla",
@@ -118,7 +83,6 @@ export default async function MetricsPage() {
       unit: maxSquat ? "kg" : "",
       description: "Tu peso máximo registrado en sentadilla",
       icon: Trophy,
-      ...gymColor,
     },
     {
       label: "Sesiones Gym",
@@ -126,7 +90,6 @@ export default async function MetricsPage() {
       unit: "días",
       description: "Total de sesiones de gym completadas",
       icon: Dumbbell,
-      ...gymColor,
     },
     {
       label: "Series Totales",
@@ -134,50 +97,8 @@ export default async function MetricsPage() {
       unit: "sets",
       description: "Total de series registradas",
       icon: Clock,
-      ...gymColor,
     },
   ];
-
-  const cyclingMetrics: Metric[] = cyclingAvailable
-    ? [
-        {
-          label: "KM Este Año",
-          value: cyclingYtdKm,
-          unit: "km",
-          description: "Distancia total recorrida en bici este año",
-          icon: Route,
-          ...cyclingColor,
-        },
-        {
-          label: "Horas Este Año",
-          value: cyclingYtdHours,
-          decimals: 1,
-          unit: "hs",
-          description: "Tiempo total en bici este año",
-          icon: Timer,
-          ...cyclingColor,
-        },
-        {
-          label: "Ride Más Largo",
-          value: longestRideKm,
-          decimals: 1,
-          unit: "km",
-          description: "Tu salida más larga registrada en Strava",
-          icon: Trophy,
-          ...cyclingColor,
-        },
-        {
-          label: "Desnivel Año",
-          value: totalElevationM,
-          unit: "m",
-          description: "Metros de desnivel positivo acumulados",
-          icon: Mountain,
-          ...cyclingColor,
-        },
-      ]
-    : [];
-
-  const metrics: Metric[] = [...gymMetrics, ...cyclingMetrics];
 
   return (
     <div className="app-container">
@@ -186,24 +107,24 @@ export default async function MetricsPage() {
       <p className="subtitle">Tu progreso general</p>
 
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-        {metrics.map(({ label, value, displayFallback, unit, description, icon: Icon, color, bg, border, decimals }) => (
+        {gymMetrics.map(({ label, value, displayFallback, unit, description, icon: Icon, decimals }) => (
           <div
             key={label}
             className="card"
-            style={{ cursor: "default", background: bg, borderColor: border }}
+            style={{ cursor: "default", background: gymColor.bg, borderColor: gymColor.border }}
           >
             <div className="flex items-start justify-between mb-3">
               <div
                 className="p-2 rounded-xl"
-                style={{ background: `color-mix(in srgb, ${color} 13%, transparent)` }}
+                style={{ background: `color-mix(in srgb, ${gymColor.color} 13%, transparent)` }}
               >
-                <Icon size={20} style={{ color }} />
+                <Icon size={20} style={{ color: gymColor.color }} aria-hidden="true" />
               </div>
             </div>
             <p className="text-sm font-semibold mb-1" style={{ color: "var(--text-secondary)" }}>
               {label}
             </p>
-            <p className="font-bold mb-1 text-xl md:text-3xl" style={{ color }}>
+            <p className="font-bold mb-1 text-xl md:text-3xl" style={{ color: gymColor.color }}>
               {displayFallback ?? <CountUp value={value} decimals={decimals ?? 0} />}{" "}
               {unit && (
                 <span className="text-xs md:text-sm" style={{ color: "var(--text-secondary)", fontWeight: 400 }}>{unit}</span>
@@ -221,12 +142,13 @@ export default async function MetricsPage() {
         >
           <div className="flex items-start justify-between mb-3">
             <div className="p-2 rounded-xl" style={{ background: "color-mix(in srgb, var(--accent-gym) 15%, transparent)" }}>
-              <Dumbbell size={20} style={{ color: "var(--accent-gym)" }} />
+              <Dumbbell size={20} style={{ color: "var(--accent-gym)" }} aria-hidden="true" />
             </div>
             <ArrowRight
               size={18}
               className="opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all"
               style={{ color: "var(--accent-gym)" }}
+              aria-hidden="true"
             />
           </div>
           <div>
@@ -239,7 +161,17 @@ export default async function MetricsPage() {
           </div>
         </Link>
 
-        <WeightChart />
+        {/* Cycling cards stream in independently — Strava lentitud no bloquea las cards de gym */}
+        {stravaConnected && (
+          <Suspense fallback={<CyclingCardsSkeleton />}>
+            <CyclingCards userId={userId} />
+          </Suspense>
+        )}
+
+        {/* Weight chart streams in independently — query a Prisma sin bloquear el grid */}
+        <Suspense fallback={<WeightChartSkeleton />}>
+          <WeightChart userId={userId} />
+        </Suspense>
       </div>
 
       {/* Strava Section */}
@@ -255,7 +187,7 @@ export default async function MetricsPage() {
             gap: 10,
           }}
         >
-          <Bike size={22} style={{ color: "#FC4C02" }} />
+          <Bike size={22} style={{ color: "#FC4C02" }} aria-hidden="true" />
           Strava
         </h2>
         <p style={{ color: "var(--text-secondary)", fontSize: 14, marginBottom: 20 }}>
@@ -278,7 +210,7 @@ export default async function MetricsPage() {
               boxShadow: "0 4px 16px rgba(252,76,2,0.3)",
             }}
           >
-            <svg width="20" height="20" viewBox="0 0 64 64" fill="currentColor">
+            <svg width="20" height="20" viewBox="0 0 64 64" fill="currentColor" aria-hidden="true">
               <path d="M41.03 47.852l-5.572-10.976h-8.172L41.03 64l13.736-27.124h-8.18" />
               <path d="M27.898 21.944l7.564 14.928h11.124L27.898 0 9.234 36.876H20.35" opacity=".6" />
             </svg>
@@ -287,7 +219,9 @@ export default async function MetricsPage() {
         )}
 
         {stravaConfigured && stravaConnected && (
-          <StravaActivities />
+          <Suspense fallback={<StravaActivitiesSkeleton />}>
+            <StravaActivities userId={userId} />
+          </Suspense>
         )}
       </div>
     </div>

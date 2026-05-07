@@ -1,6 +1,5 @@
-"use client";
-import { useEffect, useState } from "react";
 import { Bike, Clock, TrendingUp, Mountain, Heart, Zap } from "lucide-react";
+import { getStravaActivities, getStravaStats } from "@/lib/strava-cached";
 
 interface StravaActivity {
   id: number;
@@ -19,12 +18,6 @@ interface StravaActivity {
   average_watts?: number;
   kilojoules?: number;
   suffer_score?: number;
-}
-
-interface StravaStats {
-  recent_ride_totals: { count: number; distance: number; moving_time: number; elevation_gain: number };
-  ytd_ride_totals: { count: number; distance: number; moving_time: number; elevation_gain: number };
-  all_ride_totals: { count: number; distance: number; moving_time: number; elevation_gain: number };
 }
 
 function formatDistance(meters: number) {
@@ -52,50 +45,15 @@ function activityIcon(type: string) {
   return TrendingUp;
 }
 
-export function StravaActivities() {
-  const [activities, setActivities] = useState<StravaActivity[]>([]);
-  const [stats, setStats] = useState<StravaStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+export async function StravaActivities({ userId }: { userId: string }) {
+  // Both calls are deduplicated via React.cache() within the same render pass —
+  // shared with CyclingCards which also reads getStravaStats.
+  const [activitiesRaw, stats] = await Promise.all([
+    getStravaActivities(userId, 1, 10),
+    getStravaStats(userId),
+  ]);
 
-  useEffect(() => {
-    fetch("/api/strava/activities?per_page=10")
-      .then((r) => {
-        if (!r.ok) throw new Error("Error al cargar actividades");
-        return r.json();
-      })
-      .then((data) => {
-        setActivities(data.activities || []);
-        setStats(data.stats || null);
-      })
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
-  }, []);
-
-  if (loading) {
-    return (
-      <div style={{ textAlign: "center", padding: 40, color: "var(--text-secondary)" }}>
-        Cargando actividades de Strava...
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div
-        style={{
-          padding: "16px 20px",
-          borderRadius: 12,
-          background: "rgba(220,38,38,0.08)",
-          border: "1px solid rgba(220,38,38,0.2)",
-          color: "var(--accent-primary)",
-          fontSize: 14,
-        }}
-      >
-        {error}
-      </div>
-    );
-  }
+  const activities = (activitiesRaw as StravaActivity[]) ?? [];
 
   return (
     <div>
@@ -172,7 +130,7 @@ export function StravaActivities() {
                         justifyContent: "center",
                       }}
                     >
-                      <Icon size={16} style={{ color: "#FC4C02" }} />
+                      <Icon size={16} style={{ color: "#FC4C02" }} aria-hidden="true" />
                     </div>
                     <div>
                       <p style={{ fontWeight: 600, fontSize: 14, color: "var(--text-primary)" }}>
@@ -221,7 +179,15 @@ export function StravaActivities() {
   );
 }
 
-function StatCard({ label, value, unit, icon: Icon }: { label: string; value: string; unit: string; icon: any }) {
+export function StravaActivitiesSkeleton() {
+  return (
+    <div role="status" aria-live="polite" style={{ textAlign: "center", padding: 40, color: "var(--text-secondary)" }}>
+      Cargando actividades de Strava…
+    </div>
+  );
+}
+
+function StatCard({ label, value, unit, icon: Icon }: { label: string; value: string; unit: string; icon: typeof Bike }) {
   return (
     <div
       style={{
@@ -232,7 +198,7 @@ function StatCard({ label, value, unit, icon: Icon }: { label: string; value: st
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-        <Icon size={14} style={{ color: "#FC4C02" }} />
+        <Icon size={14} style={{ color: "#FC4C02" }} aria-hidden="true" />
         <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{label}</span>
       </div>
       <p style={{ fontSize: 22, fontWeight: 800, color: "#FC4C02" }}>
@@ -243,10 +209,10 @@ function StatCard({ label, value, unit, icon: Icon }: { label: string; value: st
   );
 }
 
-function Metric({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
+function Metric({ icon: Icon, label, value }: { icon: typeof Bike; label: string; value: string }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-      <Icon size={13} style={{ color: "var(--text-secondary)", opacity: 0.6 }} />
+      <Icon size={13} style={{ color: "var(--text-secondary)", opacity: 0.6 }} aria-hidden="true" />
       <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{label}:</span>
       <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>{value}</span>
     </div>
