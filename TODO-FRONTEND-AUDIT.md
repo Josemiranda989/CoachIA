@@ -88,10 +88,11 @@
 - **Fix**: computar en el initializer del `useState`.
 - **Done**: `exIdx` ahora se inicializa con el primer ejercicio incompleto via `useState(() => ...)` (corre solo una vez en mount). Eliminado el `useEffect` con `exhaustive-deps disabled` y el render extra que causaba.
 
-### [ ] #13 `force-dynamic` por todos lados
+### [x] #13 `force-dynamic` por todos lados
 - **Dónde**: `metrics`, `metrics/records`, `wiki`, `wiki/[slug]`, `routine/pending`
 - **Problema**: en Next 16 con cache components, esto es anti-pattern. La wiki cambia poco — perfecta para cachear.
 - **Fix**: sacar `force-dynamic` y usar `'use cache'` con `cacheLife('hours')` + `cacheTag('exercises')` para la wiki. Envolver lo dinámico en `<Suspense>`.
+- **Done**: `force-dynamic` eliminado de los 5 archivos. Para `wiki/*` (queries globales sobre `ExerciseDefinition`) extraje las queries a `src/lib/exercise-cache.ts` con `unstable_cache` (revalidate 1h, tag `exercises`) — preferí `unstable_cache` sobre la directiva `'use cache'` porque esta última requiere habilitar `experimental.cacheComponents` (feature experimental que afecta toda la app). Las páginas per-user (`metrics/records`, `routine/pending`) quedan dynamic via `cookies()` automáticamente; no se cachean cross-request porque el contenido depende del usuario.
 
 ---
 
