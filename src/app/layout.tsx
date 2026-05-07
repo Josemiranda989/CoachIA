@@ -56,12 +56,15 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
       </head>
       <body className="bg-bg-main text-text-primary min-h-screen">
+        <a href="#main" className="skip-link">
+          Saltar al contenido
+        </a>
         <Script id="sw-register" strategy="beforeInteractive">
           {`if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js')}`}
         </Script>
         <Providers>
           <Header />
-          <main className="pb-20 md:pb-0">
+          <main id="main" className="pb-20 md:pb-0">
             <PageTransition>{children}</PageTransition>
           </main>
           <BottomNav />

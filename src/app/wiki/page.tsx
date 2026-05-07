@@ -55,7 +55,7 @@ export default async function WikiPage() {
               </div>
 
               <div className="min-w-0 flex-1">
-                <h3 className="font-bold text-text-primary truncate">{ex.name}</h3>
+                <h2 className="font-bold text-text-primary truncate">{ex.name}</h2>
                 <p className="text-xs text-text-secondary truncate">
                   {ex.muscleGroups}
                 </p>
