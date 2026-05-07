@@ -111,12 +111,13 @@ export function ProfileClient({ user }: Props) {
           </div>
 
           <div className="space-y-2">
-            <label className="flex items-center gap-2 text-sm font-medium text-text-secondary">
-              <Lock size={16} />
+            <label htmlFor="profile-current-password" className="flex items-center gap-2 text-sm font-medium text-text-secondary">
+              <Lock size={16} aria-hidden="true" />
               <span>Contraseña actual</span>
             </label>
             <div style={{ position: "relative" }}>
               <input
+                id="profile-current-password"
                 type={showCurrent ? "text" : "password"}
                 placeholder="••••••••"
                 value={currentPassword}
@@ -132,18 +133,19 @@ export function ProfileClient({ user }: Props) {
                 aria-label={showCurrent ? "Ocultar contraseña" : "Mostrar contraseña"}
                 style={eyeButtonStyle}
               >
-                {showCurrent ? <EyeOff size={18} /> : <Eye size={18} />}
+                {showCurrent ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
               </button>
             </div>
           </div>
 
           <div className="space-y-2">
-            <label className="flex items-center gap-2 text-sm font-medium text-text-secondary">
-              <Lock size={16} />
+            <label htmlFor="profile-new-password" className="flex items-center gap-2 text-sm font-medium text-text-secondary">
+              <Lock size={16} aria-hidden="true" />
               <span>Nueva contraseña</span>
             </label>
             <div style={{ position: "relative" }}>
               <input
+                id="profile-new-password"
                 type={showNew ? "text" : "password"}
                 placeholder="Mínimo 8 caracteres"
                 value={newPassword}
@@ -160,17 +162,18 @@ export function ProfileClient({ user }: Props) {
                 aria-label={showNew ? "Ocultar contraseña" : "Mostrar contraseña"}
                 style={eyeButtonStyle}
               >
-                {showNew ? <EyeOff size={18} /> : <Eye size={18} />}
+                {showNew ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
               </button>
             </div>
           </div>
 
           <div className="space-y-2">
-            <label className="flex items-center gap-2 text-sm font-medium text-text-secondary">
-              <Lock size={16} />
+            <label htmlFor="profile-confirm-password" className="flex items-center gap-2 text-sm font-medium text-text-secondary">
+              <Lock size={16} aria-hidden="true" />
               <span>Confirmar nueva contraseña</span>
             </label>
             <input
+              id="profile-confirm-password"
               type={showNew ? "text" : "password"}
               placeholder="Repetí la nueva contraseña"
               value={confirmPassword}

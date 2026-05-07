@@ -148,12 +148,13 @@ function ResetPasswordForm() {
         </div>
 
         <div className="space-y-2">
-          <label className="flex items-center gap-2 text-sm font-medium text-text-secondary">
-            <Lock size={16} />
+          <label htmlFor="reset-new-password" className="flex items-center gap-2 text-sm font-medium text-text-secondary">
+            <Lock size={16} aria-hidden="true" />
             <span>Nueva contraseña</span>
           </label>
           <div style={{ position: "relative" }}>
             <input
+              id="reset-new-password"
               type={showPassword ? "text" : "password"}
               placeholder="Mínimo 8 caracteres"
               value={newPassword}
@@ -170,17 +171,18 @@ function ResetPasswordForm() {
               aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
               style={eyeButtonStyle}
             >
-              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              {showPassword ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
             </button>
           </div>
         </div>
 
         <div className="space-y-2">
-          <label className="flex items-center gap-2 text-sm font-medium text-text-secondary">
-            <Lock size={16} />
+          <label htmlFor="reset-confirm-password" className="flex items-center gap-2 text-sm font-medium text-text-secondary">
+            <Lock size={16} aria-hidden="true" />
             <span>Confirmar contraseña</span>
           </label>
           <input
+            id="reset-confirm-password"
             type={showPassword ? "text" : "password"}
             placeholder="Repetí la nueva contraseña"
             value={confirmPassword}
