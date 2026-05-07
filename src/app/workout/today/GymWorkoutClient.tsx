@@ -229,7 +229,9 @@ export function GymWorkoutClient({ workout }: { workout: GymWorkoutData }) {
   const [loading, setLoading] = useState(false);
   const [resting, setResting] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
+  const [pendingNav, setPendingNav] = useState<string | null>(null);
   const restDoneRef = useRef<(() => void) | undefined>(undefined);
+  const dialogRef = useRef<HTMLDialogElement>(null);
 
   // Build initial logs state: restore from localStorage if same workout, else from server
   const [logs, setLogs] = useState<Record<string, SetLog>>(() => {
@@ -304,7 +306,10 @@ export function GymWorkoutClient({ workout }: { workout: GymWorkoutData }) {
     return () => window.removeEventListener("beforeunload", handler);
   }, []);
 
-  // Intercept in-app navigation when there's unsaved data
+  // Intercept in-app navigation when there's unsaved data. Always block,
+  // capture the target, and let the <dialog> below ask the user. Synchronous
+  // preventDefault is required (browser navigates the moment the listener
+  // returns), so we cannot await a custom modal here.
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (!hasUnsavedRef.current) return;
@@ -313,14 +318,34 @@ export function GymWorkoutClient({ workout }: { workout: GymWorkoutData }) {
       const url = new URL(anchor.href, window.location.origin);
       if (url.origin !== window.location.origin) return;
       if (url.pathname === window.location.pathname) return;
-      if (!confirm("Tenés sets sin guardar. ¿Salir igual?")) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
+      e.preventDefault();
+      e.stopPropagation();
+      setPendingNav(url.pathname + url.search + url.hash);
     };
     document.addEventListener("click", handler, true);
     return () => document.removeEventListener("click", handler, true);
   }, []);
+
+  // Open the modal whenever a navigation is pending. Native <dialog> handles
+  // focus trap, Escape, and focus return automatically.
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (pendingNav && dialog && !dialog.open) {
+      dialog.showModal();
+    }
+  }, [pendingNav]);
+
+  const handleConfirmLeave = () => {
+    const target = pendingNav;
+    setPendingNav(null);
+    dialogRef.current?.close();
+    if (target) router.push(target);
+  };
+
+  const handleCancelLeave = () => {
+    setPendingNav(null);
+    dialogRef.current?.close();
+  };
 
   // Track input focus to hide FAB when keyboard is open
   useEffect(() => {
@@ -419,21 +444,59 @@ export function GymWorkoutClient({ workout }: { workout: GymWorkoutData }) {
     }
   };
 
+  const navGuardDialog = (
+    <dialog
+      ref={dialogRef}
+      className="dialog-card"
+      aria-labelledby="unsaved-title"
+      aria-describedby="unsaved-desc"
+      onClose={() => setPendingNav(null)}
+    >
+      <h3 id="unsaved-title" className="text-lg font-bold mb-2 text-accent-gym">
+        Tenés sets sin guardar
+      </h3>
+      <p id="unsaved-desc" className="text-sm text-text-secondary mb-5">
+        Si salís ahora vas a perder los sets que cargaste pero no guardaste.
+      </p>
+      <div className="flex gap-3 justify-end">
+        <button
+          type="button"
+          className="btn btn-secondary"
+          onClick={handleCancelLeave}
+          autoFocus
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          className="btn"
+          onClick={handleConfirmLeave}
+        >
+          Salir igual
+        </button>
+      </div>
+    </dialog>
+  );
+
   /* ---- Render: all done ---- */
   if (allDone) {
     return (
-      <div>
-        <ProgressBar pct={100} completed={completedSets} total={totalSets} />
-        <WorkoutComplete totalSets={totalSets} onSave={handleSave} loading={loading} />
-      </div>
+      <>
+        <div>
+          <ProgressBar pct={100} completed={completedSets} total={totalSets} />
+          <WorkoutComplete totalSets={totalSets} onSave={handleSave} loading={loading} />
+        </div>
+        {navGuardDialog}
+      </>
     );
   }
 
-  if (!currentEx) return null;
+  if (!currentEx) return navGuardDialog;
 
   const currentLog = logs[`${currentEx.id}_${currentSetNum}`];
 
   return (
+    <>
     <div className="pb-24 md:pb-0">
       {/* Global progress */}
       <ProgressBar pct={progressPct} completed={completedSets} total={totalSets} />
@@ -655,6 +718,8 @@ export function GymWorkoutClient({ workout }: { workout: GymWorkoutData }) {
         </button>
       )}
     </div>
+    {navGuardDialog}
+    </>
   );
 }
 
