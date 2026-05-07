@@ -44,19 +44,24 @@ export default function LoginPage() {
           <p className="subtitle">Bienvenido a CoachIA. Ingresa tus datos para continuar.</p>
         </header>
 
-        <form onSubmit={handleSubmit} className="card space-y-6">
+        <form onSubmit={handleSubmit} className="card space-y-6" noValidate>
           {error && (
-            <div className="bg-red-500/10 border border-red-500/50 text-red-400 p-4 rounded-lg text-sm mb-4">
+            <div
+              role="alert"
+              aria-live="assertive"
+              className="bg-red-500/10 border border-red-500/50 text-red-400 p-4 rounded-lg text-sm mb-4"
+            >
               {error}
             </div>
           )}
-          
+
           <div className="space-y-2">
-            <label className="flex items-center gap-2 text-sm font-medium text-text-secondary">
-              <Mail size={16} />
+            <label htmlFor="login-email" className="flex items-center gap-2 text-sm font-medium text-text-secondary">
+              <Mail size={16} aria-hidden="true" />
               <span>Email</span>
             </label>
             <input
+              id="login-email"
               type="email"
               placeholder="atleta@ejemplo.com"
               value={email}
@@ -69,8 +74,8 @@ export default function LoginPage() {
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 text-sm font-medium text-text-secondary">
-                <Lock size={16} />
+              <label htmlFor="login-password" className="flex items-center gap-2 text-sm font-medium text-text-secondary">
+                <Lock size={16} aria-hidden="true" />
                 <span>Contraseña</span>
               </label>
               <Link
@@ -81,6 +86,7 @@ export default function LoginPage() {
               </Link>
             </div>
             <input
+              id="login-password"
               type="password"
               placeholder="••••••••"
               value={password}
