@@ -78,7 +78,7 @@ export default async function Home() {
       {/* ── Hero ── */}
       <header className="mb-10 animate-fade-up" style={{ animationDelay: "0ms" }}>
         <div className="flex items-center gap-2 mb-3">
-          <Sparkles className="text-accent-primary" size={16} />
+          <Sparkles aria-hidden="true" className="text-accent-primary" size={16} />
           <span className="text-accent-primary font-semibold uppercase tracking-widest text-xs">
             Panel de Control
           </span>
@@ -130,7 +130,7 @@ export default async function Home() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="p-4 bg-amber-500/20 rounded-2xl badge-pulse">
-                <Bell className="text-amber-400" size={28} />
+                <Bell aria-hidden="true" className="text-amber-400" size={28} />
               </div>
               <div>
                 <p className="text-amber-400 text-xs font-bold uppercase tracking-widest mb-1">
@@ -145,6 +145,7 @@ export default async function Home() {
               </div>
             </div>
             <ArrowRight
+              aria-hidden="true"
               className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-amber-400 shrink-0 hidden md:block"
               size={28}
             />
@@ -164,7 +165,7 @@ export default async function Home() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="p-4 bg-accent-primary-soft rounded-2xl">
-              <Zap className="text-accent-primary" size={32} />
+              <Zap aria-hidden="true" className="text-accent-primary" size={32} />
             </div>
             <div>
               <p className="text-accent-primary text-xs font-bold uppercase tracking-widest mb-1">
@@ -177,6 +178,7 @@ export default async function Home() {
             </div>
           </div>
           <ArrowRight
+            aria-hidden="true"
             className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-accent-primary shrink-0 hidden md:block"
             size={28}
           />
@@ -203,11 +205,11 @@ export default async function Home() {
             Nuevo
           </div>
           <div className="mb-4 p-3 bg-accent-primary-soft rounded-xl w-fit">
-            <Bot className="text-accent-primary" size={26} />
+            <Bot aria-hidden="true" className="text-accent-primary" size={26} />
           </div>
           <h2 className="text-lg md:text-xl font-bold mb-2 flex items-center justify-between">
             Generar con IA
-            <ArrowRight className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" size={18} />
+            <ArrowRight aria-hidden="true" className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" size={18} />
           </h2>
           <p className="text-text-secondary text-sm leading-relaxed hidden sm:block">
             Describí tus objetivos y la IA genera tu rutina semanal completa.
@@ -221,11 +223,11 @@ export default async function Home() {
           style={{ animationDelay: "180ms" }}
         >
           <div className="mb-4 p-3 bg-accent-gym-soft rounded-xl w-fit">
-            <Calendar className="text-accent-gym" size={26} />
+            <Calendar aria-hidden="true" className="text-accent-gym" size={26} />
           </div>
           <h2 className="text-lg md:text-xl font-bold mb-2 flex items-center justify-between">
             Toda la Semana
-            <ArrowRight className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" size={18} />
+            <ArrowRight aria-hidden="true" className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" size={18} />
           </h2>
           <p className="text-text-secondary text-sm leading-relaxed hidden sm:block">
             Resumen completo de tu rutina planificada y objetivos semanales.
@@ -239,11 +241,11 @@ export default async function Home() {
           style={{ animationDelay: "240ms" }}
         >
           <div className="mb-4 p-3 bg-accent-cycling-soft rounded-xl w-fit">
-            <BarChart3 className="text-accent-cycling" size={26} />
+            <BarChart3 aria-hidden="true" className="text-accent-cycling" size={26} />
           </div>
           <h2 className="text-lg md:text-xl font-bold mb-2 flex items-center justify-between">
             Métricas
-            <ArrowRight className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" size={18} />
+            <ArrowRight aria-hidden="true" className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" size={18} />
           </h2>
           <p className="text-text-secondary text-sm leading-relaxed hidden sm:block">
             Evolución de carga, fatiga en bici, récords personales y más.
@@ -257,11 +259,11 @@ export default async function Home() {
           style={{ animationDelay: "300ms" }}
         >
           <div className="mb-4 p-3 bg-violet-500/20 rounded-xl w-fit group-hover:bg-violet-500/30 transition-colors">
-            <Upload className="text-violet-400" size={26} />
+            <Upload aria-hidden="true" className="text-violet-400" size={26} />
           </div>
           <h2 className="text-lg md:text-xl font-bold mb-2 flex items-center justify-between">
             Cargar JSON
-            <ArrowRight className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" size={18} />
+            <ArrowRight aria-hidden="true" className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" size={18} />
           </h2>
           <p className="text-text-secondary text-sm leading-relaxed hidden sm:block">
             Pegá manualmente un JSON de rutina generado por cualquier IA.
@@ -275,11 +277,11 @@ export default async function Home() {
           style={{ animationDelay: "360ms" }}
         >
           <div className="mb-4 p-3 bg-indigo-500/20 rounded-xl w-fit group-hover:bg-indigo-500/30 transition-colors">
-            <HelpCircle className="text-indigo-400" size={26} />
+            <HelpCircle aria-hidden="true" className="text-indigo-400" size={26} />
           </div>
           <h2 className="text-lg md:text-xl font-bold mb-2 flex items-center justify-between">
             Ayuda / FAQs
-            <ArrowRight className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" size={18} />
+            <ArrowRight aria-hidden="true" className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" size={18} />
           </h2>
           <p className="text-text-secondary text-sm leading-relaxed hidden sm:block">
             Guías de uso, estructura JSON y preguntas frecuentes.
@@ -293,11 +295,11 @@ export default async function Home() {
           style={{ animationDelay: "420ms" }}
         >
           <div className="mb-4 p-3 bg-emerald-500/20 rounded-xl w-fit group-hover:bg-emerald-500/30 transition-colors">
-            <Apple className="text-emerald-400" size={26} />
+            <Apple aria-hidden="true" className="text-emerald-400" size={26} />
           </div>
           <h2 className="text-lg md:text-xl font-bold mb-2 flex items-center justify-between">
             Nutrición Bici
-            <ArrowRight className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" size={18} />
+            <ArrowRight aria-hidden="true" className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" size={18} />
           </h2>
           <p className="text-text-secondary text-sm leading-relaxed hidden sm:block">
             Guía de combustible: qué comer, cuánto y cuándo en tus salidas.
@@ -311,11 +313,11 @@ export default async function Home() {
           style={{ animationDelay: "480ms" }}
         >
           <div className="mb-4 p-3 bg-sky-500/20 rounded-xl w-fit group-hover:bg-sky-500/30 transition-colors">
-            <BookOpen className="text-sky-400" size={26} />
+            <BookOpen aria-hidden="true" className="text-sky-400" size={26} />
           </div>
           <h2 className="text-lg md:text-xl font-bold mb-2 flex items-center justify-between">
             Wiki de Ejercicios
-            <ArrowRight className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" size={18} />
+            <ArrowRight aria-hidden="true" className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" size={18} />
           </h2>
           <p className="text-text-secondary text-sm leading-relaxed hidden sm:block">
             Referencia visual: descripción, ejecución y tips para cada ejercicio.
