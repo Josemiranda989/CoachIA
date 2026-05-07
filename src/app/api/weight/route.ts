@@ -18,19 +18,30 @@ export async function POST(request: Request) {
     );
   }
 
-  if (scaleId != null) {
-    const existing = await prisma.bodyWeight.findUnique({
-      where: { userId_scaleId: { userId: auth.userId, scaleId } },
+  const dateObj = date ? new Date(date) : new Date();
+
+  const existing = await prisma.bodyWeight.findUnique({
+    where: { userId_date: { userId: auth.userId, date: dateObj } },
+  });
+
+  if (existing) {
+    const updated = await prisma.bodyWeight.update({
+      where: { id: existing.id },
+      data: {
+        weight,
+        bodyFat: bodyFat ?? existing.bodyFat,
+        muscle: muscle ?? existing.muscle,
+        scaleId: scaleId ?? existing.scaleId,
+        notes: notes ?? existing.notes,
+      },
     });
-    if (existing) {
-      return NextResponse.json(existing, { status: 200 });
-    }
+    return NextResponse.json(updated, { status: 200 });
   }
 
   const record = await prisma.bodyWeight.create({
     data: {
       userId: auth.userId,
-      date: date ? new Date(date) : new Date(),
+      date: dateObj,
       weight,
       bodyFat: bodyFat ?? null,
       muscle: muscle ?? null,
