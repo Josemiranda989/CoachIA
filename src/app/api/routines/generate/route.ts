@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { GoogleGenAI, Type } from '@google/genai';
 import { getValidAccessToken, fetchActivities, fetchStats } from '@/lib/strava';
+import { hrZonesSummary } from '@/lib/hr-zones';
 
 const routineResponseSchema = {
   type: Type.OBJECT,
@@ -70,6 +71,13 @@ function getNextMonday(): string {
 }
 
 async function gatherAthleteData(userId: string) {
+  // HR zones — only kick in when rider has filled them in /profile.
+  const hrUser = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { fcMax: true, lthr: true },
+  });
+  const hrSection = hrUser ? hrZonesSummary({ fcMax: hrUser.fcMax, lthr: hrUser.lthr }) : null;
+
   // Gym: PRs and volume
   const allLogs = await prisma.workoutLog.findMany({
     include: { exercise: { select: { name: true } } },
@@ -145,7 +153,7 @@ async function gatherAthleteData(userId: string) {
     // Strava not available — continue without it
   }
 
-  return { gymSection, stravaSection };
+  return { gymSection, stravaSection, hrSection };
 }
 
 export async function POST(request: Request) {
@@ -176,7 +184,7 @@ export async function POST(request: Request) {
     }
 
     const nextMonday = getNextMonday();
-    const { gymSection, stravaSection } = await gatherAthleteData(userId);
+    const { gymSection, stravaSection, hrSection } = await gatherAthleteData(userId);
 
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
@@ -190,11 +198,13 @@ DATOS DEL ATLETA:
 ${notes ? `- Notas adicionales: ${notes}` : ''}
 ${gymSection}
 ${stravaSection}
+${hrSection ? `\n${hrSection}` : ''}
 
 USA LOS DATOS REALES del atleta para:
 - Ajustar los pesos y repeticiones de gym basándote en sus PRs (no pongas pesos genéricos, usá porcentajes realistas de sus récords)
 - Ajustar la duración e intensidad del ciclismo según su nivel real (distancias, velocidad promedio, FC y potencia recientes)
 - Si no hay datos de ciclismo, usá valores conservadores para principiante
+- Si conocés las zonas FC del atleta (sección "Zonas FC"), podés anotar el rango bpm en notes para que el atleta tenga referencia explícita en pantalla. Ej: notes "Z4 sostenible (~150-158 bpm)"
 
 PERIODIZACIÓN SEMANAL (OBLIGATORIA):
 

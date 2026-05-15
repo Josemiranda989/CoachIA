@@ -6,6 +6,7 @@ import { getCurrentWeekStart } from "@/lib/week";
 import { getValidAccessToken, fetchActivities, fetchStats } from "@/lib/strava";
 import hevyPool from "@/data/hevy-template-pool.json";
 import { openCodeMonthlyChat } from "@/lib/opencode";
+import { hrZonesSummary } from "@/lib/hr-zones";
 
 const VALID_DAY_TYPES = ["Gym", "Cycling", "Rest", "Gym + Cycling"] as const;
 type DayType = (typeof VALID_DAY_TYPES)[number];
@@ -61,6 +62,12 @@ function getNextFourMondays(): string[] {
 }
 
 async function gatherAthleteData(userId: string) {
+  const hrUser = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { fcMax: true, lthr: true },
+  });
+  const hrSection = hrUser ? hrZonesSummary({ fcMax: hrUser.fcMax, lthr: hrUser.lthr }) : null;
+
   const allLogs = await prisma.workoutLog.findMany({
     include: { exercise: { select: { name: true } } },
     orderBy: { id: "desc" },
@@ -136,7 +143,7 @@ async function gatherAthleteData(userId: string) {
     // Strava not available
   }
 
-  return { gymSection, stravaSection };
+  return { gymSection, stravaSection, hrSection };
 }
 
 async function alertAndRespond(msg: string, status: number) {
@@ -164,7 +171,7 @@ export async function POST(request: Request) {
     const notes = body.notes || "";
 
     const mondays = getNextFourMondays();
-    const { gymSection, stravaSection } = await gatherAthleteData(auth.userId);
+    const { gymSection, stravaSection, hrSection } = await gatherAthleteData(auth.userId);
     const hevyLibraryBlock = buildHevyPoolBlock();
 
     const systemPrompt = "Eres un entrenador personal experto en fuerza y ciclismo. Genera un MESOCICLO DE 4 SEMANAS en formato JSON. Devolves EXCLUSIVAMENTE el JSON pedido, sin texto adicional, sin markdown, sin comentarios.";
@@ -223,6 +230,7 @@ DATOS DEL ATLETA:
 ${notes ? `- Notas adicionales: ${notes}` : ""}
 ${gymSection}
 ${stravaSection}
+${hrSection ? `\n${hrSection}` : ""}
 
 USA LOS DATOS REALES del atleta para:
 - Ajustar pesos y reps de gym basándote en sus PRs. Para el primer set sugerí ~70-80% del PR como punto de partida (el atleta progresa carga manualmente).
