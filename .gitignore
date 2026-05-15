@@ -61,3 +61,15 @@ skills-lock.json
 /last-payload.json
 /last-workout.json
 /probe-*.mjs
+
+# generated FIT exports / scratch artifacts
+/tmp/
+
+# personal codebase snapshot (kept local, can go stale fast)
+/DOCUMENTACION.md
+
+# n8n DB-fix one-offs (do not belong in this repo)
+/scripts/fix-workflow-*.js
+/scripts/insert-workflow.js
+/scripts/seed-workflow-history.js
+/scripts/set-workflow-key.js
