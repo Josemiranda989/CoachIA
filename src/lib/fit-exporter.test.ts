@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { Decoder, Stream } from "@garmin/fitsdk";
 import { blocksToFitWorkout, parseCadenceTarget } from "./fit-exporter";
 
 describe("parseCadenceTarget", () => {
@@ -148,5 +149,119 @@ describe("blocksToFitWorkout cadence target", () => {
     const idx = findBytes(fit, anchor);
     expect(idx).toBeGreaterThan(0);
     expect(fit[idx + 35]).toBe(1); // TARGET_HEART_RATE on the recovery
+  });
+});
+
+// Round-trip tests: parse the bytes we emit with Garmin's own FIT SDK to make
+// sure the file is structurally valid (header, CRC, message definitions) and
+// that the field values we wrote come back out unchanged. Byte-signature tests
+// above catch encoding regressions; these catch protocol regressions that
+// byte tests don't see (CRC drift, malformed mesg defs, wrong dev fields).
+describe("blocksToFitWorkout round-trip via @garmin/fitsdk", () => {
+  it("produces a structurally valid FIT file with intact CRC", () => {
+    const fit = blocksToFitWorkout({
+      name: "Valid",
+      blocks: [{ order: 0, kind: "warmup", duration: 10, targetPower: "Z1" }],
+    });
+
+    const stream = Stream.fromByteArray(Array.from(fit));
+    const decoder = new Decoder(stream);
+    expect(decoder.isFIT()).toBe(true);
+    expect(decoder.checkIntegrity()).toBe(true);
+  });
+
+  it("round-trips workout name, step count, and intensities", () => {
+    const fit = blocksToFitWorkout({
+      name: "RoundTrip",
+      blocks: [
+        { order: 0, kind: "warmup", duration: 10, targetPower: "Z1" },
+        {
+          order: 1,
+          kind: "interval",
+          duration: 4,
+          targetPower: "Z3",
+          repetitions: 4,
+          recoveryDuration: 4,
+          recoveryPower: "Z1",
+        },
+        { order: 2, kind: "cooldown", duration: 10, targetPower: "Z1" },
+      ],
+    });
+
+    const stream = Stream.fromByteArray(Array.from(fit));
+    const decoder = new Decoder(stream);
+    const { messages, errors } = decoder.read();
+    expect(errors).toHaveLength(0);
+
+    expect(messages.workoutMesgs).toHaveLength(1);
+    expect(messages.workoutMesgs[0].wktName).toBe("RoundTrip");
+
+    // warmup + (work + recovery + repeat-marker) + cooldown = 5 steps
+    expect(messages.workoutStepMesgs).toHaveLength(5);
+
+    const steps = messages.workoutStepMesgs;
+    expect(steps[0].intensity).toBe("warmup");
+    expect(steps[1].intensity).toBe("active");
+    expect(steps[2].intensity).toBe("rest");
+    // step 3 is the repeat-marker (intensity is active but durationType differs)
+    expect(steps[4].intensity).toBe("cooldown");
+  });
+
+  it("round-trips cadence target with exact rpm range", () => {
+    const fit = blocksToFitWorkout({
+      name: "Cadence",
+      blocks: [
+        { order: 0, kind: "warmup", duration: 5, targetPower: "Z1" },
+        {
+          order: 1,
+          kind: "interval",
+          duration: 2,
+          targetPower: "Z3",
+          targetCadence: "60-65 rpm",
+          repetitions: 3,
+          recoveryDuration: 1,
+          recoveryPower: "Z1",
+        },
+      ],
+    });
+
+    const stream = Stream.fromByteArray(Array.from(fit));
+    const { messages } = new Decoder(stream).read();
+    const work = messages.workoutStepMesgs[1]; // step after warmup
+    expect(work.targetType).toBe("cadence");
+    expect(work.customTargetValueLow).toBe(60);
+    expect(work.customTargetValueHigh).toBe(65);
+  });
+
+  it("round-trips %FCmax HR target with computed bpm range", () => {
+    const fit = blocksToFitWorkout({
+      name: "HRFcMax",
+      blocks: [{ order: 0, kind: "warmup", duration: 5, targetPower: "Z1" }],
+      hrConfig: { fcMax: 182 },
+    });
+
+    const stream = Stream.fromByteArray(Array.from(fit));
+    const { messages } = new Decoder(stream).read();
+    const step = messages.workoutStepMesgs[0];
+    expect(step.targetType).toBe("heartRate");
+    // %FCmax Z1 = 50-60% × 182 = 91-109.2 → 91-109
+    expect(step.customTargetValueLow).toBe(91);
+    expect(step.customTargetValueHigh).toBe(109);
+  });
+
+  it("round-trips Friel LTHR HR target overriding fcMax", () => {
+    const fit = blocksToFitWorkout({
+      name: "HRLthr",
+      blocks: [{ order: 0, kind: "steady", duration: 10, targetPower: "Z4" }],
+      hrConfig: { fcMax: 190, lthr: 160 },
+    });
+
+    const stream = Stream.fromByteArray(Array.from(fit));
+    const { messages } = new Decoder(stream).read();
+    const step = messages.workoutStepMesgs[0];
+    expect(step.targetType).toBe("heartRate");
+    // Friel Z4 = 94-99% × 160 = 150.4-158.4 → 150-158
+    expect(step.customTargetValueLow).toBe(150);
+    expect(step.customTargetValueHigh).toBe(158);
   });
 });
