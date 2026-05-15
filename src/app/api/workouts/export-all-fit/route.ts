@@ -53,6 +53,7 @@ function buildCyclingDay(
       repetitions: b.repetitions,
       recoveryDuration: b.recoveryDuration,
       recoveryPower: b.recoveryPower,
+      targetCadence: b.targetCadence,
       notes: b.notes,
     })),
   };
@@ -72,6 +73,12 @@ export async function GET(req: NextRequest) {
     }
     userId = session.user.id;
   }
+
+  const hrUser = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { fcMax: true, lthr: true },
+  });
+  const hrConfig = hrUser ? { fcMax: hrUser.fcMax, lthr: hrUser.lthr } : undefined;
 
   // Obtener rutinas activas + pendientes de aprobación
   const routines = await prisma.routine.findMany({
@@ -109,7 +116,7 @@ export async function GET(req: NextRequest) {
       const fitName = `${baseName}-coachia.fit`;
       const wktName = `CoachIA ${dayEs}`;
       try {
-        const bytes = blocksToFitWorkout({ name: wktName, blocks: day.blocks });
+        const bytes = blocksToFitWorkout({ name: wktName, blocks: day.blocks, hrConfig });
         entries.push({ name: `fit/${fitName}`, data: Buffer.from(bytes) });
       } catch (err: any) {
         console.error(`Error exporting ${fitName}:`, err?.message ?? String(err));

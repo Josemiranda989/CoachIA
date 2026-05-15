@@ -46,6 +46,7 @@ export async function GET(request: Request) {
         maxHR: a.max_heartrate ?? null,
         avgWatts: a.average_watts ?? null,
         maxWatts: a.max_watts ?? null,
+        avgCadence: a.average_cadence ?? null,
         elevationGain: a.total_elevation_gain ?? 0,
         sufferScore: a.suffer_score ?? null,
       }));
@@ -65,6 +66,9 @@ export async function GET(request: Request) {
     const avgWatts = rides
       .map((r: any) => r.avgWatts)
       .filter((w: any): w is number => w !== null);
+    const avgCadences = rides
+      .map((r: any) => r.avgCadence)
+      .filter((c: any): c is number => c !== null);
 
     const longestRide = rides.reduce(
       (max: any, r: any) => (r.distanceKm > (max?.distanceKm ?? 0) ? r : max),
@@ -86,6 +90,12 @@ export async function GET(request: Request) {
         avgWatts.length > 0
           ? Math.round(
               avgWatts.reduce((a: number, b: number) => a + b, 0) / avgWatts.length
+            )
+          : null,
+      avgCadence:
+        avgCadences.length > 0
+          ? Math.round(
+              avgCadences.reduce((a: number, b: number) => a + b, 0) / avgCadences.length
             )
           : null,
       totalElevation: Math.round(

@@ -7,6 +7,7 @@ type Block = {
   repetitions?: number | null;
   recoveryDuration?: number | null;
   recoveryPower?: string | null;
+  targetCadence?: string | null;
   notes?: string | null;
 };
 
@@ -25,11 +26,12 @@ const KIND_ICON: Record<string, string> = {
 };
 
 function renderBlockLine(b: Block): string {
+  const cadenceSuffix = b.targetCadence ? ` @ ${b.targetCadence}` : "";
   if (b.kind === "interval" && b.repetitions && b.recoveryDuration) {
     const recPart = b.recoveryPower ? `${b.recoveryDuration}min ${b.recoveryPower} rec` : `${b.recoveryDuration}min rec`;
-    return `${b.repetitions}x (${b.duration}min ${b.targetPower} / ${recPart})`;
+    return `${b.repetitions}x (${b.duration}min ${b.targetPower}${cadenceSuffix} / ${recPart})`;
   }
-  return `${b.duration}min ${b.targetPower}`;
+  return `${b.duration}min ${b.targetPower}${cadenceSuffix}`;
 }
 
 /**

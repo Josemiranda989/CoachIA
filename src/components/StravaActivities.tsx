@@ -1,4 +1,4 @@
-import { Bike, Clock, TrendingUp, Mountain, Heart, Zap } from "lucide-react";
+import { Bike, Clock, TrendingUp, Mountain, Heart, Zap, RotateCw } from "lucide-react";
 import { getStravaActivities, getStravaStats } from "@/lib/strava-cached";
 
 interface StravaActivity {
@@ -16,6 +16,7 @@ interface StravaActivity {
   average_heartrate?: number;
   max_heartrate?: number;
   average_watts?: number;
+  average_cadence?: number;
   kilojoules?: number;
   suffer_score?: number;
 }
@@ -168,6 +169,9 @@ export async function StravaActivities({ userId }: { userId: string }) {
                   )}
                   {act.average_watts && (
                     <Metric icon={Zap} label="Potencia" value={`${Math.round(act.average_watts)} W`} />
+                  )}
+                  {act.average_cadence && (
+                    <Metric icon={RotateCw} label="Cadencia" value={`${Math.round(act.average_cadence)} rpm`} />
                   )}
                 </div>
               </div>

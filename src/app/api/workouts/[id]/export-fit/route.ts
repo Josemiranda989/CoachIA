@@ -37,13 +37,19 @@ export async function GET(
 
   const { id: dailyWorkoutId } = await params;
 
-  const day = await prisma.dailyWorkout.findUnique({
-    where: { id: dailyWorkoutId },
-    include: {
-      routine: true,
-      blocks: { orderBy: { order: "asc" } },
-    },
-  });
+  const [day, hrUser] = await Promise.all([
+    prisma.dailyWorkout.findUnique({
+      where: { id: dailyWorkoutId },
+      include: {
+        routine: true,
+        blocks: { orderBy: { order: "asc" } },
+      },
+    }),
+    prisma.user.findUnique({
+      where: { id: session.user.id as string },
+      select: { fcMax: true, lthr: true },
+    }),
+  ]);
 
   if (!day) {
     return NextResponse.json({ error: "Workout not found" }, { status: 404 });
@@ -65,7 +71,11 @@ export async function GET(
 
   let bytes: Uint8Array;
   try {
-    bytes = blocksToFitWorkout({ name: wktName, blocks: day.blocks });
+    bytes = blocksToFitWorkout({
+      name: wktName,
+      blocks: day.blocks,
+      hrConfig: hrUser ? { fcMax: hrUser.fcMax, lthr: hrUser.lthr } : undefined,
+    });
   } catch (err: any) {
     return NextResponse.json(
       { error: "Failed to encode .fit", detail: err?.message ?? String(err) },

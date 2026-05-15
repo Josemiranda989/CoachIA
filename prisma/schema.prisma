@@ -95,6 +95,10 @@ model CyclingBlock {
   recoveryDuration Int?
   recoveryPower    String?
 
+  // Optional cadence target (rpm). Examples: "85-95 rpm", "100+ rpm spin-up",
+  // "60-65 rpm big gear". When null, the block has no cadence prescription.
+  targetCadence    String?
+
   notes            String?
 
   dailyWorkout     DailyWorkout @relation(fields: [dailyWorkoutId], references: [id], onDelete: Cascade)
@@ -161,6 +165,14 @@ model User {
   stravaAccessToken  String?
   stravaRefreshToken String?
   stravaTokenExpiry  Int?     // Unix timestamp
+
+  // Heart rate config used to resolve "Z1"-"Z7" labels into actionable bpm
+  // ranges on the BSC300T. lthr (Lactate Threshold HR) takes precedence when
+  // set; fcMax is the fallback. Without either, exports fall back to FIT
+  // zone references which the device renders only if its own HR zones are
+  // configured.
+  fcMax Int?
+  lthr  Int?
 
   accounts      Account[]
   sessions      Session[]
