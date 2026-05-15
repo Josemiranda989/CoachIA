@@ -8,6 +8,7 @@ import { ArrowRight, Dumbbell, Trophy, Clock, TrendingUp, Bike, type LucideIcon 
 import { redirect } from "next/navigation";
 import { StravaActivities, StravaActivitiesSkeleton } from "@/components/StravaActivities";
 import { isStravaConfigured, getStravaAuthUrl } from "@/lib/strava";
+import { getStravaContext } from "@/lib/strava-cached";
 import { WeightChart } from "./WeightChart";
 import { WeightChartSkeleton } from "./WeightChartView";
 import { CyclingCards, CyclingCardsSkeleton } from "./CyclingCards";
@@ -30,6 +31,14 @@ export default async function MetricsPage() {
   const stravaConnected = stravaConfigured
     ? !!(await prisma.user.findUnique({ where: { id: userId }, select: { stravaAthleteId: true } }))?.stravaAthleteId
     : false;
+
+  // Token health check — uses React.cache(), so the cycling Suspense boundaries
+  // below reuse this single resolution. When stravaTokenInvalid is true, the
+  // athlete connected at some point but the refresh_token was revoked/expired
+  // and getValidAccessToken cleared the dead tokens. We surface a re-auth
+  // banner instead of letting the cycling cards render empty.
+  const stravaCtx = stravaConfigured && stravaConnected ? await getStravaContext(userId) : null;
+  const stravaTokenInvalid = stravaConnected && !stravaCtx;
 
   // Gym stats — always synchronous, scoped to current user
   const allLogs = await prisma.workoutLog.findMany({
@@ -109,6 +118,44 @@ export default async function MetricsPage() {
       <h1 className="title">Métricas</h1>
       <p className="subtitle">Tu progreso general</p>
 
+      {stravaTokenInvalid && stravaAuthUrl && (
+        <div
+          role="alert"
+          className="card flex items-center gap-4"
+          style={{
+            background: "color-mix(in srgb, var(--accent-gym) 8%, transparent)",
+            borderColor: "color-mix(in srgb, var(--accent-gym) 40%, transparent)",
+            marginBottom: 16,
+          }}
+        >
+          <Bike size={24} style={{ color: "var(--accent-gym)", flexShrink: 0 }} aria-hidden="true" />
+          <div className="flex-1">
+            <p className="font-semibold mb-1" style={{ color: "var(--accent-gym)" }}>
+              Reconectá tu Strava
+            </p>
+            <p style={{ color: "var(--text-secondary)", fontSize: 13 }}>
+              El acceso a Strava expiró o fue revocado. Tus métricas de ciclismo no se están actualizando.
+            </p>
+          </div>
+          <a
+            href={stravaAuthUrl}
+            style={{
+              background: "#FC4C02",
+              color: "#fff",
+              padding: "10px 16px",
+              borderRadius: 8,
+              fontWeight: 600,
+              fontSize: 14,
+              textDecoration: "none",
+              flexShrink: 0,
+              whiteSpace: "nowrap",
+            }}
+          >
+            Reconectar
+          </a>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         {gymMetrics.map(({ label, value, displayFallback, unit, description, icon: Icon, decimals }) => (
           <div
@@ -165,7 +212,7 @@ export default async function MetricsPage() {
         </Link>
 
         {/* Cycling cards stream in independently — Strava lentitud no bloquea las cards de gym */}
-        {stravaConnected && (
+        {stravaConnected && !stravaTokenInvalid && (
           <Suspense fallback={<CyclingCardsSkeleton />}>
             <CyclingCards userId={userId} />
           </Suspense>
@@ -221,7 +268,7 @@ export default async function MetricsPage() {
           </a>
         )}
 
-        {stravaConfigured && stravaConnected && (
+        {stravaConfigured && stravaConnected && !stravaTokenInvalid && (
           <Suspense fallback={<StravaActivitiesSkeleton />}>
             <StravaActivities userId={userId} />
           </Suspense>

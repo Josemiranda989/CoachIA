@@ -43,17 +43,32 @@ export async function getValidAccessToken(userId: string): Promise<string | null
     return user.stravaAccessToken;
   }
 
-  // Token expirado — refrescamos
-  const data = await refreshToken(user.stravaRefreshToken);
-  await prisma.user.update({
-    where: { id: userId },
-    data: {
-      stravaAccessToken: data.access_token,
-      stravaRefreshToken: data.refresh_token,
-      stravaTokenExpiry: data.expires_at,
-    },
-  });
-  return data.access_token as string;
+  // Token expirado — intentamos refrescar.
+  try {
+    const data = await refreshToken(user.stravaRefreshToken);
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        stravaAccessToken: data.access_token,
+        stravaRefreshToken: data.refresh_token,
+        stravaTokenExpiry: data.expires_at,
+      },
+    });
+    return data.access_token as string;
+  } catch {
+    // Refresh falló — el refresh_token fue revocado o expiró. Limpiamos los
+    // tokens muertos (pero conservamos stravaAthleteId) y devolvemos null
+    // para que el caller surfacée un banner de reconexión en vez de crashear.
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        stravaAccessToken: null,
+        stravaRefreshToken: null,
+        stravaTokenExpiry: null,
+      },
+    });
+    return null;
+  }
 }
 
 export async function exchangeCode(code: string) {
