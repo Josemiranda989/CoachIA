@@ -46,8 +46,8 @@ const INTENSITY = { active: 0, rest: 1, warmup: 2, cooldown: 3 } as const;
 const DURATION_TIME = 0;
 const DURATION_REPEAT_STEPS = 6;
 const TARGET_OPEN = 2;
+const TARGET_HEART_RATE = 1;
 const TARGET_CADENCE = 3;
-const TARGET_POWER = 4;
 
 // Manufacturer IDs (FIT profile)
 const MFR_IGPSPORT = 115;
@@ -90,13 +90,22 @@ type StepDraft = {
   targetValue: number;
 };
 
-function parsePowerTarget(raw: string | null | undefined): {
+// Resolve a "Z1"-"Z7" label to a FIT target. We emit HR-zone targets rather
+// than POWER-zone targets because the typical CoachIA rider trains with a HR
+// strap + cadence sensor (no power meter on the bike). The BSC300T resolves
+// HR Zone N against the rider's configured FCmax, so the target range shown
+// on screen is something they can actually chase in real time. Power target
+// would render a watt range that's unmeasurable without a power meter.
+//
+// (The `targetPower` field name in the data model is historical — the value
+// is a zone label, not a watt prescription.)
+function parseZoneTarget(raw: string | null | undefined): {
   targetType: number;
   targetValue: number;
 } {
   if (!raw) return { targetType: TARGET_OPEN, targetValue: 0 };
   const m = raw.match(/Z([1-7])/i);
-  if (m) return { targetType: TARGET_POWER, targetValue: parseInt(m[1], 10) };
+  if (m) return { targetType: TARGET_HEART_RATE, targetValue: parseInt(m[1], 10) };
   return { targetType: TARGET_OPEN, targetValue: 0 };
 }
 
@@ -124,7 +133,7 @@ function resolveTarget(
   if (cad) {
     return { targetType: TARGET_CADENCE, targetValue: 0, field5: cad.low, field6: cad.high };
   }
-  const p = parsePowerTarget(power);
+  const p = parseZoneTarget(power);
   return { targetType: p.targetType, targetValue: p.targetValue, field5: null, field6: null };
 }
 
@@ -200,7 +209,7 @@ export function blocksToFitWorkout({ name, blocks }: FitWorkoutInput): Uint8Arra
         targetValue: workTarget.targetValue,
       });
       // Recovery never has a cadence prescription of its own — defaults to power.
-      const rec = parsePowerTarget(b.recoveryPower);
+      const rec = parseZoneTarget(b.recoveryPower);
       drafts.push({
         messageIndex: drafts.length,
         wktStepName: STEP_NAME.recovery,

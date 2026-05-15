@@ -69,7 +69,7 @@ describe("blocksToFitWorkout cadence target", () => {
     expect(fit[idx + 35]).toBe(3);
   });
 
-  it("falls back to power target when cadence is qualitative", () => {
+  it("falls back to HR target when cadence is qualitative", () => {
     const fit = blocksToFitWorkout({
       name: "BigGear",
       blocks: [
@@ -83,15 +83,15 @@ describe("blocksToFitWorkout cadence target", () => {
       ],
     });
 
-    // Step should use power target (type=4, value=3 for Z3) and 0xffffffff in custom range fields.
+    // Step should use HR target (type=1, value=3 for Z3) and 0xffffffff in custom range fields.
     const sig = [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00];
     const idx = findBytes(fit, sig);
     expect(idx).toBeGreaterThan(0);
     // target_type byte at idx + 35
-    expect(fit[idx + 35]).toBe(4); // TARGET_POWER
+    expect(fit[idx + 35]).toBe(1); // TARGET_HEART_RATE
   });
 
-  it("recovery step keeps power target even when work step uses cadence", () => {
+  it("recovery step keeps HR target even when work step uses cadence", () => {
     const fit = blocksToFitWorkout({
       name: "Mixed",
       blocks: [
@@ -108,12 +108,12 @@ describe("blocksToFitWorkout cadence target", () => {
       ],
     });
 
-    // 3 steps emitted: work (cadence), recovery (Z1 power), repeat marker.
+    // 3 steps emitted: work (cadence), recovery (Z1 HR), repeat marker.
     // Find the recovery step: it has 0xffffffff in fields 5/6, intensity=rest (1).
     // Use the message_index=1 as anchor.
     const anchor = [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x01, 0x00];
     const idx = findBytes(fit, anchor);
     expect(idx).toBeGreaterThan(0);
-    expect(fit[idx + 35]).toBe(4); // TARGET_POWER on the recovery
+    expect(fit[idx + 35]).toBe(1); // TARGET_HEART_RATE on the recovery
   });
 });
