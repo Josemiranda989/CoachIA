@@ -95,6 +95,10 @@ model CyclingBlock {
   recoveryDuration Int?
   recoveryPower    String?
 
+  // Optional cadence target (rpm). Examples: "85-95 rpm", "100+ rpm spin-up",
+  // "60-65 rpm big gear". When null, the block has no cadence prescription.
+  targetCadence    String?
+
   notes            String?
 
   dailyWorkout     DailyWorkout @relation(fields: [dailyWorkoutId], references: [id], onDelete: Cascade)

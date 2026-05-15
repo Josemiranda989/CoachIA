@@ -60,6 +60,7 @@ export async function GET(request: Request) {
             repetitions: b.repetitions,
             recoveryDuration: b.recoveryDuration,
             recoveryPower: b.recoveryPower,
+            targetCadence: b.targetCadence,
             notes: b.notes,
           })),
         });

@@ -53,6 +53,7 @@ function buildCyclingDay(
       repetitions: b.repetitions,
       recoveryDuration: b.recoveryDuration,
       recoveryPower: b.recoveryPower,
+      targetCadence: b.targetCadence,
       notes: b.notes,
     })),
   };
