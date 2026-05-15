@@ -9,9 +9,11 @@ export type Block = {
   repetitions?: number | null;
   recoveryDuration?: number | null;
   recoveryPower?: string | null;
-  // Cadence target is informational only — the iGS BSC300T renders power/HR
-  // targets in workout mode but not cadence, so we surface it in the in-app
-  // block view + notes rather than encoding a FIT cadence target step.
+  // When cadence is a clean numeric range ("60-65 rpm", "55-65 rpm big gear"),
+  // it overrides the power target for this step — iGPSPORT workouts allow
+  // only one target type per step (confirmed by inspecting an exported .fit).
+  // Qualitative cadence cues ("big gear", "100+ rpm spin-up") are left to the
+  // in-app UI / notes since they have no clean range to encode.
   targetCadence?: string | null;
   notes?: string | null;
 };
@@ -44,6 +46,7 @@ const INTENSITY = { active: 0, rest: 1, warmup: 2, cooldown: 3 } as const;
 const DURATION_TIME = 0;
 const DURATION_REPEAT_STEPS = 6;
 const TARGET_OPEN = 2;
+const TARGET_CADENCE = 3;
 const TARGET_POWER = 4;
 
 // Manufacturer IDs (FIT profile)
@@ -78,8 +81,11 @@ type StepDraft = {
   intensity: number;
   durationType: number;
   durationValue: number;
-  durationStep: number | null;
-  repeatSteps: number | null;
+  // Field #5 and #6 are dual-purpose in FIT: for repeat steps they hold
+  // durationStep + repeatSteps; for regular steps they hold
+  // customTargetValueLow + customTargetValueHigh (used for cadence ranges).
+  field5: number | null;
+  field6: number | null;
   targetType: number;
   targetValue: number;
 };
@@ -92,6 +98,34 @@ function parsePowerTarget(raw: string | null | undefined): {
   const m = raw.match(/Z([1-7])/i);
   if (m) return { targetType: TARGET_POWER, targetValue: parseInt(m[1], 10) };
   return { targetType: TARGET_OPEN, targetValue: 0 };
+}
+
+// Parse a cadence prescription like "60-65 rpm", "55-65 rpm big gear",
+// "90 - 100 rpm". Returns null for qualitative cues ("big gear", "100+ rpm")
+// since the FIT custom-range fields need a closed [low, high] pair.
+export function parseCadenceTarget(raw: string | null | undefined): { low: number; high: number } | null {
+  if (!raw) return null;
+  const m = raw.match(/(\d{2,3})\s*-\s*(\d{2,3})\s*rpm/i);
+  if (!m) return null;
+  const low = parseInt(m[1], 10);
+  const high = parseInt(m[2], 10);
+  if (low < 30 || high > 200 || low >= high) return null;
+  return { low, high };
+}
+
+// Pick the effective FIT target for a step. Cadence wins when it has a clean
+// range — the rider explicitly added a cadence prescription (big-gear,
+// spin-up, recovery high-cadence) and that's the discipline of the step.
+function resolveTarget(
+  power: string | null | undefined,
+  cadence: string | null | undefined,
+): { targetType: number; targetValue: number; field5: number | null; field6: number | null } {
+  const cad = parseCadenceTarget(cadence);
+  if (cad) {
+    return { targetType: TARGET_CADENCE, targetValue: 0, field5: cad.low, field6: cad.high };
+  }
+  const p = parsePowerTarget(power);
+  return { targetType: p.targetType, targetValue: p.targetValue, field5: null, field6: null };
 }
 
 function kindToIntensity(kind: string): number {
@@ -148,7 +182,7 @@ export function blocksToFitWorkout({ name, blocks }: FitWorkoutInput): Uint8Arra
   // Expand CoachIA blocks into flat FIT step drafts.
   const drafts: StepDraft[] = [];
   for (const b of sorted) {
-    const target = parsePowerTarget(b.targetPower);
+    const workTarget = resolveTarget(b.targetPower, b.targetCadence);
     const hasReps =
       b.kind === "interval" && !!b.repetitions && b.repetitions > 1 && !!b.recoveryDuration;
 
@@ -160,11 +194,12 @@ export function blocksToFitWorkout({ name, blocks }: FitWorkoutInput): Uint8Arra
         intensity: INTENSITY.active,
         durationType: DURATION_TIME,
         durationValue: b.duration * 60_000,
-        durationStep: null,
-        repeatSteps: null,
-        targetType: target.targetType,
-        targetValue: target.targetValue,
+        field5: workTarget.field5,
+        field6: workTarget.field6,
+        targetType: workTarget.targetType,
+        targetValue: workTarget.targetValue,
       });
+      // Recovery never has a cadence prescription of its own — defaults to power.
       const rec = parsePowerTarget(b.recoveryPower);
       drafts.push({
         messageIndex: drafts.length,
@@ -172,8 +207,8 @@ export function blocksToFitWorkout({ name, blocks }: FitWorkoutInput): Uint8Arra
         intensity: INTENSITY.rest,
         durationType: DURATION_TIME,
         durationValue: (b.recoveryDuration ?? 0) * 60_000,
-        durationStep: null,
-        repeatSteps: null,
+        field5: null,
+        field6: null,
         targetType: rec.targetType,
         targetValue: rec.targetValue,
       });
@@ -183,8 +218,8 @@ export function blocksToFitWorkout({ name, blocks }: FitWorkoutInput): Uint8Arra
         intensity: INTENSITY.active,
         durationType: DURATION_REPEAT_STEPS,
         durationValue: workStart,
-        durationStep: workStart,
-        repeatSteps: b.repetitions!,
+        field5: workStart,
+        field6: b.repetitions!,
         targetType: TARGET_OPEN,
         targetValue: b.repetitions!,
       });
@@ -195,10 +230,10 @@ export function blocksToFitWorkout({ name, blocks }: FitWorkoutInput): Uint8Arra
         intensity: kindToIntensity(b.kind),
         durationType: DURATION_TIME,
         durationValue: b.duration * 60_000,
-        durationStep: null,
-        repeatSteps: null,
-        targetType: target.targetType,
-        targetValue: target.targetValue,
+        field5: workTarget.field5,
+        field6: workTarget.field6,
+        targetType: workTarget.targetType,
+        targetValue: workTarget.targetValue,
       });
     }
   }
@@ -238,8 +273,8 @@ export function blocksToFitWorkout({ name, blocks }: FitWorkoutInput): Uint8Arra
   // Data record for each step — values written in definition order
   for (const d of drafts) {
     writeU8(data, 0x00);
-    writeU32(data, d.durationStep ?? 0xffffffff);   // field #5
-    writeU32(data, d.repeatSteps ?? 0xffffffff);    // field #6
+    writeU32(data, d.field5 ?? 0xffffffff);         // field #5 (durationStep | customTargetValueLow)
+    writeU32(data, d.field6 ?? 0xffffffff);         // field #6 (repeatSteps  | customTargetValueHigh)
     writeU16(data, d.messageIndex);                 // field #254
     writeString(data, d.wktStepName, STEP_NAME_SIZE); // field #0
     writeU8(data, d.durationType);                  // field #1
