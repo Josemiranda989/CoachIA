@@ -8,7 +8,7 @@ This project runs **exclusively via Docker Compose** (Prisma has EPERM issues on
 cd D:/docker-containers/CoachIA
 docker compose up -d
 # App available at http://localhost:3001
-# Public: https://gym.homelab989.duckdns.org
+# Public: https://coachia.jmlabs.app
 ```
 
 **After any code change**: `docker compose up -d --build` — the compose runs `NODE_ENV=production` with no source volume mount, so the image must be rebuilt to pick up changes. Plain `docker compose restart` only restarts the existing image and **will not** apply your edits.
