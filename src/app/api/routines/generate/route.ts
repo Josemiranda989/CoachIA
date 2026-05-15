@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { GoogleGenAI, Type } from '@google/genai';
 import { getValidAccessToken, fetchActivities, fetchStats } from '@/lib/strava';
+import { hrZonesSummary } from '@/lib/hr-zones';
 
 const routineResponseSchema = {
   type: Type.OBJECT,
@@ -42,6 +43,7 @@ const routineResponseSchema = {
                 repetitions: { type: Type.NUMBER, description: "Only for kind='interval'." },
                 recoveryDuration: { type: Type.NUMBER, description: "Only for kind='interval'. Recovery minutes between reps." },
                 recoveryPower: { type: Type.STRING, description: "Only for kind='interval'. Usually Z1 or Z2." },
+                targetCadence: { type: Type.STRING, description: "Optional cadence target. Examples: '85-95 rpm' (default Z2), '100+ rpm spin-up', '60-65 rpm big gear' (low-cadence strength)." },
                 notes: { type: Type.STRING },
               },
               required: ['kind', 'duration', 'targetPower'],
@@ -69,6 +71,13 @@ function getNextMonday(): string {
 }
 
 async function gatherAthleteData(userId: string) {
+  // HR zones — only kick in when rider has filled them in /profile.
+  const hrUser = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { fcMax: true, lthr: true },
+  });
+  const hrSection = hrUser ? hrZonesSummary({ fcMax: hrUser.fcMax, lthr: hrUser.lthr }) : null;
+
   // Gym: PRs and volume
   const allLogs = await prisma.workoutLog.findMany({
     include: { exercise: { select: { name: true } } },
@@ -134,6 +143,7 @@ async function gatherAthleteData(userId: string) {
             let line = `  - ${ride.name}: ${dist} km, ${hrs}h${mins}m, ${speed} km/h avg`;
             if (ride.average_heartrate) line += `, FC ${Math.round(ride.average_heartrate)} bpm`;
             if (ride.average_watts) line += `, ${Math.round(ride.average_watts)} W`;
+            if (ride.average_cadence) line += `, ${Math.round(ride.average_cadence)} rpm`;
             stravaSection += `\n${line}`;
           }
         }
@@ -143,7 +153,7 @@ async function gatherAthleteData(userId: string) {
     // Strava not available — continue without it
   }
 
-  return { gymSection, stravaSection };
+  return { gymSection, stravaSection, hrSection };
 }
 
 export async function POST(request: Request) {
@@ -174,7 +184,7 @@ export async function POST(request: Request) {
     }
 
     const nextMonday = getNextMonday();
-    const { gymSection, stravaSection } = await gatherAthleteData(userId);
+    const { gymSection, stravaSection, hrSection } = await gatherAthleteData(userId);
 
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
@@ -188,11 +198,13 @@ DATOS DEL ATLETA:
 ${notes ? `- Notas adicionales: ${notes}` : ''}
 ${gymSection}
 ${stravaSection}
+${hrSection ? `\n${hrSection}` : ''}
 
 USA LOS DATOS REALES del atleta para:
 - Ajustar los pesos y repeticiones de gym basándote en sus PRs (no pongas pesos genéricos, usá porcentajes realistas de sus récords)
 - Ajustar la duración e intensidad del ciclismo según su nivel real (distancias, velocidad promedio, FC y potencia recientes)
 - Si no hay datos de ciclismo, usá valores conservadores para principiante
+- Si conocés las zonas FC del atleta (sección "Zonas FC"), podés anotar el rango bpm en notes para que el atleta tenga referencia explícita en pantalla. Ej: notes "Z4 sostenible (~150-158 bpm)"
 
 PERIODIZACIÓN SEMANAL (OBLIGATORIA):
 
@@ -230,6 +242,32 @@ ESTILO DEL ATLETA (preferencias extraídas de un plan real que le funcionó):
   - **Excepción: 2:1 SOLO cuando la rep dura ≥10 minutos**. Ej: 2x10' → recovery 5'.
   - NO inventar ratios distintos. Si el bloque no encaja en 1:1 o 2:1 → repensalo.
 
+ZONAS DE POTENCIA (Coggan 7-zone model, %FTP):
+- Z1 Recovery activo: <55% FTP — rides post-piernas, very easy
+- Z2 Endurance: 56-75% FTP — base, la mayoría del volumen semanal
+- Z3 Tempo: 76-90% FTP — ritmo "confortable rápido", conversación entrecortada
+- Z4 Threshold: 91-105% FTP — umbral, sostenible 30-60min máximo (en intervals: 4-15min por rep)
+- Z5 VO2max: 106-120% FTP — máximo aeróbico, sostenible 3-8min total (en intervals: 2-5min por rep)
+- Z6+ Anaeróbico: >120% — sprints/all-out, sostenible 30s-2min
+
+DURACIONES DE REP POR ZONA (fisiológicamente realistas — NO VIOLAR):
+- Z3 Tempo: 8-20min por rep, recovery 1:1 (default) o 2:1 si rep ≥10min
+- Z4 Threshold/SOSTENIBLE: 4-15min por rep, recovery 1:1 default
+- Z5 VO2max: 2-5min por rep, NUNCA exceder 5min/rep, recovery 1:1 (rara excepción 2:1)
+- Z6+ Anaeróbico: 30s-2min por rep, raro
+
+REGLA DURA — kind="steady" SOLO permitido en Z1, Z2 o Z3.
+- Z4 SIEMPRE como kind="interval" con mínimo 2 reps.
+- Z5 SIEMPRE como kind="interval" con mínimo 3 reps.
+- Un bloque steady de 6min en Z4 o Z5 NO es un entreno, es un test mal pegado. PROHIBIDO.
+
+CADENCIA (campo opcional targetCadence por bloque):
+- Default Z2/Z3 self-paced (85-95 rpm): podés omitir targetCadence o usar "85-95 rpm".
+- **Spin-ups** (eficiencia neuromuscular): bloques Z2 con targetCadence "100+ rpm". Útil en warmups o steady cortos de 10-20min.
+- **Big gear / fuerza-resistencia** (reclutamiento de fibra): intervals Z3-Z4 con targetCadence "50-65 rpm big gear". Tip: meter "fuerza-resistencia" como tipo de sesión alternativo al VO2max si el objetivo incluye fuerza pedalística.
+- Recovery rides post-piernas: targetCadence "90+ rpm" para no cargar piernas.
+- Solo prescribir cadencia cuando aporte (no llenar bloques con el default redundante).
+
 REGLAS ESTRICTAS:
 1. weekStart DEBE ser exactamente: "${nextMonday}"
 2. SIEMPRE incluir los 7 días de la semana (Monday a Sunday)
@@ -238,12 +276,42 @@ REGLAS ESTRICTAS:
 5. Para días Cycling: incluir targetDuration (total minutos, 60-120), targetPower (label resumen "Z2" o "Z2 + 4xZ4"), y **blocks** (array ordenado de la ride):
    - warmup (10-20min Z1-Z2) → steady|interval (×N) → cooldown (8-15min Z1). Entre 3 y 7 bloques.
    - kind="interval" usa formato COMPRIMIDO: duration=duración DE CADA rep, repetitions=cantidad, recoveryDuration=min entre reps, recoveryPower=zona recovery. Ej "4x4min Z4/3min Z2" → {kind:"interval",duration:4,targetPower:"Z4",repetitions:4,recoveryDuration:3,recoveryPower:"Z2"}.
-   - kind="steady" = bloque sostenido (duration, targetPower). NO usar repetitions.
+   - kind="steady" = bloque sostenido (duration, targetPower). NO usar repetitions. SOLO en Z1-Z3.
    - La suma (warmup + Σ rep*(duration+recoveryDuration) + Σ steady.duration + cooldown) debe igualar targetDuration.
-   - Rides recovery (post-piernas): solo warmup + steady Z1-Z2 + cooldown, sin interval.
+   - Rides recovery (post-piernas): solo warmup + steady Z1-Z2 + cooldown, sin interval, targetCadence "90+ rpm".
 6. Para días Rest: NO incluir exercises, targetDuration, targetPower ni blocks
 7. Variar los grupos musculares entre días de gym (no repetir el mismo grupo dos días seguidos)
-8. Los ejercicios deben ser realistas y progresivos para el objetivo "${goal}"`;
+8. Los ejercicios deben ser realistas y progresivos para el objetivo "${goal}"
+
+EJEMPLOS DE BLOCKS BIEN FORMADOS:
+
+Recovery ride post-piernas (60min, Z2):
+[
+  {"kind":"warmup","duration":10,"targetPower":"Z1","targetCadence":"90+ rpm"},
+  {"kind":"steady","duration":40,"targetPower":"Z2","targetCadence":"90+ rpm","notes":"Piernas ligeras, NO subir pulsaciones"},
+  {"kind":"cooldown","duration":10,"targetPower":"Z1"}
+]
+
+VO2max (60min total, 4x4 Z5):
+[
+  {"kind":"warmup","duration":15,"targetPower":"Z1-Z2"},
+  {"kind":"interval","duration":4,"targetPower":"Z5","repetitions":4,"recoveryDuration":4,"recoveryPower":"Z1","notes":"Primer rep suave, últimos 2 sostener"},
+  {"kind":"cooldown","duration":13,"targetPower":"Z1"}
+]
+
+Fuerza-resistencia big gear (75min):
+[
+  {"kind":"warmup","duration":15,"targetPower":"Z1-Z2"},
+  {"kind":"interval","duration":6,"targetPower":"Z3","repetitions":4,"recoveryDuration":4,"recoveryPower":"Z2","targetCadence":"55-65 rpm","notes":"Plato grande, sentado, traccionar con cuádriceps. SOSTENIBLE."},
+  {"kind":"cooldown","duration":16,"targetPower":"Z1"}
+]
+
+Long ride sábado (120min Z2):
+[
+  {"kind":"warmup","duration":15,"targetPower":"Z1"},
+  {"kind":"steady","duration":90,"targetPower":"Z2","notes":"Z2 bajo, conversación fluida, NO acelerar al final"},
+  {"kind":"cooldown","duration":15,"targetPower":"Z1"}
+]`;
 
     const response = await ai.models.generateContent({
       model: 'gemini-flash-latest',

@@ -108,6 +108,7 @@ export async function POST(request: Request) {
       repetitions?: number;
       recoveryDuration?: number;
       recoveryPower?: string;
+      targetCadence?: string;
       notes?: string;
     };
 
@@ -149,6 +150,7 @@ export async function POST(request: Request) {
                 repetitions: b.repetitions ?? null,
                 recoveryDuration: b.recoveryDuration ?? null,
                 recoveryPower: b.recoveryPower ?? null,
+                targetCadence: b.targetCadence ?? null,
                 notes: b.notes ?? null,
               })),
             } : undefined,
