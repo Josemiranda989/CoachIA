@@ -126,6 +126,7 @@ async function gatherAthleteData(userId: string) {
             let line = `  - ${ride.name}: ${dist} km, ${hrs}h${mins}m, ${speed} km/h avg`;
             if (ride.average_heartrate) line += `, FC ${Math.round(ride.average_heartrate)} bpm`;
             if (ride.average_watts) line += `, ${Math.round(ride.average_watts)} W`;
+            if (ride.average_cadence) line += `, ${Math.round(ride.average_cadence)} rpm`;
             stravaSection += `\n${line}`;
           }
         }
@@ -255,6 +256,17 @@ DURACIONES DE REP POR ZONA (fisiológicamente realistas — NO VIOLAR):
 - Z4 Threshold: 5-15min por rep, 3-5min recovery Z2
 - Z5 VO2max: 2-5min por rep, 2-3x la duración en recovery Z1
 - Z6+ Anaeróbico: 30s-2min por rep, 2-4x recovery Z1
+
+REGLA DURA — kind="steady" SOLO permitido en Z1, Z2 o Z3.
+- Z4 SIEMPRE como kind="interval" con mínimo 2 reps.
+- Z5 SIEMPRE como kind="interval" con mínimo 3 reps.
+- Un bloque steady de 6min en Z4 o Z5 NO es un entreno, es un test. PROHIBIDO.
+
+CADENCIA (campo opcional targetCadence por bloque — usar cuando aporta, omitir si es el default):
+- Default Z2/Z3 self-paced (~85-95 rpm): omitir targetCadence.
+- **Spin-ups** (neuromuscular): bloques Z2 con targetCadence "100+ rpm". Útil en warmups o como bloque separado al inicio de la temporada.
+- **Big gear / fuerza-resistencia**: intervals Z3-Z4 con targetCadence "55-65 rpm big gear". Alternativa al VO2max para mesociclos con foco en fuerza pedalística — semana 2 o 3 puede sustituir el VO2max por fuerza-resistencia si el atleta carga gym de piernas pesado y los datos Strava muestran cadencia auto-seleccionada baja (<80rpm).
+- Recovery rides post-piernas: targetCadence "90+ rpm" para no cargar piernas.
 
 DURACIONES TOTALES TÍPICAS DE RIDE:
 - Recovery ride (post-leg day, ej Thursday si leg day fue Wednesday): 40-80min Z1-Z2
@@ -523,6 +535,7 @@ REGLAS ESTRICTAS:
                 repetitions: b.repetitions ?? null,
                 recoveryDuration: b.recoveryDuration ?? null,
                 recoveryPower: b.recoveryPower ?? null,
+                targetCadence: b.targetCadence ?? null,
                 notes: b.notes ?? null,
               })),
             },

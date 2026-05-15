@@ -1,6 +1,6 @@
-import { Route, Timer, Trophy, Mountain } from "lucide-react";
+import { Route, Timer, Trophy, Mountain, RotateCw } from "lucide-react";
 import { CountUp } from "@/components/CountUp";
-import { getStravaStats } from "@/lib/strava-cached";
+import { getStravaStats, getStravaActivities } from "@/lib/strava-cached";
 
 const cyclingColor = {
   color: "var(--accent-cycling)",
@@ -18,9 +18,23 @@ type CardSpec = {
 };
 
 export async function CyclingCards({ userId }: { userId: string }) {
-  const stats = await getStravaStats(userId);
+  // Both stats + activities are deduplicated via React.cache() — shared with
+  // StravaActivities in a different Suspense boundary on the same page.
+  const [stats, recentActivities] = await Promise.all([
+    getStravaStats(userId),
+    getStravaActivities(userId, 1, 30),
+  ]);
   const ytd = stats?.ytd_ride_totals;
   if (!ytd) return null;
+
+  // Average cadence across recent rides that recorded it (sensor connected).
+  // ytd_ride_totals doesn't expose cadence, so we sample from the last ~30 activities.
+  const cadenceSamples = ((recentActivities as any[]) ?? [])
+    .filter((a) => (a.type === "Ride" || a.type === "VirtualRide") && typeof a.average_cadence === "number")
+    .map((a) => a.average_cadence as number);
+  const avgCadence = cadenceSamples.length > 0
+    ? Math.round(cadenceSamples.reduce((s, c) => s + c, 0) / cadenceSamples.length)
+    : null;
 
   const cards: CardSpec[] = [
     {
@@ -54,6 +68,16 @@ export async function CyclingCards({ userId }: { userId: string }) {
       icon: Mountain,
     },
   ];
+
+  if (avgCadence !== null) {
+    cards.push({
+      label: "Cadencia Media",
+      value: avgCadence,
+      unit: "rpm",
+      description: `Promedio de tus últimas ${cadenceSamples.length} salidas con sensor`,
+      icon: RotateCw,
+    });
+  }
 
   return (
     <>

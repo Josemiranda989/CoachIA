@@ -9,6 +9,10 @@ export type Block = {
   repetitions?: number | null;
   recoveryDuration?: number | null;
   recoveryPower?: string | null;
+  // Cadence target is informational only — the iGS BSC300T renders power/HR
+  // targets in workout mode but not cadence, so we surface it in the in-app
+  // block view + notes rather than encoding a FIT cadence target step.
+  targetCadence?: string | null;
   notes?: string | null;
 };
 
