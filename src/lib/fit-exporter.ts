@@ -1,4 +1,5 @@
 import { CrcCalculator } from "@garmin/fitsdk";
+import { resolveHrZone, type HrConfig } from "./hr-zones";
 
 export type Block = {
   id?: string;
@@ -21,6 +22,11 @@ export type Block = {
 export type FitWorkoutInput = {
   name: string;
   blocks: Block[];
+  // Optional HR config. When provided, "Z1"-"Z7" labels resolve to explicit
+  // bpm ranges (target_type=heart_rate + customTargetValueLow/High). Without
+  // it, the exporter emits a zone reference (target_value=N) and the device
+  // uses its own HR zones — works only if the rider configured them on-device.
+  hrConfig?: HrConfig;
 };
 
 // FIT epoch: seconds between Unix epoch (1970-01-01) and FIT epoch (1989-12-31 UTC)
@@ -97,16 +103,33 @@ type StepDraft = {
 // on screen is something they can actually chase in real time. Power target
 // would render a watt range that's unmeasurable without a power meter.
 //
+// When hrConfig has fcMax/lthr, we compute the bpm range from the rider's
+// own zones and emit it as a custom range (target_value=0, customLow/High).
+// This wins over the device's internal HR zones — useful because the device
+// defaults often lag what the rider's actual zones should be.
+//
 // (The `targetPower` field name in the data model is historical — the value
 // is a zone label, not a watt prescription.)
-function parseZoneTarget(raw: string | null | undefined): {
-  targetType: number;
-  targetValue: number;
-} {
-  if (!raw) return { targetType: TARGET_OPEN, targetValue: 0 };
+function resolveZoneTarget(
+  raw: string | null | undefined,
+  hrConfig?: HrConfig,
+): { targetType: number; targetValue: number; field5: number | null; field6: number | null } {
+  if (!raw) return { targetType: TARGET_OPEN, targetValue: 0, field5: null, field6: null };
   const m = raw.match(/Z([1-7])/i);
-  if (m) return { targetType: TARGET_HEART_RATE, targetValue: parseInt(m[1], 10) };
-  return { targetType: TARGET_OPEN, targetValue: 0 };
+  if (!m) return { targetType: TARGET_OPEN, targetValue: 0, field5: null, field6: null };
+  const zone = parseInt(m[1], 10);
+  if (hrConfig) {
+    const range = resolveHrZone(zone, hrConfig);
+    if (range) {
+      return {
+        targetType: TARGET_HEART_RATE,
+        targetValue: 0,
+        field5: range.low,
+        field6: range.high,
+      };
+    }
+  }
+  return { targetType: TARGET_HEART_RATE, targetValue: zone, field5: null, field6: null };
 }
 
 // Parse a cadence prescription like "60-65 rpm", "55-65 rpm big gear",
@@ -128,13 +151,13 @@ export function parseCadenceTarget(raw: string | null | undefined): { low: numbe
 function resolveTarget(
   power: string | null | undefined,
   cadence: string | null | undefined,
+  hrConfig?: HrConfig,
 ): { targetType: number; targetValue: number; field5: number | null; field6: number | null } {
   const cad = parseCadenceTarget(cadence);
   if (cad) {
     return { targetType: TARGET_CADENCE, targetValue: 0, field5: cad.low, field6: cad.high };
   }
-  const p = parseZoneTarget(power);
-  return { targetType: p.targetType, targetValue: p.targetValue, field5: null, field6: null };
+  return resolveZoneTarget(power, hrConfig);
 }
 
 function kindToIntensity(kind: string): number {
@@ -185,13 +208,13 @@ function writeString(out: number[], s: string, fixedSize: number) {
 
 // --- Main export ----------------------------------------------------------
 
-export function blocksToFitWorkout({ name, blocks }: FitWorkoutInput): Uint8Array {
+export function blocksToFitWorkout({ name, blocks, hrConfig }: FitWorkoutInput): Uint8Array {
   const sorted = [...blocks].sort((a, b) => a.order - b.order);
 
   // Expand CoachIA blocks into flat FIT step drafts.
   const drafts: StepDraft[] = [];
   for (const b of sorted) {
-    const workTarget = resolveTarget(b.targetPower, b.targetCadence);
+    const workTarget = resolveTarget(b.targetPower, b.targetCadence, hrConfig);
     const hasReps =
       b.kind === "interval" && !!b.repetitions && b.repetitions > 1 && !!b.recoveryDuration;
 
@@ -208,16 +231,16 @@ export function blocksToFitWorkout({ name, blocks }: FitWorkoutInput): Uint8Arra
         targetType: workTarget.targetType,
         targetValue: workTarget.targetValue,
       });
-      // Recovery never has a cadence prescription of its own — defaults to power.
-      const rec = parseZoneTarget(b.recoveryPower);
+      // Recovery never has a cadence prescription of its own — defaults to HR zone.
+      const rec = resolveZoneTarget(b.recoveryPower, hrConfig);
       drafts.push({
         messageIndex: drafts.length,
         wktStepName: STEP_NAME.recovery,
         intensity: INTENSITY.rest,
         durationType: DURATION_TIME,
         durationValue: (b.recoveryDuration ?? 0) * 60_000,
-        field5: null,
-        field6: null,
+        field5: rec.field5,
+        field6: rec.field6,
         targetType: rec.targetType,
         targetValue: rec.targetValue,
       });

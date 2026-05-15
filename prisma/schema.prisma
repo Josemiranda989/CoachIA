@@ -166,6 +166,14 @@ model User {
   stravaRefreshToken String?
   stravaTokenExpiry  Int?     // Unix timestamp
 
+  // Heart rate config used to resolve "Z1"-"Z7" labels into actionable bpm
+  // ranges on the BSC300T. lthr (Lactate Threshold HR) takes precedence when
+  // set; fcMax is the fallback. Without either, exports fall back to FIT
+  // zone references which the device renders only if its own HR zones are
+  // configured.
+  fcMax Int?
+  lthr  Int?
+
   accounts      Account[]
   sessions      Session[]
   routines      Routine[]

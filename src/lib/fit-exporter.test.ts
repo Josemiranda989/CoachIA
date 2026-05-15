@@ -83,12 +83,45 @@ describe("blocksToFitWorkout cadence target", () => {
       ],
     });
 
-    // Step should use HR target (type=1, value=3 for Z3) and 0xffffffff in custom range fields.
+    // Step should use HR zone-reference target (type=1, value=3 for Z3) and
+    // 0xffffffff in custom range fields (no hrConfig passed).
     const sig = [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00];
     const idx = findBytes(fit, sig);
     expect(idx).toBeGreaterThan(0);
     // target_type byte at idx + 35
     expect(fit[idx + 35]).toBe(1); // TARGET_HEART_RATE
+  });
+
+  it("emits explicit bpm custom range when fcMax is provided", () => {
+    const fit = blocksToFitWorkout({
+      name: "WithFc",
+      blocks: [{ order: 0, kind: "warmup", duration: 5, targetPower: "Z1" }],
+      hrConfig: { fcMax: 190 },
+    });
+
+    // %FCmax Z1 = 50-60% → 95-114 bpm at FCmax=190.
+    // Custom low/high should appear at the start of the step (fields 5/6).
+    // low=95 LE uint32 = 5f 00 00 00, high=114 LE uint32 = 72 00 00 00.
+    const sig = [0x5f, 0x00, 0x00, 0x00, 0x72, 0x00, 0x00, 0x00, 0x00, 0x00];
+    const idx = findBytes(fit, sig);
+    expect(idx).toBeGreaterThan(0);
+    // target_type byte at idx + 35 should be HEART_RATE (1)
+    expect(fit[idx + 35]).toBe(1);
+  });
+
+  it("uses LTHR zones (Friel) when lthr is set, overriding fcMax", () => {
+    const fit = blocksToFitWorkout({
+      name: "WithLthr",
+      blocks: [{ order: 0, kind: "steady", duration: 10, targetPower: "Z4" }],
+      hrConfig: { fcMax: 190, lthr: 160 },
+    });
+
+    // Friel Z4 = 94-99% LTHR → 150-158 bpm at LTHR=160.
+    // low=150 LE = 96 00 00 00, high=158 LE = 9e 00 00 00.
+    const sig = [0x96, 0x00, 0x00, 0x00, 0x9e, 0x00, 0x00, 0x00, 0x00, 0x00];
+    const idx = findBytes(fit, sig);
+    expect(idx).toBeGreaterThan(0);
+    expect(fit[idx + 35]).toBe(1);
   });
 
   it("recovery step keeps HR target even when work step uses cadence", () => {
