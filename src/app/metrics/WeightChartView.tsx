@@ -17,6 +17,7 @@ export interface ChartData {
   label: string;
   weight: number;
   bodyFat: number | null;
+  muscle: number | null;
 }
 
 export function WeightChartView({ data }: { data: ChartData[] }) {
@@ -52,9 +53,14 @@ export function WeightChartView({ data }: { data: ChartData[] }) {
   const maxW = Math.ceil(Math.max(...weights) + 1);
 
   const fats = data.map((d) => d.bodyFat).filter((v): v is number => v != null);
+  const muscles = data.map((d) => d.muscle).filter((v): v is number => v != null);
   const hasFat = fats.length > 0;
-  const minF = hasFat ? Math.floor(Math.min(...fats) - 1) : 0;
-  const maxF = hasFat ? Math.ceil(Math.max(...fats) + 1) : 100;
+  const hasMuscle = muscles.length > 0;
+  // Fat and muscle share the right Y-axis. Range covers both so both lines stay visible.
+  const pcts = [...fats, ...muscles];
+  const hasPct = pcts.length > 0;
+  const minF = hasPct ? Math.floor(Math.min(...pcts) - 1) : 0;
+  const maxF = hasPct ? Math.ceil(Math.max(...pcts) + 1) : 100;
 
   return (
     <div
@@ -107,9 +113,9 @@ export function WeightChartView({ data }: { data: ChartData[] }) {
               axisLine={false}
               width={35}
             />
-            {hasFat && (
+            {hasPct && (
               <YAxis
-                yAxisId="fat"
+                yAxisId="pct"
                 orientation="right"
                 domain={[minF, maxF]}
                 tick={{ fill: "var(--text-secondary)", fontSize: 11 }}
@@ -147,7 +153,7 @@ export function WeightChartView({ data }: { data: ChartData[] }) {
             />
             {hasFat && (
               <Line
-                yAxisId="fat"
+                yAxisId="pct"
                 type="monotone"
                 dataKey="bodyFat"
                 name="Grasa"
@@ -156,6 +162,20 @@ export function WeightChartView({ data }: { data: ChartData[] }) {
                 strokeDasharray="4 3"
                 dot={{ r: 3, fill: "#f59e0b", strokeWidth: 0 }}
                 activeDot={{ r: 5, fill: "#f59e0b" }}
+                connectNulls
+              />
+            )}
+            {hasMuscle && (
+              <Line
+                yAxisId="pct"
+                type="monotone"
+                dataKey="muscle"
+                name="Músculo"
+                stroke="#10b981"
+                strokeWidth={2}
+                strokeDasharray="2 4"
+                dot={{ r: 3, fill: "#10b981", strokeWidth: 0 }}
+                activeDot={{ r: 5, fill: "#10b981" }}
                 connectNulls
               />
             )}

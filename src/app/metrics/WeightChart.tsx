@@ -17,6 +17,7 @@ export async function WeightChart({ userId }: { userId: string }) {
       label: r.date.toLocaleDateString("es-AR", { day: "numeric", month: "short" }),
       weight: r.weight,
       bodyFat: r.bodyFat,
+      muscle: r.muscle,
     }));
 
   return <WeightChartView data={data} />;
