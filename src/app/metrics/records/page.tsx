@@ -3,10 +3,28 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { BackLink } from "@/components/BackLink";
 
 export const metadata: Metadata = { title: "Récords" };
+
+// Epley formula — most common, works for any rep count.
+function epley1RM(weight: number, reps: number): number {
+  if (reps <= 0 || weight <= 0) return 0;
+  if (reps === 1) return weight;
+  return weight * (1 + reps / 30);
+}
+
+function ymd(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
+type RecordEntry = {
+  maxWeight: number;
+  maxWeightReps: number;
+  date: Date | null;
+  current1RM: number;
+  past1RM: number | null;
+};
 
 export default async function RecordsPage() {
   const session = await getServerSession(authOptions);
@@ -17,11 +35,6 @@ export default async function RecordsPage() {
   }
 
   const allLogs = await prisma.workoutLog.findMany({
-    include: {
-      exercise: {
-        include: { dailyWorkout: true }
-      }
-    },
     where: {
       exercise: {
         dailyWorkout: {
@@ -29,35 +42,65 @@ export default async function RecordsPage() {
           completions: { some: { completed: true } },
         },
       },
-    }
+    },
+    include: {
+      exercise: {
+        include: { dailyWorkout: { select: { date: true } } },
+      },
+    },
   });
 
-  // Group by exercise name and find max weight
-  const recordsMap: Record<string, { maxWeight: number, reps: number, date: Date | null }> = {};
+  // Cutoff: 28 days ago. Logs whose weekStart is strictly before this count as "past"
+  // for the 1RM delta. weekStart is YYYY-MM-DD so lexicographic compare === date compare.
+  const fourWeeksAgo = new Date();
+  fourWeeksAgo.setDate(fourWeeksAgo.getDate() - 28);
+  const cutoffYmd = ymd(fourWeeksAgo);
 
-  allLogs.forEach(log => {
+  const records: Record<string, RecordEntry> = {};
+
+  for (const log of allLogs) {
     const name = log.exercise.name;
-    if (!recordsMap[name] || log.weight > recordsMap[name].maxWeight) {
-      recordsMap[name] = { 
-        maxWeight: log.weight, 
-        reps: log.reps, 
-        date: log.exercise.dailyWorkout.date 
-      };
-    } else if (log.weight === recordsMap[name].maxWeight && log.reps > recordsMap[name].reps) {
-      // If same weight, more reps is also a record
-      recordsMap[name].reps = log.reps;
-    }
-  });
+    const est = epley1RM(log.weight, log.reps);
+    const entry = records[name] ?? {
+      maxWeight: 0,
+      maxWeightReps: 0,
+      date: null,
+      current1RM: 0,
+      past1RM: null,
+    };
 
-  const sortedNames = Object.keys(recordsMap).sort();
+    // Heaviest absolute weight (with tie-break by reps).
+    if (
+      log.weight > entry.maxWeight ||
+      (log.weight === entry.maxWeight && log.reps > entry.maxWeightReps)
+    ) {
+      entry.maxWeight = log.weight;
+      entry.maxWeightReps = log.reps;
+      entry.date = log.exercise.dailyWorkout.date;
+    }
+
+    // Best estimated 1RM across all logs.
+    if (est > entry.current1RM) {
+      entry.current1RM = est;
+    }
+
+    // Best estimated 1RM strictly older than the 28-day cutoff.
+    if (log.weekStart < cutoffYmd && (entry.past1RM === null || est > entry.past1RM)) {
+      entry.past1RM = est;
+    }
+
+    records[name] = entry;
+  }
+
+  const sortedNames = Object.keys(records).sort();
 
   return (
     <div className="container" style={{ paddingBottom: "60px" }}>
       <BackLink href="/metrics" label="Volver a Métricas" />
       <h1 className="title">Récords Personales (PRs) 🏆</h1>
-      <p className="subtitle">Tu máximo peso levantado por ejercicio</p>
+      <p className="subtitle">Peso máximo + 1RM estimado (fórmula Epley)</p>
 
-      {/* Desktop: tabla | Mobile: tarjetas */}
+      {/* Desktop: tabla */}
       <div className="hidden md:block card" style={{ padding: 0, overflow: "hidden", cursor: "default" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", color: "var(--text-primary)" }}>
           <thead>
@@ -65,27 +108,37 @@ export default async function RecordsPage() {
               <th style={{ padding: "16px", borderBottom: "1px solid var(--border-color)" }}>Ejercicio</th>
               <th style={{ padding: "16px", borderBottom: "1px solid var(--border-color)" }}>Peso Máx</th>
               <th style={{ padding: "16px", borderBottom: "1px solid var(--border-color)" }}>Reps</th>
+              <th style={{ padding: "16px", borderBottom: "1px solid var(--border-color)" }}>1RM est.</th>
+              <th style={{ padding: "16px", borderBottom: "1px solid var(--border-color)" }}>Δ 4 sem</th>
               <th style={{ padding: "16px", borderBottom: "1px solid var(--border-color)" }}>Fecha</th>
             </tr>
           </thead>
           <tbody>
-            {sortedNames.map(name => {
-              const record = recordsMap[name];
+            {sortedNames.map((name) => {
+              const r = records[name];
               return (
                 <tr key={name} style={{ borderBottom: "1px solid var(--border-color)" }}>
-                  <td style={{ padding: "16px", fontWeight: "600" }}>{name}</td>
-                  <td style={{ padding: "16px", color: "var(--accent-gym)", fontWeight: "bold" }}>{record.maxWeight} kg</td>
-                  <td style={{ padding: "16px" }}>{record.reps}</td>
+                  <td style={{ padding: "16px", fontWeight: 600 }}>{name}</td>
+                  <td style={{ padding: "16px", color: "var(--accent-gym)", fontWeight: "bold" }}>
+                    {r.maxWeight} kg
+                  </td>
+                  <td style={{ padding: "16px" }}>{r.maxWeightReps}</td>
+                  <td style={{ padding: "16px", fontWeight: 600 }}>
+                    {Math.round(r.current1RM)} kg
+                  </td>
+                  <td style={{ padding: "16px" }}>
+                    <DeltaBadge current={r.current1RM} past={r.past1RM} />
+                  </td>
                   <td style={{ padding: "16px", fontSize: "13px", color: "var(--text-secondary)" }}>
-                    {record.date ? new Date(record.date).toLocaleDateString() : "-"}
+                    {r.date ? new Date(r.date).toLocaleDateString() : "-"}
                   </td>
                 </tr>
               );
             })}
             {sortedNames.length === 0 && (
               <tr>
-                <td colSpan={4} style={{ padding: "32px", textAlign: "center", color: "var(--text-secondary)" }}>
-                  Aún no tienes récords registrados. ¡Empieza a entrenar!
+                <td colSpan={6} style={{ padding: "32px", textAlign: "center", color: "var(--text-secondary)" }}>
+                  Aún no tienes récords registrados. ¡Empezá a entrenar!
                 </td>
               </tr>
             )}
@@ -93,22 +146,30 @@ export default async function RecordsPage() {
         </table>
       </div>
 
-      {/* Mobile: card layout */}
+      {/* Mobile: cards */}
       <div className="md:hidden flex flex-col gap-3">
-        {sortedNames.map(name => {
-          const record = recordsMap[name];
+        {sortedNames.map((name) => {
+          const r = records[name];
           return (
             <div key={name} className="card" style={{ cursor: "default" }}>
               <h3 style={{ fontWeight: 600, marginBottom: 8 }}>{name}</h3>
-              <div className="flex items-center gap-4 text-sm">
+              <div className="flex items-center gap-4 text-sm flex-wrap">
                 <span style={{ color: "var(--accent-gym)", fontWeight: 700, fontSize: "18px" }}>
-                  {record.maxWeight} kg
+                  {r.maxWeight} kg
                 </span>
-                <span style={{ color: "var(--text-secondary)" }}>
-                  × {record.reps} reps
-                </span>
+                <span style={{ color: "var(--text-secondary)" }}>× {r.maxWeightReps} reps</span>
                 <span style={{ color: "var(--text-secondary)", fontSize: "12px", marginLeft: "auto" }}>
-                  {record.date ? new Date(record.date).toLocaleDateString() : "-"}
+                  {r.date ? new Date(r.date).toLocaleDateString() : "-"}
+                </span>
+              </div>
+              <div
+                className="flex items-center gap-3 mt-2 pt-2"
+                style={{ borderTop: "1px solid var(--border-color)", fontSize: 13 }}
+              >
+                <span style={{ color: "var(--text-secondary)" }}>1RM est.</span>
+                <span style={{ fontWeight: 700 }}>{Math.round(r.current1RM)} kg</span>
+                <span style={{ marginLeft: "auto" }}>
+                  <DeltaBadge current={r.current1RM} past={r.past1RM} />
                 </span>
               </div>
             </div>
@@ -116,10 +177,28 @@ export default async function RecordsPage() {
         })}
         {sortedNames.length === 0 && (
           <div className="card" style={{ textAlign: "center", color: "var(--text-secondary)", cursor: "default" }}>
-            Aún no tienes récords registrados. ¡Empieza a entrenar!
+            Aún no tienes récords registrados. ¡Empezá a entrenar!
           </div>
         )}
       </div>
     </div>
+  );
+}
+
+function DeltaBadge({ current, past }: { current: number; past: number | null }) {
+  if (past === null) {
+    return <span style={{ color: "var(--text-secondary)", fontSize: 13 }}>—</span>;
+  }
+  const diff = current - past;
+  const rounded = Math.round(diff);
+  if (Math.abs(rounded) < 1) {
+    return <span style={{ color: "var(--text-secondary)", fontSize: 13 }}>≈ 0 kg</span>;
+  }
+  const color = rounded > 0 ? "#10b981" : "#ef4444";
+  const arrow = rounded > 0 ? "↑" : "↓";
+  return (
+    <span style={{ color, fontWeight: 600, fontSize: 13 }}>
+      {arrow} {Math.abs(rounded)} kg
+    </span>
   );
 }
