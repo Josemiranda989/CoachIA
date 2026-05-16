@@ -116,6 +116,11 @@ export default function LoginPage() {
           <Link href="/" className="text-text-secondary text-xs hover:text-text-primary transition-colors block italic">
             &larr; Volver al sitio principal
           </Link>
+          <p className="text-text-secondary text-xs">
+            <Link href="/privacy" className="hover:underline">Política de Privacidad</Link>
+            {" · "}
+            <Link href="/terms" className="hover:underline">Términos de Servicio</Link>
+          </p>
         </div>
       </div>
     </div>
