@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentWeekStart } from "@/lib/week";
 import { getActiveRoutineLight } from "@/lib/queries/getActiveRoutine";
 import { DashboardCard, type DashboardCardProps } from "@/components/DashboardCard";
+import { WeekKPIs } from "@/components/WeekKPIs";
 import {
   Sparkles, Calendar, BarChart3, HelpCircle,
   ArrowRight, Bot, Upload, Zap, Bell, Apple, BookOpen,
@@ -155,6 +156,9 @@ export default async function Home() {
           </div>
         )}
       </header>
+
+      {/* ── KPIs de la semana — strip clickable a /metrics y /routine/week ── */}
+      <WeekKPIs userId={userId} weekStart={weekStart} />
 
       {/* ── Rutina pendiente de aprobación ── */}
       {pendingRoutine && (
