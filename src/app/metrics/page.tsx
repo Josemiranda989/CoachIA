@@ -14,6 +14,8 @@ import { WeightChartSkeleton } from "./WeightChartView";
 import { CyclingCards, CyclingCardsSkeleton } from "./CyclingCards";
 import { CountUp } from "@/components/CountUp";
 import { BackLink } from "@/components/BackLink";
+import { MesocycleProgress, MesocycleProgressSkeleton } from "@/components/MesocycleProgress";
+import { getCurrentWeekStart } from "@/lib/week";
 
 export const metadata: Metadata = { title: "Métricas" };
 
@@ -27,6 +29,7 @@ export default async function MetricsPage() {
 
   const stravaConfigured = isStravaConfigured();
   const stravaAuthUrl = stravaConfigured ? getStravaAuthUrl() : null;
+  const currentWeekStart = getCurrentWeekStart();
 
   const stravaConnected = stravaConfigured
     ? !!(await prisma.user.findUnique({ where: { id: userId }, select: { stravaAthleteId: true } }))?.stravaAthleteId
@@ -223,6 +226,11 @@ export default async function MetricsPage() {
           <WeightChart userId={userId} />
         </Suspense>
       </div>
+
+      {/* Mesocycle progress — streams in independently; depende de Strava para los km */}
+      <Suspense fallback={<MesocycleProgressSkeleton />}>
+        <MesocycleProgress userId={userId} weekStart={currentWeekStart} />
+      </Suspense>
 
       {/* Strava Section */}
       <div style={{ marginTop: 40 }}>
