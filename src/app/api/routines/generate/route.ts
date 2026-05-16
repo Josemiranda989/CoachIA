@@ -262,8 +262,8 @@ REGLA DURA — kind="steady" SOLO permitido en Z1, Z2 o Z3.
 - Un bloque steady de 6min en Z4 o Z5 NO es un entreno, es un test mal pegado. PROHIBIDO.
 
 CADENCIA (campo opcional targetCadence por bloque):
-- Default Z2/Z3 self-paced (85-95 rpm): podés omitir targetCadence o usar "85-95 rpm".
-- **Spin-ups** (eficiencia neuromuscular): bloques Z2 con targetCadence "100+ rpm". Útil en warmups o steady cortos de 10-20min.
+- Default Z2/Z3 self-paced (~85-95 rpm aspiracional). Cadencia auto-seleccionada actual del atleta: 80-90 rpm; subir arriba de 90 le resulta neuromuscularmente exigido (no cardio). Omitir targetCadence en bloques normales.
+- **Spin-up drills** (cadencia pura, foco neuromuscular): kind="interval" con targetPower "Z1" o "Z2" (watts bajos — el desafío es MOTOR, no aerobio), duration 1-2min, repetitions 4-6, recoveryDuration 2-3min en "Z1", targetCadence "90-95 rpm" (progresar a "95-100 rpm" tras 2-3 semanas de drills consistentes). Schedular en el warmup de la long ride, NO en el día de intervals duros. Notes: vocabulario MOTOR ("pedaleo redondo", "no rebotar", "círculo"), NO mencionar potencia ni FC — distrae del foco.
 - **Big gear / fuerza-resistencia** (reclutamiento de fibra): intervals Z3-Z4 con targetCadence "50-65 rpm big gear". Tip: meter "fuerza-resistencia" como tipo de sesión alternativo al VO2max si el objetivo incluye fuerza pedalística.
 - Recovery rides post-piernas: targetCadence "90+ rpm" para no cargar piernas.
 - Solo prescribir cadencia cuando aporte (no llenar bloques con el default redundante).
