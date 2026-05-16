@@ -271,8 +271,14 @@ REGLA DURA — kind="steady" SOLO permitido en Z1, Z2 o Z3.
 - Un bloque steady de 6min en Z4 o Z5 NO es un entreno, es un test. PROHIBIDO.
 
 CADENCIA (campo opcional targetCadence por bloque — usar cuando aporta, omitir si es el default):
-- Default Z2/Z3 self-paced (~85-95 rpm): omitir targetCadence.
-- **Spin-ups** (neuromuscular): bloques Z2 con targetCadence "100+ rpm". Útil en warmups o como bloque separado al inicio de la temporada.
+- Default Z2/Z3 self-paced (~85-95 rpm aspiracional). Cadencia auto-seleccionada actual del atleta: 80-90 rpm. Subir arriba de 90 todavía le resulta neuromuscularmente exigido (no cardiovascular) — los drills de abajo son la herramienta para mover este techo, progresivamente. Omitir targetCadence en bloques normales.
+- **Spin-up drills** (cadencia pura, foco neuromuscular): kind="interval" con targetPower SIEMPRE "Z1" o "Z2" (marcha fácil, watts bajos — el desafío es MOTOR, no aerobio), duration corta 1-2min por rep, repetitions 4-6, recoveryDuration 2-3min en "Z1", targetCadence progresiva por semana del mesociclo:
+    - Sem 1 (BUILD base): "90-95 rpm" — 4x1min
+    - Sem 2 (BUILD): "90-95 rpm" — 4x2min
+    - Sem 3 (PEAK): "95-100 rpm" — 4x2min
+    - Sem 4 (RECOVERY): SIN drills — es semana de descarga, no estímulo
+  Schedular dentro del WARMUP del long ride del sábado (entre el warmup propiamente dicho y el cuerpo Z2 sostenido). Nunca en el día de intervals duros (martes) — el atleta necesita piernas frescas para la calidad de los intervals.
+  Notes obligatorias para drills: vocabulario MOTOR ("pedaleo redondo", "círculo no martillo", "sin rebotar en el asiento"). NO mencionar potencia ni FC — distrae del foco.
 - **Big gear / fuerza-resistencia**: intervals Z3-Z4 con targetCadence "55-65 rpm big gear". Alternativa al VO2max para mesociclos con foco en fuerza pedalística — semana 2 o 3 puede sustituir el VO2max por fuerza-resistencia si el atleta carga gym de piernas pesado y los datos Strava muestran cadencia auto-seleccionada baja (<80rpm).
 - Recovery rides post-piernas: targetCadence "90+ rpm" para no cargar piernas.
 
