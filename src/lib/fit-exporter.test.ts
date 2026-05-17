@@ -93,33 +93,33 @@ describe("blocksToFitWorkout cadence target", () => {
     expect(fit[idx + 35]).toBe(1); // TARGET_HEART_RATE
   });
 
-  it("emits explicit bpm custom range when fcMax is provided", () => {
+  it("ignores hrConfig.fcMax for FIT output (emits zone reference for BSC300T compat)", () => {
+    // Empirical evidence (2026-05-17): the BSC300T does NOT render custom HR
+    // ranges from FIT workouts. It expects target_value=zone_ref and uses its
+    // own configured HR zones. fcMax/lthr stay relevant for the routine
+    // prompt (via hrZonesSummary) but are intentionally ignored here.
     const fit = blocksToFitWorkout({
       name: "WithFc",
       blocks: [{ order: 0, kind: "warmup", duration: 5, targetPower: "Z1" }],
       hrConfig: { fcMax: 190 },
     });
 
-    // %FCmax Z1 = 50-60% → 95-114 bpm at FCmax=190.
-    // Custom low/high should appear at the start of the step (fields 5/6).
-    // low=95 LE uint32 = 5f 00 00 00, high=114 LE uint32 = 72 00 00 00.
-    const sig = [0x5f, 0x00, 0x00, 0x00, 0x72, 0x00, 0x00, 0x00, 0x00, 0x00];
+    // Zone reference mode: fields 5/6 are 0xffffffff (no custom range);
+    // target_type=HEART_RATE (1), target_value=zone number (1 for Z1).
+    const sig = [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00];
     const idx = findBytes(fit, sig);
     expect(idx).toBeGreaterThan(0);
-    // target_type byte at idx + 35 should be HEART_RATE (1)
-    expect(fit[idx + 35]).toBe(1);
+    expect(fit[idx + 35]).toBe(1); // TARGET_HEART_RATE
   });
 
-  it("uses LTHR zones (Friel) when lthr is set, overriding fcMax", () => {
+  it("ignores hrConfig.lthr for FIT output (emits zone reference for BSC300T compat)", () => {
     const fit = blocksToFitWorkout({
       name: "WithLthr",
       blocks: [{ order: 0, kind: "steady", duration: 10, targetPower: "Z4" }],
       hrConfig: { fcMax: 190, lthr: 160 },
     });
 
-    // Friel Z4 = 94-99% LTHR → 150-158 bpm at LTHR=160.
-    // low=150 LE = 96 00 00 00, high=158 LE = 9e 00 00 00.
-    const sig = [0x96, 0x00, 0x00, 0x00, 0x9e, 0x00, 0x00, 0x00, 0x00, 0x00];
+    const sig = [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00];
     const idx = findBytes(fit, sig);
     expect(idx).toBeGreaterThan(0);
     expect(fit[idx + 35]).toBe(1);
@@ -233,7 +233,8 @@ describe("blocksToFitWorkout round-trip via @garmin/fitsdk", () => {
     expect(work.customTargetValueHigh).toBe(65);
   });
 
-  it("round-trips %FCmax HR target with computed bpm range", () => {
+  it("round-trips HR target as zone reference regardless of fcMax", () => {
+    // BSC300T compat: HR target always emitted as zone_ref, not custom bpm.
     const fit = blocksToFitWorkout({
       name: "HRFcMax",
       blocks: [{ order: 0, kind: "warmup", duration: 5, targetPower: "Z1" }],
@@ -244,12 +245,10 @@ describe("blocksToFitWorkout round-trip via @garmin/fitsdk", () => {
     const { messages } = new Decoder(stream).read();
     const step = messages.workoutStepMesgs[0];
     expect(step.targetType).toBe("heartRate");
-    // %FCmax Z1 = 50-60% × 182 = 91-109.2 → 91-109
-    expect(step.customTargetValueLow).toBe(91);
-    expect(step.customTargetValueHigh).toBe(109);
+    expect(step.targetValue).toBe(1); // zone reference for Z1
   });
 
-  it("round-trips Friel LTHR HR target overriding fcMax", () => {
+  it("round-trips HR target as zone reference regardless of lthr", () => {
     const fit = blocksToFitWorkout({
       name: "HRLthr",
       blocks: [{ order: 0, kind: "steady", duration: 10, targetPower: "Z4" }],
@@ -260,8 +259,6 @@ describe("blocksToFitWorkout round-trip via @garmin/fitsdk", () => {
     const { messages } = new Decoder(stream).read();
     const step = messages.workoutStepMesgs[0];
     expect(step.targetType).toBe("heartRate");
-    // Friel Z4 = 94-99% × 160 = 150.4-158.4 → 150-158
-    expect(step.customTargetValueLow).toBe(150);
-    expect(step.customTargetValueHigh).toBe(158);
+    expect(step.targetValue).toBe(4); // zone reference for Z4
   });
 });
