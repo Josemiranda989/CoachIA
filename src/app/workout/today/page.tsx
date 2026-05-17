@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { GymWorkoutClient } from "./GymWorkoutClient";
 import { CyclingWorkoutClient } from "./CyclingWorkoutClient";
 import { BackLink } from "@/components/BackLink";
+import { DrillExecutionCard, DrillExecutionCardSkeleton } from "@/components/DrillExecutionCard";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
@@ -132,6 +134,12 @@ export default async function TodayWorkoutPage() {
       {isCycling && (
         <div>
           {isGym && <h2 className="text-xl mb-4 text-text-primary mt-4">2. Sesión de Bici</h2>}
+          {/* Drill execution card — Saturday warmup spin drill detection from
+              Strava cadence stream. Server-only side-effect inside
+              DrillExecutionCard auto-no-ops when the day has no drill block. */}
+          <Suspense fallback={<DrillExecutionCardSkeleton />}>
+            <DrillExecutionCard userId={userId} dailyWorkoutId={todayWorkout.id} />
+          </Suspense>
           <CyclingWorkoutClient workout={cyclingWorkout} />
         </div>
       )}

@@ -103,6 +103,28 @@ export async function fetchStats(accessToken: string, athleteId: string) {
   return res.json();
 }
 
+// Per-second time-series for a single activity. Strava returns one entry per
+// requested key when key_by_type=true (e.g. {cadence: {data: [...], type:
+// "cadence"}, time: {data: [...], type: "time"}}). Requires the
+// activity:read_all scope (we already have it). Returns null on 404 (activity
+// without recorded streams for that key).
+export type StravaStream = { data: number[]; type: string; series_type?: string; original_size?: number; resolution?: string };
+export type StravaStreams = Record<string, StravaStream>;
+
+export async function fetchActivityStreams(
+  accessToken: string,
+  activityId: number | string,
+  keys: string[] = ["cadence", "time", "heartrate"],
+): Promise<StravaStreams | null> {
+  const params = new URLSearchParams({ keys: keys.join(","), key_by_type: "true" });
+  const res = await fetch(`${STRAVA_API_URL}/activities/${activityId}/streams?${params}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`Streams error: ${res.status}`);
+  return res.json();
+}
+
 export function isStravaConfigured() {
   return !!(process.env.STRAVA_CLIENT_ID && process.env.STRAVA_CLIENT_SECRET);
 }
