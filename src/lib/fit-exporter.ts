@@ -98,37 +98,32 @@ type StepDraft = {
 
 // Resolve a "Z1"-"Z7" label to a FIT target. We emit HR-zone targets rather
 // than POWER-zone targets because the typical CoachIA rider trains with a HR
-// strap + cadence sensor (no power meter on the bike). The BSC300T resolves
-// HR Zone N against the rider's configured FCmax, so the target range shown
-// on screen is something they can actually chase in real time. Power target
-// would render a watt range that's unmeasurable without a power meter.
+// strap + cadence sensor (no power meter on the bike).
 //
-// When hrConfig has fcMax/lthr, we compute the bpm range from the rider's
-// own zones and emit it as a custom range (target_value=0, customLow/High).
-// This wins over the device's internal HR zones — useful because the device
-// defaults often lag what the rider's actual zones should be.
+// IMPORTANT — the BSC300T renders HR targets as **zone references** only.
+// Empirical evidence (2026-05-17): an earlier export that worked correctly on
+// the device used target_type=heart_rate + target_value=N (zone reference,
+// no custom range). A later export emitted custom bpm ranges
+// (customTargetValueLow/High computed from fcMax/lthr) and the device showed
+// empty / "30/30" placeholders on the screen because it ignores custom HR
+// ranges. So we ALWAYS emit zone references for HR; the device uses its own
+// configured HR zones to resolve the actual bpm range on display.
+//
+// The `hrConfig` parameter is kept in the signature for backward compatibility
+// with the FIT input contract — it is still used by the routine generator
+// prompt via `hrZonesSummary()` (different consumer). For the FIT bytes it is
+// intentionally ignored.
 //
 // (The `targetPower` field name in the data model is historical — the value
 // is a zone label, not a watt prescription.)
 function resolveZoneTarget(
   raw: string | null | undefined,
-  hrConfig?: HrConfig,
+  _hrConfig?: HrConfig,
 ): { targetType: number; targetValue: number; field5: number | null; field6: number | null } {
   if (!raw) return { targetType: TARGET_OPEN, targetValue: 0, field5: null, field6: null };
   const m = raw.match(/Z([1-7])/i);
   if (!m) return { targetType: TARGET_OPEN, targetValue: 0, field5: null, field6: null };
   const zone = parseInt(m[1], 10);
-  if (hrConfig) {
-    const range = resolveHrZone(zone, hrConfig);
-    if (range) {
-      return {
-        targetType: TARGET_HEART_RATE,
-        targetValue: 0,
-        field5: range.low,
-        field6: range.high,
-      };
-    }
-  }
   return { targetType: TARGET_HEART_RATE, targetValue: zone, field5: null, field6: null };
 }
 
