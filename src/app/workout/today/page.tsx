@@ -53,12 +53,35 @@ export default async function TodayWorkoutPage() {
   const hasCyclingData = !!(todayWorkout?.targetDuration);
 
   if (!todayWorkout || (!hasExercises && !hasCyclingData)) {
+    const isRest = !todayWorkout || todayWorkout.type === "Rest";
     return (
       <div className="app-container py-8">
         <BackLink href="/" />
-        <h1 className="title">{todayWorkout?.type ?? "Descanso"}</h1>
-        {todayWorkout?.targetDuration && (
-          <p className="subtitle">{todayWorkout.targetDuration} min — {todayWorkout.targetPower}</p>
+        <h1 className="title">
+          {isRest ? "🛋️ Descanso" : todayWorkout!.type}
+        </h1>
+        <p className="subtitle">
+          {isRest
+            ? "Día sin entrenamiento programado"
+            : "Sin contenido programado para hoy"}
+        </p>
+        {isRest && (
+          <div
+            className="card mt-6"
+            style={{
+              background: "color-mix(in srgb, var(--accent-primary) 7%, transparent)",
+              borderColor: "color-mix(in srgb, var(--accent-primary) 22%, transparent)",
+            }}
+          >
+            <p style={{ color: "var(--text-primary)", fontWeight: 600, marginBottom: 8 }}>
+              Recuperar también entrena.
+            </p>
+            <p style={{ color: "var(--text-secondary)", fontSize: 14, lineHeight: 1.5 }}>
+              Aprovechá para hidratarte bien, dormir tus 7-9 horas, y comer suficiente
+              proteína. El estímulo de los días duros se consolida hoy — no es un día
+              perdido, es parte del plan.
+            </p>
+          </div>
         )}
         {todayWorkout?.notes && (
           <div className="card mt-4">
