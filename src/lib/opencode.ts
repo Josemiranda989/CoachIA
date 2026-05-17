@@ -9,7 +9,7 @@ import https from "node:https";
 
 const BASE_URL = "https://opencode.ai/zen/go/v1";
 const DEFAULT_MODEL = "deepseek-v4-flash";
-const MONTHLY_MODEL = "deepseek-v4-pro";
+const MONTHLY_MODEL = "kimi-k2.6";
 
 interface OpenCodeMessage {
   role: "system" | "user" | "assistant";
