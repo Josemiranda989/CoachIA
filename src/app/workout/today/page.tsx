@@ -6,6 +6,7 @@ import { GymWorkoutClient } from "./GymWorkoutClient";
 import { CyclingWorkoutClient } from "./CyclingWorkoutClient";
 import { BackLink } from "@/components/BackLink";
 import { DrillExecutionCard, DrillExecutionCardSkeleton } from "@/components/DrillExecutionCard";
+import { CyclingExecutionCard, CyclingExecutionCardSkeleton } from "@/components/CyclingExecutionCard";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
@@ -162,6 +163,11 @@ export default async function TodayWorkoutPage() {
               DrillExecutionCard auto-no-ops when the day has no drill block. */}
           <Suspense fallback={<DrillExecutionCardSkeleton />}>
             <DrillExecutionCard userId={userId} dailyWorkoutId={todayWorkout.id} />
+          </Suspense>
+          {/* Per-block HR execution vs prescription — applies to any cycling
+              day with HR data. Auto-no-ops when no blocks / no HR config. */}
+          <Suspense fallback={<CyclingExecutionCardSkeleton />}>
+            <CyclingExecutionCard userId={userId} dailyWorkoutId={todayWorkout.id} />
           </Suspense>
           <CyclingWorkoutClient workout={cyclingWorkout} />
         </div>
