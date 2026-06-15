@@ -24,7 +24,7 @@
 }
 
 /* Opacity-modifier replacements — Turbopack scanner won't emit
- * bg-accent-*/20 etc. These replace `bg-accent-primary/20` and variants,
+ * the bg-accent-color/20 utilities. These replace bg-accent-primary/20 and variants,
  * and auto-intensify when inside a `.group:hover` for free. */
 .bg-accent-primary-soft { background: color-mix(in srgb, var(--accent-primary) 20%, transparent); transition: background 0.2s ease; }
 .bg-accent-gym-soft     { background: color-mix(in srgb, var(--accent-gym) 20%, transparent);     transition: background 0.2s ease; }
