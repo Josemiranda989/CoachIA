@@ -4,7 +4,16 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import Link from "next/link";
-import { ArrowRight, Dumbbell, Trophy, Clock, TrendingUp, Bike, type LucideIcon } from "lucide-react";
+import {
+  ArrowRight,
+  Dumbbell,
+  Flame,
+  TrendingDown,
+  TrendingUp,
+  Bike,
+  Activity,
+  type LucideIcon,
+} from "lucide-react";
 import { redirect } from "next/navigation";
 import { StravaActivities, StravaActivitiesSkeleton } from "@/components/StravaActivities";
 import { isStravaConfigured, getStravaAuthUrl } from "@/lib/strava";
@@ -12,12 +21,84 @@ import { getStravaContext } from "@/lib/strava-cached";
 import { WeightChart } from "./WeightChart";
 import { WeightChartSkeleton } from "./WeightChartView";
 import { CyclingCards, CyclingCardsSkeleton } from "./CyclingCards";
+import { GymStravaCards, GymStravaCardsSkeleton } from "./GymStravaCards";
+import { CyclingTrendChart, CyclingTrendChartSkeleton } from "./CyclingTrendChart";
+import { GymVolumeChart, GymVolumeChartSkeleton } from "./GymVolumeChart";
 import { CountUp } from "@/components/CountUp";
 import { BackLink } from "@/components/BackLink";
 import { MesocycleProgress, MesocycleProgressSkeleton } from "@/components/MesocycleProgress";
 import { getCurrentWeekStart } from "@/lib/week";
 
 export const metadata: Metadata = { title: "Métricas" };
+
+const TIMEZONE_ART = "America/Argentina/Tucuman";
+const MONTH_NAMES_ES = [
+  "enero", "febrero", "marzo", "abril", "mayo", "junio",
+  "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
+];
+
+function artDateParts(d: Date): { year: number; month: number; day: number } {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: TIMEZONE_ART,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(d);
+  const get = (t: string) => parts.find((p) => p.type === t)!.value;
+  return {
+    year: Number(get("year")),
+    month: Number(get("month")),
+    day: Number(get("day")),
+  };
+}
+
+function artDateString(d: Date): string {
+  const { year, month, day } = artDateParts(d);
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+function monthKey(year: number, month: number): string {
+  return `${year}-${String(month).padStart(2, "0")}`;
+}
+
+function prevYearMonth(year: number, month: number): { year: number; month: number } {
+  return month === 1 ? { year: year - 1, month: 12 } : { year, month: month - 1 };
+}
+
+function formatWeight(n: number): string {
+  return n % 1 !== 0
+    ? n.toLocaleString("es-AR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+    : String(n);
+}
+
+type SectionHeaderProps = {
+  icon: LucideIcon;
+  title: string;
+  subtitle: string;
+  color?: string;
+};
+
+function SectionHeader({ icon: Icon, title, subtitle, color = "var(--text-primary)" }: SectionHeaderProps) {
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <h2
+        style={{
+          fontSize: 20,
+          fontWeight: 800,
+          color: "var(--text-primary)",
+          marginBottom: 6,
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+        }}
+      >
+        <Icon size={22} style={{ color }} aria-hidden="true" />
+        {title}
+      </h2>
+      <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>{subtitle}</p>
+    </div>
+  );
+}
 
 export default async function MetricsPage() {
   const session = await getServerSession(authOptions);
@@ -42,6 +123,7 @@ export default async function MetricsPage() {
   // banner instead of letting the cycling cards render empty.
   const stravaCtx = stravaConfigured && stravaConnected ? await getStravaContext(userId) : null;
   const stravaTokenInvalid = stravaConnected && !stravaCtx;
+  const stravaReady = stravaConnected && !stravaTokenInvalid;
 
   // Gym stats — always synchronous, scoped to current user
   const allLogs = await prisma.workoutLog.findMany({
@@ -51,21 +133,90 @@ export default async function MetricsPage() {
     select: {
       reps: true,
       weight: true,
-      exercise: {
-        select: {
-          name: true,
-          dailyWorkout: { select: { id: true } },
-        },
-      },
+      weekStart: true,
+      exercise: { select: { name: true } },
     },
   });
 
   const totalVolume = allLogs.reduce((acc, log) => acc + (log.reps * log.weight), 0);
-  const maxSquat = allLogs
-    .filter(l => l.exercise.name.toLowerCase().includes("sentadilla") || l.exercise.name.toLowerCase().includes("squat"))
-    .reduce((max, log) => log.weight > max ? log.weight : max, 0);
-  const totalSets = allLogs.length;
-  const totalWorkouts = new Set(allLogs.map(l => l.exercise.dailyWorkout.id)).size;
+
+  // Month buckets in ART for "este mes" vs "mes anterior" comparisons.
+  const now = new Date();
+  const todayParts = artDateParts(now);
+  const currentMonthKey = monthKey(todayParts.year, todayParts.month);
+  const prev = prevYearMonth(todayParts.year, todayParts.month);
+  const prevMonthKey = monthKey(prev.year, prev.month);
+  const prevMonthName = MONTH_NAMES_ES[prev.month - 1];
+
+  const thisMonthLogs = allLogs.filter((l) => l.weekStart.startsWith(currentMonthKey));
+  const prevMonthLogs = allLogs.filter((l) => l.weekStart.startsWith(prevMonthKey));
+
+  const maxByExercise = (logs: typeof allLogs): Map<string, number> => {
+    const m = new Map<string, number>();
+    for (const log of logs) {
+      if (log.weight <= 0) continue;
+      const cur = m.get(log.exercise.name) ?? 0;
+      if (log.weight > cur) m.set(log.exercise.name, log.weight);
+    }
+    return m;
+  };
+  const thisMax = maxByExercise(thisMonthLogs);
+  const prevMax = maxByExercise(prevMonthLogs);
+
+  // Pick the exercise with the largest positive weight delta vs last month.
+  // Fallback: highest absolute weight this month when no prior reference exists.
+  let topExercise: { name: string; current: number; previous: number | null; delta: number } | null = null;
+  for (const [name, curWeight] of thisMax) {
+    const prevWeight = prevMax.get(name);
+    if (prevWeight !== undefined && curWeight > prevWeight) {
+      const delta = curWeight - prevWeight;
+      if (!topExercise || delta > topExercise.delta) {
+        topExercise = { name, current: curWeight, previous: prevWeight, delta };
+      }
+    }
+  }
+  if (!topExercise && thisMax.size > 0) {
+    let best: { name: string; weight: number } | null = null;
+    for (const [name, w] of thisMax) {
+      if (!best || w > best.weight) best = { name, weight: w };
+    }
+    if (best) topExercise = { name: best.name, current: best.weight, previous: null, delta: 0 };
+  }
+
+  const volumeThisMonth = thisMonthLogs.reduce((acc, l) => acc + l.reps * l.weight, 0);
+  const volumePrevMonth = prevMonthLogs.reduce((acc, l) => acc + l.reps * l.weight, 0);
+  const volumeDeltaPct = volumePrevMonth > 0
+    ? Math.round(((volumeThisMonth - volumePrevMonth) / volumePrevMonth) * 100)
+    : null;
+
+  // Streak: consecutive ART days with a completed Gym session, counting back from today.
+  const gymCompletions = await prisma.workoutCompletion.findMany({
+    where: {
+      completed: true,
+      completedAt: { not: null },
+      dailyWorkout: { type: "Gym", routine: { userId } },
+    },
+    select: { completedAt: true },
+    orderBy: { completedAt: "desc" },
+    take: 365,
+  });
+  const completedDates = new Set(
+    gymCompletions
+      .map((c) => (c.completedAt ? artDateString(c.completedAt) : null))
+      .filter((s): s is string => s !== null),
+  );
+  let streak = 0;
+  {
+    const cursor = new Date(now);
+    // If today has no session yet, start counting from yesterday so the streak doesn't reset mid-day.
+    if (!completedDates.has(artDateString(cursor))) {
+      cursor.setUTCDate(cursor.getUTCDate() - 1);
+    }
+    while (completedDates.has(artDateString(cursor))) {
+      streak++;
+      cursor.setUTCDate(cursor.getUTCDate() - 1);
+    }
+  }
 
   const gymColor = {
     color: "var(--accent-gym)",
@@ -83,6 +234,23 @@ export default async function MetricsPage() {
     decimals?: number;
   };
 
+  const topExerciseDescription = !topExercise
+    ? "Sin entrenamientos este mes"
+    : topExercise.previous !== null && topExercise.delta > 0
+      ? `${topExercise.name} · ${formatWeight(topExercise.previous)}kg → ${formatWeight(topExercise.current)}kg (+${formatWeight(topExercise.delta)}kg)`
+      : `${topExercise.name} · máximo del mes`;
+
+  const volumeIsDown = volumeDeltaPct !== null && volumeDeltaPct < 0;
+  const volumeDescription = volumeDeltaPct === null
+    ? volumeThisMonth > 0
+      ? "Sin datos del mes anterior para comparar"
+      : "Aún no entrenaste este mes"
+    : `${volumeDeltaPct > 0 ? "+" : ""}${volumeDeltaPct}% vs ${prevMonthName}`;
+
+  const streakDescription = streak === 0
+    ? "Hoy es buen día para empezar"
+    : "Sesiones de gym consecutivas";
+
   const gymMetrics: Metric[] = [
     {
       label: "Volumen Histórico",
@@ -92,26 +260,28 @@ export default async function MetricsPage() {
       icon: TrendingUp,
     },
     {
-      label: "Récord Sentadilla",
-      value: maxSquat,
-      displayFallback: maxSquat ? undefined : "—",
-      unit: maxSquat ? "kg" : "",
-      description: "Tu peso máximo registrado en sentadilla",
-      icon: Trophy,
+      label: "Ejercicio Top del Mes",
+      value: topExercise?.current ?? 0,
+      displayFallback: topExercise ? undefined : "—",
+      unit: topExercise ? "kg" : "",
+      decimals: topExercise && topExercise.current % 1 !== 0 ? 1 : 0,
+      description: topExerciseDescription,
+      icon: TrendingUp,
     },
     {
-      label: "Sesiones Gym",
-      value: totalWorkouts,
-      unit: "días",
-      description: "Total de sesiones de gym completadas",
-      icon: Dumbbell,
+      label: "Racha Actual",
+      value: streak,
+      unit: streak === 0 ? "" : streak === 1 ? "día" : "días",
+      description: streakDescription,
+      icon: Flame,
     },
     {
-      label: "Series Totales",
-      value: totalSets,
-      unit: "sets",
-      description: "Total de series registradas",
-      icon: Clock,
+      label: "Volumen Este Mes",
+      value: volumeThisMonth,
+      displayFallback: volumeThisMonth > 0 ? undefined : "—",
+      unit: volumeThisMonth > 0 ? "kg" : "",
+      description: volumeDescription,
+      icon: volumeIsDown ? TrendingDown : TrendingUp,
     },
   ];
 
@@ -159,73 +329,118 @@ export default async function MetricsPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-        {gymMetrics.map(({ label, value, displayFallback, unit, description, icon: Icon, decimals }) => (
-          <div
-            key={label}
-            className="card"
-            style={{ cursor: "default", background: gymColor.bg, borderColor: gymColor.border }}
+      {/* ─── Gym ─────────────────────────────────────────────────────────── */}
+      <section style={{ marginBottom: 40 }}>
+        <SectionHeader
+          icon={Dumbbell}
+          title="Gym"
+          subtitle="Volumen levantado, récords y sesiones registradas"
+          color="var(--accent-gym)"
+        />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {gymMetrics.map(({ label, value, displayFallback, unit, description, icon: Icon, decimals }) => (
+            <div
+              key={label}
+              className="card"
+              style={{ cursor: "default", background: gymColor.bg, borderColor: gymColor.border }}
+            >
+              <div className="flex items-start justify-between mb-3">
+                <div
+                  className="p-2 rounded-xl"
+                  style={{ background: `color-mix(in srgb, ${gymColor.color} 13%, transparent)` }}
+                >
+                  <Icon size={20} style={{ color: gymColor.color }} aria-hidden="true" />
+                </div>
+              </div>
+              <p className="text-sm font-semibold mb-1" style={{ color: "var(--text-secondary)" }}>
+                {label}
+              </p>
+              <p className="font-bold mb-1 text-xl md:text-3xl" style={{ color: gymColor.color }}>
+                {displayFallback ?? <CountUp value={value} decimals={decimals ?? 0} />}{" "}
+                {unit && (
+                  <span className="text-xs md:text-sm" style={{ color: "var(--text-secondary)", fontWeight: 400 }}>{unit}</span>
+                )}
+              </p>
+              <p style={{ color: "var(--text-secondary)", fontSize: "12px" }}>{description}</p>
+            </div>
+          ))}
+
+          {/* Records link */}
+          <Link
+            href="/metrics/records"
+            className="card group flex flex-col justify-between"
+            style={{ border: "1px solid color-mix(in srgb, var(--accent-gym) 40%, transparent)", background: "color-mix(in srgb, var(--accent-gym) 6%, transparent)" }}
           >
             <div className="flex items-start justify-between mb-3">
-              <div
-                className="p-2 rounded-xl"
-                style={{ background: `color-mix(in srgb, ${gymColor.color} 13%, transparent)` }}
-              >
-                <Icon size={20} style={{ color: gymColor.color }} aria-hidden="true" />
+              <div className="p-2 rounded-xl" style={{ background: "color-mix(in srgb, var(--accent-gym) 15%, transparent)" }}>
+                <Dumbbell size={20} style={{ color: "var(--accent-gym)" }} aria-hidden="true" />
               </div>
+              <ArrowRight
+                size={18}
+                className="opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all"
+                style={{ color: "var(--accent-gym)" }}
+                aria-hidden="true"
+              />
             </div>
-            <p className="text-sm font-semibold mb-1" style={{ color: "var(--text-secondary)" }}>
-              {label}
-            </p>
-            <p className="font-bold mb-1 text-xl md:text-3xl" style={{ color: gymColor.color }}>
-              {displayFallback ?? <CountUp value={value} decimals={decimals ?? 0} />}{" "}
-              {unit && (
-                <span className="text-xs md:text-sm" style={{ color: "var(--text-secondary)", fontWeight: 400 }}>{unit}</span>
-              )}
-            </p>
-            <p style={{ color: "var(--text-secondary)", fontSize: "12px" }}>{description}</p>
-          </div>
-        ))}
-
-        {/* Records link */}
-        <Link
-          href="/metrics/records"
-          className="card group flex flex-col justify-between"
-          style={{ border: "1px solid color-mix(in srgb, var(--accent-gym) 40%, transparent)", background: "color-mix(in srgb, var(--accent-gym) 6%, transparent)" }}
-        >
-          <div className="flex items-start justify-between mb-3">
-            <div className="p-2 rounded-xl" style={{ background: "color-mix(in srgb, var(--accent-gym) 15%, transparent)" }}>
-              <Dumbbell size={20} style={{ color: "var(--accent-gym)" }} aria-hidden="true" />
+            <div>
+              <p className="font-bold text-lg mb-1" style={{ color: "var(--accent-gym)" }}>
+                Todos los Récords
+              </p>
+              <p style={{ color: "var(--text-secondary)", fontSize: "13px" }}>
+                Máximo peso y reps en cada ejercicio.
+              </p>
             </div>
-            <ArrowRight
-              size={18}
-              className="opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all"
-              style={{ color: "var(--accent-gym)" }}
-              aria-hidden="true"
-            />
-          </div>
-          <div>
-            <p className="font-bold text-lg mb-1" style={{ color: "var(--accent-gym)" }}>
-              Todos los Récords
-            </p>
-            <p style={{ color: "var(--text-secondary)", fontSize: "13px" }}>
-              Máximo peso y reps en cada ejercicio.
-            </p>
-          </div>
-        </Link>
+          </Link>
 
-        {/* Cycling cards stream in independently — Strava lentitud no bloquea las cards de gym */}
-        {stravaConnected && !stravaTokenInvalid && (
-          <Suspense fallback={<CyclingCardsSkeleton />}>
-            <CyclingCards userId={userId} />
+          {/* Gym-related Strava data (sessions, minutos, FC media) — gated on a valid Strava token */}
+          {stravaReady && (
+            <Suspense fallback={<GymStravaCardsSkeleton />}>
+              <GymStravaCards userId={userId} />
+            </Suspense>
+          )}
+        </div>
+      </section>
+
+      {/* ─── Ciclismo ─────────────────────────────────────────────────────── */}
+      {stravaReady && (
+        <section style={{ marginBottom: 40 }}>
+          <SectionHeader
+            icon={Bike}
+            title="Ciclismo"
+            subtitle="Datos en tiempo real desde Strava"
+            color="var(--accent-cycling)"
+          />
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <Suspense fallback={<CyclingCardsSkeleton />}>
+              <CyclingCards userId={userId} />
+            </Suspense>
+          </div>
+        </section>
+      )}
+
+      {/* ─── Tendencias ───────────────────────────────────────────────────── */}
+      <section style={{ marginBottom: 40 }}>
+        <SectionHeader
+          icon={Activity}
+          title="Tendencias"
+          subtitle="Evolución a lo largo del tiempo"
+        />
+        <div className="flex flex-col gap-4">
+          {stravaReady && (
+            <Suspense fallback={<CyclingTrendChartSkeleton />}>
+              <CyclingTrendChart userId={userId} />
+            </Suspense>
+          )}
+
+          <Suspense fallback={<GymVolumeChartSkeleton />}>
+            <GymVolumeChart userId={userId} />
           </Suspense>
-        )}
 
-        {/* Weight chart streams in independently — query a Prisma sin bloquear el grid */}
-        <Suspense fallback={<WeightChartSkeleton />}>
-          <WeightChart userId={userId} />
-        </Suspense>
-      </div>
+          <Suspense fallback={<WeightChartSkeleton />}>
+            <WeightChart userId={userId} />
+          </Suspense>
+        </div>
+      </section>
 
       {/* Mesocycle progress — streams in independently; depende de Strava para los km */}
       <Suspense fallback={<MesocycleProgressSkeleton />}>
