@@ -96,6 +96,10 @@ export async function GET(request: Request) {
   let avgCyclingHR: number | null = null;
   let longestRideKm = 0;
   let ridesCount = 0;
+  let totalCyclingKj = 0;
+  let totalSuffer = 0;
+  let peakHr: number | null = null;
+  let avgCyclingTemp: number | null = null;
 
   try {
     const accessToken = await getValidAccessToken(auth.userId);
@@ -114,6 +118,15 @@ export async function GET(request: Request) {
       const hrs = rides.map((r: any) => r.average_heartrate).filter((hr: any): hr is number => hr != null);
       avgCyclingHR = hrs.length > 0 ? Math.round(hrs.reduce((a: number, b: number) => a + b, 0) / hrs.length) : null;
       longestRideKm = rides.reduce((max: number, r: any) => Math.max(max, r.distance / 1000), 0);
+      // Additional cycling metrics
+      totalCyclingKj = rides.reduce((sum: number, r: any) => sum + (r.kilojoules || 0), 0);
+      totalSuffer = rides.reduce((sum: number, r: any) => sum + (r.suffer_score || 0), 0);
+      peakHr = rides.reduce((max: number | null, r: any) =>
+        r.max_heartrate != null && (max == null || r.max_heartrate > max) ? r.max_heartrate : max, null as number | null);
+      const avgTemps = rides.map((r: any) => r.average_temp).filter((t: any): t is number => t != null);
+      avgCyclingTemp = avgTemps.length > 0
+        ? Math.round(avgTemps.reduce((s: number, t: number) => s + t, 0) / avgTemps.length * 10) / 10
+        : null;
     }
   } catch {
     // Strava unavailable — leave stats as zeros
@@ -188,6 +201,11 @@ export async function GET(request: Request) {
       avgHR: avgCyclingHR,
       rides: ridesCount,
       longestRideKm: Math.round(longestRideKm * 10) / 10,
+      totalKj: Math.round(totalCyclingKj * 10) / 10,
+      totalKcal: Math.round(totalCyclingKj * 0.239 * 10) / 10,
+      totalSufferScore: Math.round(totalSuffer * 10) / 10,
+      peakHeartrate: peakHr,
+      avgTemp: avgCyclingTemp,
     },
     gym: {
       sessionsCompleted: gymCompletions.length,

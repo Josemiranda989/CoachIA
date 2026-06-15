@@ -1,4 +1,4 @@
-import { Route, Timer, Trophy, Mountain, RotateCw, Heart } from "lucide-react";
+import { Route, Timer, Trophy, Mountain, RotateCw, Heart, Flame, Thermometer } from "lucide-react";
 import { CountUp } from "@/components/CountUp";
 import { getStravaStats, getStravaActivities } from "@/lib/strava-cached";
 import { prisma } from "@/lib/prisma";
@@ -84,6 +84,36 @@ export async function CyclingCards({ userId }: { userId: string }) {
       icon: Mountain,
     },
   ];
+
+  // Total kJ from recent rides (Strava ytd stats don't include kJ)
+  const kjValues = rides
+    .map((a) => (typeof a.kilojoules === "number" ? a.kilojoules : null))
+    .filter((v): v is number => v !== null);
+  if (kjValues.length > 0) {
+    const totalKj = kjValues.reduce((s, k) => s + k, 0);
+    cards.push({
+      label: "Energía (30 rides)",
+      value: Math.round(totalKj),
+      unit: "kJ",
+      description: `Trabajo total en tus últimas ${kjValues.length} salidas`,
+      icon: Flame,
+    });
+  }
+
+  // Average temperature from recent rides
+  const tempValues = rides
+    .map((a) => (typeof a.average_temp === "number" ? a.average_temp : null))
+    .filter((v): v is number => v !== null);
+  if (tempValues.length > 0) {
+    const avgTemp = Math.round(tempValues.reduce((s, t) => s + t, 0) / tempValues.length);
+    cards.push({
+      label: "Temp. Media (30 rides)",
+      value: avgTemp,
+      unit: "°C",
+      description: `Promedio de tus últimas ${tempValues.length} salidas`,
+      icon: Thermometer,
+    });
+  }
 
   if (avgCadence !== null) {
     cards.push({
