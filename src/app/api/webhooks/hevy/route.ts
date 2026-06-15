@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
     const dw = await prisma.dailyWorkout.findFirst({
       where: {
         dayOfWeek: dayEn,
-        routine: { weekStart: routineWeekStart },
+        routine: { weekStart: routineWeekStart, status: 'active' },
       },
       include: { exercises: true, routine: true },
     });

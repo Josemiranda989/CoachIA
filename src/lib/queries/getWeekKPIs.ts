@@ -128,7 +128,7 @@ export type MesocycleWeekProgress = {
 export const getMesocycleProgress = cache(
   async (userId: string, weekStart: string) => {
     const current = await prisma.routine.findFirst({
-      where: { userId, weekStart: { lte: weekStart } },
+      where: { userId, weekStart: { lte: weekStart }, status: "active" },
       orderBy: { weekStart: "desc" },
       select: { id: true, createdAt: true },
     });
