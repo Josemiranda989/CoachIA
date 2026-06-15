@@ -7,6 +7,7 @@ import { getValidAccessToken, fetchActivities, fetchStats } from "@/lib/strava";
 import hevyPool from "@/data/hevy-template-pool.json";
 import { openCodeMonthlyChat } from "@/lib/opencode";
 import { hrZonesSummary } from "@/lib/hr-zones";
+import { archiveRoutinesInHevy } from "@/lib/hevy-archive";
 
 const VALID_DAY_TYPES = ["Gym", "Cycling", "Rest", "Gym + Cycling"] as const;
 type DayType = (typeof VALID_DAY_TYPES)[number];
@@ -496,6 +497,19 @@ REGLAS ESTRICTAS:
     // Archive previous routines + create the 4 new ones atomically. If any
     // routine fails, the whole batch rolls back — no zombie routines in DB.
     const currentWeekMonday = getCurrentWeekStart();
+    // Capture which routines are about to be archived so we can rename their
+    // Hevy counterparts AFTER the transaction commits (no external HTTP in tx).
+    const archivedRoutineIds = await prisma.routine.findMany({
+      where: {
+        userId: auth.userId,
+        OR: [
+          { status: "active", weekStart: { lt: currentWeekMonday } },
+          { status: "pending_approval" },
+        ],
+      },
+      select: { id: true },
+    });
+
     const created = await prisma.$transaction(async (tx) => {
       // Archive active routines whose week has strictly passed. The in-progress
       // week survives until it naturally ends, so there is no gap between
@@ -569,6 +583,8 @@ REGLAS ESTRICTAS:
       }
       return acc;
     }, { timeout: 30_000 });
+
+    void archiveRoutinesInHevy(archivedRoutineIds.map((r) => r.id)).catch(() => {});
 
     // Telegram summary: gym template once + cycling progression per week
     const dayNames: Record<string, string> = {

@@ -4,6 +4,7 @@ import { resolveAuth } from "@/lib/internal-auth";
 import { getCurrentWeekStart } from "@/lib/week";
 import { revalidatePath } from "next/cache";
 import { syncRoutineToHevy } from "@/lib/hevy-sync";
+import { archiveRoutinesInHevy } from "@/lib/hevy-archive";
 
 // POST /api/routines/pending-action
 // Batch approve or reject ALL pending_approval routines for the current user.
@@ -44,14 +45,19 @@ export async function POST(request: Request) {
     // Monday). The in-progress week survives until it naturally ends, closing the gap
     // between approval day and the first new week of the mesocycle.
     const currentWeekMonday = getCurrentWeekStart();
-    await prisma.routine.updateMany({
+    const toArchive = await prisma.routine.findMany({
       where: {
         userId: auth.userId,
         status: "active",
         weekStart: { lt: currentWeekMonday },
       },
+      select: { id: true },
+    });
+    await prisma.routine.updateMany({
+      where: { id: { in: toArchive.map((r) => r.id) } },
       data: { status: "archived" },
     });
+    void archiveRoutinesInHevy(toArchive.map((r) => r.id)).catch(() => {});
 
     await prisma.routine.updateMany({
       where: { userId: auth.userId, status: "pending_approval" },

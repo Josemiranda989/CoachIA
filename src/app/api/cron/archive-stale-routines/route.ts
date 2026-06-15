@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { resolveAuth } from "@/lib/internal-auth";
 import { getCurrentWeekStart } from "@/lib/week";
+import { archiveRoutinesInHevy } from "@/lib/hevy-archive";
 
 // POST /api/cron/archive-stale-routines
 // Archives any "active" routine whose weekStart is strictly before the current
@@ -17,17 +18,26 @@ export async function POST(request: Request) {
 
   const currentWeekMonday = getCurrentWeekStart();
 
-  const result = await prisma.routine.updateMany({
+  const toArchive = await prisma.routine.findMany({
     where: {
       userId: auth.userId,
       status: "active",
       weekStart: { lt: currentWeekMonday },
     },
+    select: { id: true },
+  });
+
+  const result = await prisma.routine.updateMany({
+    where: { id: { in: toArchive.map((r) => r.id) } },
     data: { status: "archived" },
   });
+
+  const hevyResults = await archiveRoutinesInHevy(toArchive.map((r) => r.id));
 
   return NextResponse.json({
     archived: result.count,
     currentWeekMonday,
+    hevyArchived: hevyResults.filter((r) => r.renamed).length,
+    hevyFailed: hevyResults.filter((r) => !r.renamed && r.reason !== "already-archived").length,
   });
 }
