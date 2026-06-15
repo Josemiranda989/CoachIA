@@ -95,9 +95,14 @@ function getDayName(dayOfWeek: string): string {
 }
 
 /**
- * Generate an .erg file XML string for a single cycling workout.
+ * Genera el XML de un workout de ciclismo en formato ZWO (Zwift / MyWhoosh).
+ *
+ * El nombre histórico "erg" engaña: el contenido NO es .erg de TrainerRoad
+ * (texto plano), es ZWO — un <workout_file> con la potencia como fracción de
+ * FTP. MyWhoosh lo importa directo desde workout.mywhoosh.com, y necesita el
+ * <sportType>bike</sportType> para reconocerlo.
  */
-export function generateErgXml(day: CyclingDay): string {
+export function generateZwoXml(day: CyclingDay): string {
   const name = `${sanitizeName(getDayName(day.dayOfWeek))} - ${day.totalPower}`;
   const blocksXml = day.blocks.map((b) => blockToErg(b)).join("\n    ");
 
@@ -106,11 +111,15 @@ export function generateErgXml(day: CyclingDay): string {
   <name>${escXml(name)}</name>
   <description>${escXml(day.weekLabel)} - ${escXml(day.weekStart)} | ${day.totalDuration} min ${day.totalPower}${day.blocks[0]?.notes ? ` | ${escXml(day.blocks[0].notes)}` : ""}</description>
   <author>CoachIA</author>
+  <sportType>bike</sportType>
   <workout>
     ${blocksXml}
   </workout>
 </workout_file>`;
 }
+
+/** @deprecated Usar generateZwoXml — el contenido siempre fue ZWO, no .erg. */
+export const generateErgXml = generateZwoXml;
 
 function escXml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");

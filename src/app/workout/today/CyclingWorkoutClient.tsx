@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { Download } from "lucide-react";
 import { CyclingBlocks } from "@/components/CyclingBlocks";
+import { suggestMyWhooshCategory } from "@/lib/mywhoosh-catalog";
 import type { DayWithLogs } from "@/lib/queries/getActiveRoutine";
 
 export type CyclingWorkoutData = DayWithLogs & { completed: boolean };
@@ -12,6 +13,13 @@ export function CyclingWorkoutClient({ workout }: { workout: CyclingWorkoutData 
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [completed, setCompleted] = useState<boolean>(!!workout.completed);
+
+  const mywhoosh =
+    workout.blocks && workout.blocks.length > 0
+      ? suggestMyWhooshCategory(workout.blocks, {
+          totalDuration: workout.targetDuration ?? undefined,
+        })
+      : null;
 
   const handleMarkComplete = async () => {
     setLoading(true);
@@ -45,6 +53,27 @@ export function CyclingWorkoutClient({ workout }: { workout: CyclingWorkoutData 
           fallbackPower={workout.targetPower}
         />
 
+        {mywhoosh && (
+          <div
+            className="mt-4 p-3 rounded-lg"
+            style={{
+              background: "color-mix(in srgb, var(--accent-cycling) 8%, transparent)",
+              border: "1px solid color-mix(in srgb, var(--accent-cycling) 25%, transparent)",
+            }}
+          >
+            <p style={{ fontWeight: 700, color: "var(--accent-cycling)", marginBottom: 4 }}>
+              🚴 En el rodillo (MyWhoosh)
+            </p>
+            <p style={{ color: "var(--text-primary)", fontSize: 14, lineHeight: 1.5 }}>
+              Abrí la colección <strong>{mywhoosh.label}</strong> y elegí un workout de{" "}
+              {mywhoosh.durationHint}. Usar uno de la biblioteca no gasta créditos.
+            </p>
+            <p style={{ color: "var(--text-secondary)", fontSize: 12, marginTop: 4 }}>
+              {mywhoosh.reason}
+            </p>
+          </div>
+        )}
+
         {workout.blocks?.length > 0 && (
           <>
             <a
@@ -55,6 +84,15 @@ export function CyclingWorkoutClient({ workout }: { workout: CyclingWorkoutData 
             >
               <Download size={16} />
               Descargar .fit para iGPSPORT
+            </a>
+            <a
+              href="/api/workouts/export-zwo"
+              download
+              onClick={() => toast.success("Descargando .zwo para subir a MyWhoosh (días de calidad)...", { duration: 4000 })}
+              className="btn-outline-cycling w-full justify-center mt-2"
+            >
+              <Download size={14} />
+              Descargar .zwo para MyWhoosh
             </a>
             <a
               href="/api/workouts/export-all-fit"
