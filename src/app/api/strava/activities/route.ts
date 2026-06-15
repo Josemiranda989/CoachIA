@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { resolveAuth } from "@/lib/internal-auth";
 import { getValidAccessToken, fetchActivities, fetchStats } from "@/lib/strava";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+  const auth = await resolveAuth(request);
+  if (!auth.authenticated) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
 
-  const userId = session.user.id;
+  const userId = auth.userId;
 
   try {
     const accessToken = await getValidAccessToken(userId);
