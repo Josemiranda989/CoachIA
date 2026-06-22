@@ -85,8 +85,14 @@ export async function archiveRoutinesInHevy(routineIds: string[]): Promise<HevyA
   });
   const ids = Array.from(new Set(dws.map((d) => d.hevyRoutineId!).filter(Boolean)));
 
+  // Never archive the persistent gym-slot routines (Día 1/2/3). They are reused
+  // across mesocycles, so renaming them to "OLD" would archive the LIVE routines.
+  const slots = await prisma.hevyGymSlot.findMany({ select: { hevyRoutineId: true } });
+  const slotIds = new Set(slots.map((s) => s.hevyRoutineId));
+  const archivableIds = ids.filter((id) => !slotIds.has(id));
+
   const results: HevyArchiveResult[] = [];
-  for (const id of ids) {
+  for (const id of archivableIds) {
     try {
       const r = await renameInHevy(apiKey, id);
       results.push(r);

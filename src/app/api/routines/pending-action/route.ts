@@ -3,8 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { resolveAuth } from "@/lib/internal-auth";
 import { getCurrentWeekStart } from "@/lib/week";
 import { revalidatePath } from "next/cache";
-import { syncRoutineToHevy } from "@/lib/hevy-sync";
-import { archiveRoutinesInHevy } from "@/lib/hevy-archive";
+import { syncRoutineToHevy, type SyncResult } from "@/lib/hevy-sync";
 
 // POST /api/routines/pending-action
 // Batch approve or reject ALL pending_approval routines for the current user.
@@ -57,24 +56,28 @@ export async function POST(request: Request) {
       where: { id: { in: toArchive.map((r) => r.id) } },
       data: { status: "archived" },
     });
-    void archiveRoutinesInHevy(toArchive.map((r) => r.id)).catch(() => {});
+    // No Hevy archiving: the 3 gym routines are persistent slots reused across
+    // mesocycles (HevyGymSlot). Renaming them to "OLD" would archive the LIVE ones.
 
     await prisma.routine.updateMany({
       where: { userId: auth.userId, status: "pending_approval" },
       data: { status: "active" },
     });
 
-    const syncResultsPerRoutine = await Promise.all(
-      pending.map((p) =>
-        syncRoutineToHevy(p.id).catch((e: unknown) => [
-          {
-            dayOfWeek: "?",
-            action: "skipped" as const,
-            error: e instanceof Error ? e.message : String(e),
-          },
-        ])
-      )
-    );
+    // Sequential, NOT parallel: week 1 POSTs the 3 gym slots and persists them;
+    // weeks 2-4 then reuse those slots via PUT. Promise.all would race — all 4
+    // weeks would read "no slot yet" and POST, creating duplicate Hevy routines.
+    const syncResultsPerRoutine: SyncResult[][] = [];
+    for (const p of pending) {
+      const r = await syncRoutineToHevy(p.id).catch((e: unknown) => [
+        {
+          dayOfWeek: "?",
+          action: "skipped" as const,
+          error: e instanceof Error ? e.message : String(e),
+        },
+      ]);
+      syncResultsPerRoutine.push(r);
+    }
     const flatSync = syncResultsPerRoutine.flat();
     const hevyCreated = flatSync.filter((r) => r.action === "created").length;
     const hevyUpdated = flatSync.filter((r) => r.action === "updated").length;

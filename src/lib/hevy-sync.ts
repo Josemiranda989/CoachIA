@@ -42,19 +42,28 @@ function parseReps(reps: string | null | undefined): number | null {
   return parseInt(match[2] || match[1]);
 }
 
-const daysInSpanish: Record<string, string> = {
-  Sunday: "Domingo",
-  Monday: "Lunes",
-  Tuesday: "Martes",
-  Wednesday: "Miercoles",
-  Thursday: "Jueves",
-  Friday: "Viernes",
-  Saturday: "Sabado",
+const dayOrder: Record<string, number> = {
+  Monday: 1,
+  Tuesday: 2,
+  Wednesday: 3,
+  Thursday: 4,
+  Friday: 5,
+  Saturday: 6,
+  Sunday: 7,
 };
+
+// Short focus tag for the Hevy title, derived from the day's notes.
+// "Empuje/jalón, sin piernas" -> "Empuje/jalón"; "Leg day" -> "Leg day".
+function focusLabel(notes: string | null | undefined): string {
+  if (!notes) return "";
+  const first = notes.split(",")[0].trim();
+  return first.length > 28 ? first.slice(0, 28).trim() : first;
+}
 
 export async function syncDailyWorkoutToHevy(
   dailyWorkoutId: string,
-  weekStart: string
+  weekStart: string,
+  slotIndex: number
 ): Promise<SyncResult> {
   const apiKey = process.env.HEVY_API_KEY;
   if (!apiKey) {
@@ -123,34 +132,64 @@ export async function syncDailyWorkoutToHevy(
     };
   }
 
-  const dayLabel = daysInSpanish[dw.dayOfWeek] ?? dw.dayOfWeek;
+  const focus = focusLabel(dw.notes);
   const payload: HevyRoutinePayload = {
     routine: {
-      title: `CoachIA - ${dayLabel} (${dw.routine.weekStart})`,
+      title: focus ? `CoachIA - Día ${slotIndex} (${focus})` : `CoachIA - Día ${slotIndex}`,
       folder_id: null,
       notes: "Sincronizado desde CoachIA",
       exercises: hevyExercises,
     },
   };
 
+  const userId = dw.routine.userId;
+
+  // Stable identity: each gym slot (Día N) reuses ONE Hevy routine across all 4
+  // weeks of the mesocycle AND across mesocycles. Prefer the persisted slot id;
+  // fall back to this workout's own id (rows synced before slots existed).
+  const slot = await prisma.hevyGymSlot.findUnique({
+    where: { userId_slotIndex: { userId, slotIndex } },
+  });
+  const targetHevyId = slot?.hevyRoutineId ?? dw.hevyRoutineId ?? null;
+
+  // Persist the slot mapping and mirror the id onto this DailyWorkout so the
+  // 3 routines stay reused instead of accumulating one per week/mesocycle.
+  async function persistSlot(hevyRoutineId: string): Promise<void> {
+    await prisma.hevyGymSlot.upsert({
+      where: { userId_slotIndex: { userId, slotIndex } },
+      create: { userId, slotIndex, hevyRoutineId },
+      update: { hevyRoutineId },
+    });
+    if (dw!.hevyRoutineId !== hevyRoutineId) {
+      await prisma.dailyWorkout.update({
+        where: { id: dailyWorkoutId },
+        data: { hevyRoutineId },
+      });
+    }
+  }
+
   try {
-    if (dw.hevyRoutineId) {
-      const res = await fetch(`${HEVY_API_BASE}/routines/${dw.hevyRoutineId}`, {
+    if (targetHevyId) {
+      const res = await fetch(`${HEVY_API_BASE}/routines/${targetHevyId}`, {
         method: "PUT",
         headers: { "api-key": apiKey, "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      if (!res.ok) {
+      if (res.ok) {
+        await persistSlot(targetHevyId);
+        return {
+          dayOfWeek: dw.dayOfWeek,
+          action: "updated",
+          hevyRoutineId: targetHevyId,
+          exercisesSent: hevyExercises.length,
+          unmapped: unmapped.length ? unmapped : undefined,
+        };
+      }
+      // 404 → routine was deleted in Hevy; fall through and recreate it (self-healing).
+      if (res.status !== 404) {
         const errBody = await res.text();
         throw new Error(`PUT ${res.status}: ${errBody.slice(0, 200)}`);
       }
-      return {
-        dayOfWeek: dw.dayOfWeek,
-        action: "updated",
-        hevyRoutineId: dw.hevyRoutineId,
-        exercisesSent: hevyExercises.length,
-        unmapped: unmapped.length ? unmapped : undefined,
-      };
     }
 
     const res = await fetch(`${HEVY_API_BASE}/routines`, {
@@ -170,14 +209,11 @@ export async function syncDailyWorkoutToHevy(
     if (!newId)
       throw new Error(`Hevy response has no id: ${JSON.stringify(data).slice(0, 200)}`);
 
-    await prisma.dailyWorkout.update({
-      where: { id: dailyWorkoutId },
-      data: { hevyRoutineId: newId },
-    });
+    await persistSlot(newId);
 
     return {
       dayOfWeek: dw.dayOfWeek,
-      action: "created",
+      action: targetHevyId ? "updated" : "created",
       hevyRoutineId: newId,
       exercisesSent: hevyExercises.length,
       unmapped: unmapped.length ? unmapped : undefined,
@@ -195,6 +231,14 @@ export async function syncRoutineToHevy(routineId: string): Promise<SyncResult[]
   });
   if (!routine) return [];
 
-  const gymDays = routine.days.filter((d) => d.type === "Gym");
-  return Promise.all(gymDays.map((d) => syncDailyWorkoutToHevy(d.id, routine.weekStart)));
+  // Sort gym days chronologically so the slot index is stable: Día 1 = first gym
+  // day of the week, Día 2 = second, etc. This is what ties every week's "Día N"
+  // to the same persistent Hevy routine.
+  const gymDays = routine.days
+    .filter((d) => d.type === "Gym")
+    .sort((a, b) => (dayOrder[a.dayOfWeek] ?? 99) - (dayOrder[b.dayOfWeek] ?? 99));
+
+  return Promise.all(
+    gymDays.map((d, i) => syncDailyWorkoutToHevy(d.id, routine.weekStart, i + 1))
+  );
 }

@@ -65,6 +65,22 @@ model HevyExerciseMapping {
   updatedAt      DateTime @updatedAt
 }
 
+// Stable mapping of a user's gym "slot" (Día 1/2/3 of the mesocycle) to a single
+// persistent Hevy routine. The gym template is identical across the 4 weeks of a
+// mesocycle AND reused month over month, so each slot maps to ONE Hevy routine that
+// gets PUT-updated each mesocycle — instead of POSTing 12 throwaway routines (3
+// gym days × 4 weeks) that then pile up as "OLD" archives.
+model HevyGymSlot {
+  id            String   @id @default(cuid())
+  userId        String
+  slotIndex     Int      // 1-based position among the week's gym days (Día 1, 2, 3...)
+  hevyRoutineId String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([userId, slotIndex])
+}
+
 // Wiki-style reference for each canonical exercise name. One row per canonical
 // exercise, independent of Routine/DailyWorkout. Keyed by `name` (must match the
 // normalized name used in `Exercise.name`).
