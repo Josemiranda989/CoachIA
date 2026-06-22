@@ -7,7 +7,6 @@ import { getValidAccessToken, fetchActivities, fetchStats } from "@/lib/strava";
 import hevyPool from "@/data/hevy-template-pool.json";
 import { openCodeMonthlyChat } from "@/lib/opencode";
 import { hrZonesSummary } from "@/lib/hr-zones";
-import { archiveRoutinesInHevy } from "@/lib/hevy-archive";
 
 const VALID_DAY_TYPES = ["Gym", "Cycling", "Rest", "Gym + Cycling"] as const;
 type DayType = (typeof VALID_DAY_TYPES)[number];
@@ -144,7 +143,35 @@ async function gatherAthleteData(userId: string) {
     // Strava not available
   }
 
-  return { gymSection, stravaSection, hrSection };
+  // Previous mesocycles' gym selection. The gym template is fixed WITHIN a
+  // mesocycle by design, so without this the model regenerates a near-identical
+  // template each month (same PRs + same pool + low temp = clone). Feeding it
+  // the recent movement selection lets it rotate variants between mesocycles.
+  const previousRoutines = await prisma.routine.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+    take: 8, // ~2 mesocycles (4 weeks each share one gymTemplate)
+    select: {
+      days: {
+        where: { type: { in: ["Gym", "Gym + Cycling"] } },
+        select: { exercises: { select: { name: true } } },
+      },
+    },
+  });
+
+  const previousExerciseNames = Array.from(
+    new Set(
+      previousRoutines.flatMap((r) =>
+        r.days.flatMap((d) => d.exercises.map((e) => e.name)),
+      ),
+    ),
+  );
+
+  const historySection = previousExerciseNames.length
+    ? `\nMESOCICLOS ANTERIORES — ejercicios de gym ya prescriptos en las últimas semanas:\n${previousExerciseNames.map((n) => `  - ${n}`).join("\n")}`
+    : "";
+
+  return { gymSection, stravaSection, hrSection, historySection };
 }
 
 async function alertAndRespond(msg: string, status: number) {
@@ -172,7 +199,7 @@ export async function POST(request: Request) {
     const notes = body.notes || "";
 
     const mondays = getNextFourMondays();
-    const { gymSection, stravaSection, hrSection } = await gatherAthleteData(auth.userId);
+    const { gymSection, stravaSection, hrSection, historySection } = await gatherAthleteData(auth.userId);
     const hevyLibraryBlock = buildHevyPoolBlock();
 
     const systemPrompt = "Eres un entrenador personal experto en fuerza y ciclismo. Genera un MESOCICLO DE 4 SEMANAS en formato JSON. Devolves EXCLUSIVAMENTE el JSON pedido, sin texto adicional, sin markdown, sin comentarios.";
@@ -232,6 +259,7 @@ ${notes ? `- Notas adicionales: ${notes}` : ""}
 ${gymSection}
 ${stravaSection}
 ${hrSection ? `\n${hrSection}` : ""}
+${historySection}
 
 USA LOS DATOS REALES del atleta para:
 - Ajustar pesos y reps de gym basándote en sus PRs. Para el primer set sugerí ~70-80% del PR como punto de partida (el atleta progresa carga manualmente).
@@ -246,6 +274,8 @@ ZONAS DE POTENCIA (Coggan 7-zone model, %FTP):
 - Z4 Threshold: 91-105% FTP — umbral, sostenible 30-60min máximo
 - Z5 VO2max: 106-120% FTP — máximo aeróbico, sostenible 3-8min
 - Z6+ Anaeróbico: >120% — sprints/all-out, sostenible segundos a 1-2min
+
+PISO DE INTENSIDAD DEL ATLETA (OBLIGATORIO, gobierna TODO lo de abajo): el atleta NO entrena en Z1. Z2 es el piso mínimo para TODO — warmup, cooldown, recovery rides post-piernas, y la recuperación entre intervals (recoveryPower). Donde cualquier regla, ejemplo o bloque de más abajo diga "Z1" o "Z1-Z2", interpretá y prescribí "Z2". NUNCA emitas un bloque ni un recoveryPower en Z1.
 
 ESTRUCTURA DE RESPUESTA — DOS PARTES:
 
@@ -397,6 +427,7 @@ ${hevyLibraryBlock}
 REGLAS DE SELECCIÓN DE EJERCICIOS:
 - Cada ejercicio del gymTemplate DEBE incluir "hevy_template_id" (del listado de arriba) y "name" (el title EXACTO en inglés).
 - NO inventes IDs. Si el ID no está en la lista, NO lo uses.
+- VARIACIÓN ENTRE MESOCICLOS (OBLIGATORIA): si arriba hay sección "MESOCICLOS ANTERIORES", al menos el 50% de los ejercicios de gym de este mesociclo deben ser DISTINTOS a esa lista. Mantené los MISMOS patrones de movimiento (empuje horizontal/vertical, jalón horizontal/vertical, dominante de rodilla, dominante de cadera) pero rotá la VARIANTE: ej. si antes fue prensa → ahora hack squat o sentadilla búlgara; si antes press banca con barra → ahora press inclinado con mancuernas; si antes jalón al pecho → ahora remo en punta o pull-over en polea. El objetivo es estímulo nuevo sin romper la lógica de empuje/jalón/piernas. NO repitas el template completo del mesociclo anterior.
 - Priorizá equipment tipo \`machine\`, \`dumbbell\`, \`barbell\`, \`cable\`. El atleta prefiere ejercicios con máquinas y mancuernas.
 - NO generes ejercicios de movilidad, warmup, stretching. Para calentar, el atleta hace 1-2 sets de approach del primer ejercicio del día (no los incluyas en el output).
 - Elegí variantes estándar de gym (no versiones "Single Leg", "Pause", "Feet Up" salvo que tengan razón específica).
@@ -416,7 +447,7 @@ REGLAS ESTRICTAS:
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-      { temperature: 0.3 },
+      { temperature: 0.6 },
     );
 
     if (!text) {
@@ -494,21 +525,11 @@ REGLAS ESTRICTAS:
       }
     }
 
-    // Archive previous routines + create the 4 new ones atomically. If any
-    // routine fails, the whole batch rolls back — no zombie routines in DB.
+    // Archive previous routines (DB status only) + create the 4 new ones
+    // atomically. If any routine fails, the whole batch rolls back — no zombie
+    // routines in DB. Hevy is NOT archived: the 3 gym routines are persistent
+    // slots (HevyGymSlot) reused across mesocycles, just PUT-updated on approval.
     const currentWeekMonday = getCurrentWeekStart();
-    // Capture which routines are about to be archived so we can rename their
-    // Hevy counterparts AFTER the transaction commits (no external HTTP in tx).
-    const archivedRoutineIds = await prisma.routine.findMany({
-      where: {
-        userId: auth.userId,
-        OR: [
-          { status: "active", weekStart: { lt: currentWeekMonday } },
-          { status: "pending_approval" },
-        ],
-      },
-      select: { id: true },
-    });
 
     const created = await prisma.$transaction(async (tx) => {
       // Archive active routines whose week has strictly passed. The in-progress
@@ -583,8 +604,6 @@ REGLAS ESTRICTAS:
       }
       return acc;
     }, { timeout: 30_000 });
-
-    void archiveRoutinesInHevy(archivedRoutineIds.map((r) => r.id)).catch(() => {});
 
     // Telegram summary: gym template once + cycling progression per week
     const dayNames: Record<string, string> = {
