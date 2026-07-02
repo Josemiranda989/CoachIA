@@ -27,6 +27,7 @@ import { GymVolumeChart, GymVolumeChartSkeleton } from "./GymVolumeChart";
 import { CountUp } from "@/components/CountUp";
 import { BackLink } from "@/components/BackLink";
 import { MesocycleProgress, MesocycleProgressSkeleton } from "@/components/MesocycleProgress";
+import { FitnessChart } from "@/components/FitnessChart";
 import { getCurrentWeekStart } from "@/lib/week";
 
 export const metadata: Metadata = { title: "Métricas" };
@@ -429,6 +430,23 @@ export default async function MetricsPage() {
           {stravaReady && (
             <Suspense fallback={<CyclingTrendChartSkeleton />}>
               <CyclingTrendChart userId={userId} />
+            </Suspense>
+          )}
+
+          {stravaReady && (
+            <Suspense
+              fallback={
+                <div
+                  className="card"
+                  style={{ padding: 24, textAlign: "center", opacity: 0.5 }}
+                >
+                  <p style={{ color: "var(--text-secondary)" }}>
+                    Cargando fitness...
+                  </p>
+                </div>
+              }
+            >
+              <FitnessChart userId={userId} />
             </Suspense>
           )}
 

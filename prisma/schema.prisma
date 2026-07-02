@@ -190,6 +190,10 @@ model User {
   fcMax Int?
   lthr  Int?
 
+  // Functional Threshold Power (watts) for cycling — used by fitness
+  // calculations (TSS normalization, CTL/ATL/TSB).
+  ftp   Int?
+
   accounts      Account[]
   sessions      Session[]
   routines      Routine[]

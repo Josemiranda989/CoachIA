@@ -51,6 +51,7 @@ export async function GET(request: Request) {
           avgCadence: a.average_cadence ?? null,
           elevationGain: a.total_elevation_gain ?? 0,
           sufferScore: a.suffer_score ?? null,
+          tss: a.suffer_score ?? null,
           kilojoules: kj,
           kcal: kj !== null ? Math.round(kj * 0.239 * 10) / 10 : null,
           averageTemp: a.average_temp ?? null,
