@@ -41,6 +41,34 @@ function buildHevyPoolBlock(): string {
   return lines.join("\n");
 }
 
+// Estación en Tucumán (hemisferio sur) para el mes que arranca el mesociclo.
+// Gobierna la modalidad sugerida: en invierno las sesiones entre semana van al
+// rodillo smart (ERG/MyWhoosh); en verano/primavera domina el outdoor.
+function seasonSection(firstMonday: string): string {
+  const month = Number(firstMonday.slice(5, 7));
+  const season =
+    month === 12 || month <= 2
+      ? "verano"
+      : month <= 5
+        ? "otoño"
+        : month <= 8
+          ? "invierno"
+          : "primavera";
+
+  const base = `\nMODALIDAD POR ESTACIÓN (el mesociclo arranca en ${season}):
+- El atleta tiene rodillo smart (Thinkrider X2 Pro, ERG con potencia real) + MTB con ciclocomputador para outdoor.`;
+
+  if (season === "invierno") {
+    return `${base}
+- INVIERNO: asumí que las sesiones ENTRE SEMANA van en rodillo. Duraciones indoor realistas: 45-75min (el rodillo se hace largo — NO prescribas >90min indoor entre semana).
+- El interval day es IDEAL en rodillo (ERG sostiene la potencia exacta): podés ser preciso con los targets.
+- El long ride del sábado puede ser outdoor si el clima acompaña; si lo pensás indoor, capealo a ~90-120min y agregale variedad (bloques tempo cortos dentro del Z2, sin convertirlo en día de calidad).
+- En notes de cada sesión indoor podés referir el modo ("ERG", "rodillo").`;
+  }
+  return `${base}
+- Sesiones outdoor por default; el rodillo queda como plan B por clima (no hace falta mencionarlo en notes).`;
+}
+
 function getNextFourMondays(): string[] {
   const now = new Date();
   const day = now.getDay();
@@ -260,6 +288,7 @@ ${gymSection}
 ${stravaSection}
 ${hrSection ? `\n${hrSection}` : ""}
 ${historySection}
+${seasonSection(mondays[0])}
 
 USA LOS DATOS REALES del atleta para:
 - Ajustar pesos y reps de gym basándote en sus PRs. Para el primer set sugerí ~70-80% del PR como punto de partida (el atleta progresa carga manualmente).
