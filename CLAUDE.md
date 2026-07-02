@@ -43,10 +43,8 @@ The app is installable on Android/iOS as a PWA:
 
 ## Known Pre-existing TS Errors (do NOT fix unless asked)
 
-These exist before any changes and are not blockers (dev mode ignores them):
-- `src/app/api/weight/route.ts` — Prisma type mismatch (userId_scaleId, scaleId)
-- `src/app/metrics/WeightChart.tsx` — recharts Formatter type incompatibility
-- `src/app/api/google-fit/` — Routes reference deleted Google Fit integration
+These exist before any changes and are not blockers (build igual pasa — Next no typechequea tests):
+- `src/lib/fit-exporter.test.ts` — `@garmin/fitsdk` no exporta tipos `Decoder`/`Stream`
 
 ## Key Architecture Decisions
 
