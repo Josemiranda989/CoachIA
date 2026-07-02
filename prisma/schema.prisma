@@ -122,6 +122,19 @@ model CyclingBlock {
   @@index([dailyWorkoutId, order])
 }
 
+// Snapshot previo a cada mutación aplicada desde el Chat Coach. Permite
+// deshacer restaurando los DailyWorkout/CyclingBlock afectados (beforeJson).
+model RoutineChangeLog {
+  id         String    @id @default(cuid())
+  routineId  String
+  summary    String    // ej "Jueves → Z2 (60 min)"
+  beforeJson String    // DaySnapshot[] de los días afectados
+  undoneAt   DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([routineId, createdAt])
+}
+
 model WorkoutCompletion {
   id             String    @id @default(cuid())
   dailyWorkoutId String

@@ -20,7 +20,7 @@ docker compose up -d
 - Next.js 16 (App Router, Turbopack build) — runs in production mode inside Docker (no HMR)
 - React 19, Tailwind 4, lucide-react, recharts, react-hot-toast
 - SQLite + Prisma, NextAuth (CredentialsProvider)
-- Google Gemini (routine generation)
+- DeepSeek V4 vía OpenCode Zen (generación de rutinas + Chat Coach). Cliente propio con `node:https` en `src/lib/opencode.ts` — NO usar el SDK de OpenAI ni fetch/undici acá (bug UND_ERR_HEADERS_TIMEOUT). Env: `OPENCODE_API_KEY`.
 - Docker Compose with volume mounts
 
 ## Conventions
@@ -55,6 +55,7 @@ These exist before any changes and are not blockers (dev mode ignores them):
 - **localStorage persistence** for gym sessions — key `coachia-gym-session`, auto-restores on page load, clears on save.
 - **Routine approval flow**: AI generates → status `pending_approval` → Telegram notification → user approves/rejects in app → active.
 - **Monthly routine generation**: Claude Code scheduled task on 1st of month at 8am Buenos Aires.
+- **Chat Coach (`/coach`)**: adaptación intra-semana vía chat con tool calling (ADR-001). El modelo PROPONE mutaciones (move_workout, set_rest_day, replace_cycling_blocks, update_day_notes), el usuario confirma en la UI, cada cambio guarda snapshot en `RoutineChangeLog` para deshacer. Contexto: rutina de la semana + Strava + balanza + CTL/ATL/TSB. Gym NO se edita por chat: solo se mueve (también disponible determinista en `/api/routine/move-day` + select en la vista semanal).
 
 ## File Structure
 
@@ -67,6 +68,7 @@ src/
     auth/login/              Login page
     auth/register/           Register page
     workout/today/           Hevy-style gym tracker + cycling view
+    coach/                   Chat Coach (consultas + adaptación de la semana con propose/confirm/undo)
     routine/week/            Accordion week view with day cards
     routine/generate/        AI routine generation form
     routine/pending/         Approve/reject AI-generated routines
@@ -88,6 +90,11 @@ src/
     strava.ts                Strava OAuth + API
     telegram.ts              Telegram Bot API
     internal-auth.ts         Dual auth (session + API key)
+    opencode.ts              Cliente LLM (DeepSeek vía OpenCode Zen, node:https, tool calling)
+    coach-tools.ts           Tools del Chat Coach: definiciones, validación, applyProposal, undo
+    coach-context.ts         Contexto del coach (semana + Strava + balanza + fitness + zonas)
+    fitness.ts               TSS estimado (TRIMP) + CTL/ATL/TSB (EMA 42/7 días)
+    fitness-data.ts          computeFitnessForUser: fitness desde actividades Strava
 public/
   sw.js                      Service worker
   icons/                     PWA icons (192, 512, maskable)
