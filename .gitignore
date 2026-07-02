@@ -81,3 +81,6 @@ skills-lock.json
 /scripts/insert-workflow.js
 /scripts/seed-workflow-history.js
 /scripts/set-workflow-key.js
+
+# Datos personales sueltos (tests FIT, etc.)
+/*.fit
