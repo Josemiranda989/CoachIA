@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { ChevronDown, Download } from "lucide-react";
+import { ArrowRightLeft, ChevronDown, Download } from "lucide-react";
 import { CyclingBlocks } from "@/components/CyclingBlocks";
 import type { DayWithBlocks } from "@/lib/queries/getActiveRoutine";
 
@@ -40,6 +40,30 @@ export function DayCardClient({ day }: { day: DayCardData }) {
   const hasCycling = !!day.targetDuration;
   const isRest = !hasGym && !hasCycling;
   const canExpand = !isRest;
+
+  const moveDay = async (toDayOfWeek: string) => {
+    if (!toDayOfWeek || toDayOfWeek === day.dayOfWeek) return;
+    setLoading(true);
+    try {
+      const res = await fetch("/api/routine/move-day", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dailyWorkoutId: day.id, toDayOfWeek }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al mover el día");
+      toast.success(
+        data.swappedWith
+          ? `${DAY_ES[day.dayOfWeek]} intercambiado con ${DAY_ES[toDayOfWeek]}`
+          : `Movido a ${DAY_ES[toDayOfWeek]}`
+      );
+      router.refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Error al mover el día");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const toggleField = async (field: "completed" | "creatineTaken", currentValue: boolean) => {
     const newValue = !currentValue;
@@ -237,6 +261,39 @@ export function DayCardClient({ day }: { day: DayCardData }) {
                 )}
               </div>
             )}
+
+            <label
+              className="flex items-center gap-2 text-xs text-text-secondary select-none"
+              style={{ marginTop: 4 }}
+            >
+              <ArrowRightLeft size={14} aria-hidden="true" />
+              <span className="font-medium">Mover a</span>
+              <select
+                value=""
+                onChange={(e) => moveDay(e.target.value)}
+                disabled={loading}
+                aria-label={`Mover ${dayLabel} a otro día`}
+                style={{
+                  background: "var(--bg-card)",
+                  color: "var(--text-primary)",
+                  border: "1px solid var(--glass-border)",
+                  borderRadius: 8,
+                  padding: "4px 8px",
+                  fontSize: 12,
+                }}
+              >
+                <option value="" disabled>
+                  Elegir día…
+                </option>
+                {Object.entries(DAY_ES)
+                  .filter(([en]) => en !== day.dayOfWeek)
+                  .map(([en, es]) => (
+                    <option key={en} value={en}>
+                      {es}
+                    </option>
+                  ))}
+              </select>
+            </label>
           </div>
         </div>
       )}
