@@ -2,61 +2,36 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { GoogleGenAI, Type } from '@google/genai';
+import { openCodeWeeklyChat } from '@/lib/opencode';
 import { getValidAccessToken, fetchActivities, fetchStats } from '@/lib/strava';
 import { hrZonesSummary } from '@/lib/hr-zones';
 
-const routineResponseSchema = {
-  type: Type.OBJECT,
-  properties: {
-    weekStart: { type: Type.STRING },
-    days: {
-      type: Type.ARRAY,
-      items: {
-        type: Type.OBJECT,
-        properties: {
-          dayOfWeek: { type: Type.STRING },
-          type: { type: Type.STRING },
-          exercises: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                name: { type: Type.STRING },
-                targetSets: { type: Type.NUMBER },
-                targetReps: { type: Type.STRING },
-              },
-              required: ['name', 'targetSets', 'targetReps'],
-            },
-          },
-          targetDuration: { type: Type.NUMBER, description: 'Total minutes for cycling days (sum of all blocks)' },
-          targetPower: { type: Type.STRING, description: 'Summary label, e.g. "Z2" or "Z2 + 4xZ4"' },
-          blocks: {
-            type: Type.ARRAY,
-            description: 'Only for Cycling days. Ordered ride blocks: warmup -> steady|interval (x N) -> cooldown.',
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                kind: { type: Type.STRING, description: "'warmup' | 'steady' | 'interval' | 'cooldown'" },
-                duration: { type: Type.NUMBER, description: "Minutes. For kind='interval' this is the duration of EACH rep." },
-                targetPower: { type: Type.STRING },
-                repetitions: { type: Type.NUMBER, description: "Only for kind='interval'." },
-                recoveryDuration: { type: Type.NUMBER, description: "Only for kind='interval'. Recovery minutes between reps." },
-                recoveryPower: { type: Type.STRING, description: "Only for kind='interval'. Usually Z1 or Z2." },
-                targetCadence: { type: Type.STRING, description: "Optional cadence target. Examples: '85-95 rpm' (default Z2), '100+ rpm spin-up', '60-65 rpm big gear' (low-cadence strength)." },
-                notes: { type: Type.STRING },
-              },
-              required: ['kind', 'duration', 'targetPower'],
-            },
-          },
-          notes: { type: Type.STRING },
-        },
-        required: ['dayOfWeek', 'type'],
-      },
-    },
-  },
-  required: ['weekStart', 'days'],
-};
+// Sin responseSchema (DeepSeek no lo soporta como Gemini): el shape se exige por
+// prompt y se valida acá tras el parse.
+const JSON_SHAPE_BLOCK = `FORMATO DE RESPUESTA EXACTO — devolvé EXCLUSIVAMENTE este JSON, sin markdown ni texto extra:
+
+{
+  "weekStart": "YYYY-MM-DD",
+  "days": [
+    {
+      "dayOfWeek": "Monday",
+      "type": "Gym",
+      "exercises": [{"name": "...", "targetSets": 4, "targetReps": "8-10"}],
+      "targetDuration": 75,
+      "targetPower": "Z2 + 4xZ4",
+      "blocks": [
+        {"kind": "warmup", "duration": 15, "targetPower": "Z1-Z2"},
+        {"kind": "interval", "duration": 4, "targetPower": "Z4", "repetitions": 4, "recoveryDuration": 4, "recoveryPower": "Z2", "targetCadence": "85-95 rpm", "notes": "..."},
+        {"kind": "cooldown", "duration": 12, "targetPower": "Z1"}
+      ],
+      "notes": "..."
+    }
+  ]
+}
+
+- "days": EXACTAMENTE 7 elementos (Monday a Sunday). Campos obligatorios por día: dayOfWeek, type.
+- exercises solo en días Gym. targetDuration/targetPower/blocks solo en días Cycling. Días Rest: solo dayOfWeek, type.
+- blocks: kind es "warmup" | "steady" | "interval" | "cooldown". duration en minutos (para interval: duración de CADA rep). repetitions/recoveryDuration/recoveryPower solo para interval. targetCadence y notes opcionales.`;
 
 function getNextMonday(): string {
   const now = new Date();
@@ -172,8 +147,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized: please login first' }, { status: 401 });
     }
 
-    if (!process.env.GEMINI_API_KEY) {
-      return NextResponse.json({ error: 'GEMINI_API_KEY no está configurada en el servidor' }, { status: 500 });
+    if (!process.env.OPENCODE_API_KEY) {
+      return NextResponse.json({ error: 'OPENCODE_API_KEY no está configurada en el servidor' }, { status: 500 });
     }
 
     const body = await request.json();
@@ -186,9 +161,9 @@ export async function POST(request: Request) {
     const nextMonday = getNextMonday();
     const { gymSection, stravaSection, hrSection } = await gatherAthleteData(userId);
 
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    const prompt = `Genera una rutina semanal COMPLETA de 7 días (Monday a Sunday).
 
-    const prompt = `Eres un entrenador personal experto en fuerza y ciclismo. Genera una rutina semanal COMPLETA de 7 días (Monday a Sunday).
+${JSON_SHAPE_BLOCK}
 
 DATOS DEL ATLETA:
 - Objetivo principal: ${goal}
@@ -313,26 +288,46 @@ Long ride sábado (120min Z2):
   {"kind":"cooldown","duration":15,"targetPower":"Z1"}
 ]`;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-flash-latest',
-      contents: prompt,
-      config: {
-        responseMimeType: 'application/json',
-        responseSchema: routineResponseSchema,
-      },
-    });
+    const text = await openCodeWeeklyChat([
+      { role: 'system', content: 'Eres un entrenador personal experto en fuerza y ciclismo. Devolves EXCLUSIVAMENTE el JSON pedido, sin texto adicional, sin markdown, sin comentarios.' },
+      { role: 'user', content: prompt },
+    ]);
 
-    const text = response.text;
     if (!text) {
-      return NextResponse.json({ error: 'Gemini no devolvió una respuesta válida' }, { status: 502 });
+      return NextResponse.json({ error: 'El modelo no devolvió una respuesta válida' }, { status: 502 });
     }
 
-    const routine = JSON.parse(text);
+    // Recorte defensivo: algunos modelos wrappean en ```json``` o agregan texto.
+    let jsonText = text.trim();
+    const blockMatch = jsonText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+    if (blockMatch) jsonText = blockMatch[1].trim();
+    const firstBrace = jsonText.indexOf('{');
+    const lastBrace = jsonText.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace > firstBrace) {
+      jsonText = jsonText.slice(firstBrace, lastBrace + 1);
+    }
+
+    let routine: any;
+    try {
+      routine = JSON.parse(jsonText);
+    } catch (parseErr: any) {
+      console.error('Weekly generation: invalid JSON (first 500 chars):', text.slice(0, 500));
+      return NextResponse.json({ error: `El modelo devolvió JSON inválido: ${parseErr.message}` }, { status: 502 });
+    }
+
+    if (!Array.isArray(routine.days) || routine.days.length !== 7) {
+      console.error('Weekly generation: invalid days shape:', JSON.stringify(routine).slice(0, 500));
+      return NextResponse.json(
+        { error: `Rutina inválida: esperaba 7 días, recibí ${Array.isArray(routine.days) ? routine.days.length : typeof routine.days}` },
+        { status: 502 }
+      );
+    }
+
     routine.weekStart = nextMonday;
 
     return NextResponse.json(routine);
   } catch (err: any) {
-    console.error('Gemini generation error:', err);
+    console.error('Weekly generation error:', err);
     return NextResponse.json(
       { error: 'Error al generar la rutina', details: err.message },
       { status: 500 }
