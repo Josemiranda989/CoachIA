@@ -11,8 +11,22 @@ const poolById = new Map<string, HevyPoolEntry>(
 );
 
 // POST /api/webhooks/hevy — receives Hevy workout events and mirrors sets
-// into WorkoutLog. Workouts whose title matches "CoachIA - <Día> (<YYYY-MM-DD>)"
-// are routed back to the matching DailyWorkout; other titles are ignored.
+// into WorkoutLog. Two title formats route back to a DailyWorkout:
+//   - "CoachIA - Día N (<focus>)"  → slot N = Nth gym day of the week the
+//     workout happened in (same chronological ordering as hevy-sync.ts)
+//   - "CoachIA - <Día> (<YYYY-MM-DD>)" → legacy per-week titles
+// Other titles are ignored. The target week comes from the workout's
+// start_time, so late webhooks and backfills land in the right week.
+
+const dayOrder: Record<string, number> = {
+  Monday: 1,
+  Tuesday: 2,
+  Wednesday: 3,
+  Thursday: 4,
+  Friday: 5,
+  Saturday: 6,
+  Sunday: 7,
+};
 
 const daysEs2En: Record<string, string> = {
   Domingo: "Sunday",
@@ -103,29 +117,56 @@ export async function POST(req: NextRequest) {
     }
 
     const title = (workout.title || "").trim();
-    const titleMatch = title.match(/CoachIA\s*-\s*(\w+)\s*\((\d{4}-\d{2}-\d{2})\)/i);
-    if (!titleMatch) {
+
+    // The week the workout belongs to comes from when it was DONE, not from
+    // when the webhook fired — otherwise late syncs and backfills would log
+    // into the wrong week.
+    const startTime = workout.start_time ? new Date(workout.start_time) : null;
+    const eventDate = startTime && !isNaN(startTime.getTime()) ? startTime : new Date();
+    const logWeekStart = getCurrentWeekStart(eventDate);
+
+    let dw: { id: string; exercises: { id: string; name: string; hevyTemplateId: string | null }[] } | null = null;
+    let dayLabel = "";
+
+    const slotMatch = title.match(/^CoachIA\s*-\s*D[ií]a\s*(\d+)/i);
+    const legacyMatch = title.match(/CoachIA\s*-\s*(\w+)\s*\((\d{4}-\d{2}-\d{2})\)/i);
+
+    if (slotMatch) {
+      // Slot format: Día N = Nth gym day (chronological) of that week's routine.
+      const slotIndex = parseInt(slotMatch[1], 10);
+      dayLabel = `Día ${slotIndex}`;
+      const routine = await prisma.routine.findFirst({
+        where: { weekStart: logWeekStart },
+        include: { days: { include: { exercises: true } } },
+      });
+      const gymDays = (routine?.days ?? [])
+        .filter((d) => d.type === "Gym")
+        .sort((a, b) => (dayOrder[a.dayOfWeek] ?? 99) - (dayOrder[b.dayOfWeek] ?? 99));
+      dw = gymDays[slotIndex - 1] ?? null;
+    } else if (legacyMatch) {
+      const [, dayEs, routineWeekStart] = legacyMatch;
+      dayLabel = dayEs;
+      const dayEn = daysEs2En[dayEs] ?? daysEs2En[dayEs.charAt(0).toUpperCase() + dayEs.slice(1).toLowerCase()];
+      if (!dayEn) {
+        await sendTelegramMessage(
+          `⚠️ Hevy webhook: día "${dayEs}" no mapeado (title: "${title}")`
+        ).catch(() => {});
+        return NextResponse.json({ ok: true, skipped: "day not mapped" });
+      }
+      dw = await prisma.dailyWorkout.findFirst({
+        where: {
+          dayOfWeek: dayEn,
+          routine: { weekStart: routineWeekStart },
+        },
+        include: { exercises: true },
+      });
+    } else {
       return NextResponse.json({ ok: true, skipped: "title not CoachIA-owned" });
     }
-    const [, dayEs, routineWeekStart] = titleMatch;
-    const dayEn = daysEs2En[dayEs] ?? daysEs2En[dayEs.charAt(0).toUpperCase() + dayEs.slice(1).toLowerCase()];
-    if (!dayEn) {
-      await sendTelegramMessage(
-        `⚠️ Hevy webhook: día "${dayEs}" no mapeado (title: "${title}")`
-      ).catch(() => {});
-      return NextResponse.json({ ok: true, skipped: "day not mapped" });
-    }
 
-    const dw = await prisma.dailyWorkout.findFirst({
-      where: {
-        dayOfWeek: dayEn,
-        routine: { weekStart: routineWeekStart, status: 'active' },
-      },
-      include: { exercises: true, routine: true },
-    });
     if (!dw) {
       await sendTelegramMessage(
-        `⚠️ Hevy webhook: no se encontró DailyWorkout para ${dayEn} (${routineWeekStart})`
+        `⚠️ Hevy webhook: no se encontró DailyWorkout para "${title}" (semana ${logWeekStart})`
       ).catch(() => {});
       return NextResponse.json({ ok: true, skipped: "daily workout not found" });
     }
@@ -141,7 +182,6 @@ export async function POST(req: NextRequest) {
       if (mapping) coachiaByTemplateId.set(mapping.hevyTemplateId, ex);
     }
 
-    const logWeekStart = getCurrentWeekStart();
     let setsLogged = 0;
     const unmatched: string[] = [];
     const createdOnTheFly: string[] = [];
@@ -205,6 +245,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    const completedAt = workout.end_time && !isNaN(new Date(workout.end_time).getTime())
+      ? new Date(workout.end_time)
+      : new Date();
     await prisma.workoutCompletion.upsert({
       where: {
         dailyWorkoutId_weekStart: {
@@ -212,12 +255,12 @@ export async function POST(req: NextRequest) {
           weekStart: logWeekStart,
         },
       },
-      update: { completed: true, completedAt: new Date() },
+      update: { completed: true, completedAt },
       create: {
         dailyWorkoutId: dw.id,
         weekStart: logWeekStart,
         completed: true,
-        completedAt: new Date(),
+        completedAt,
       },
     });
 
@@ -228,7 +271,7 @@ export async function POST(req: NextRequest) {
       ? ` · ${createdOnTheFly.length} ejercicio(s) nuevos (${createdOnTheFly.slice(0, 3).join(", ")}${createdOnTheFly.length > 3 ? "..." : ""})`
       : "";
     await sendTelegramMessage(
-      `✅ Hevy → CoachIA: ${setsLogged} sets sincronizados — ${dayEs} (${routineWeekStart})${createdMsg}${unmatchedMsg}`
+      `✅ Hevy → CoachIA: ${setsLogged} sets sincronizados — ${dayLabel} (semana ${logWeekStart})${createdMsg}${unmatchedMsg}`
     ).catch(() => {});
 
     return NextResponse.json({
