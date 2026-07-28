@@ -178,6 +178,128 @@ model WorkoutLog {
   @@index([weekStart])
 }
 
+// ─── Strava Activity Cache ──────────────────────────────────────────────────
+// Mirrors Strava activities in our DB so stats endpoints don't hit Strava on
+// every request. Sync happens every 30 min via /api/strava/sync (called by
+// cron script). userId + stravaId are unique — upsert on re-sync.
+
+model CachedActivity {
+  id                String   @id @default(cuid())
+  userId            String
+  stravaId          BigInt
+  name              String
+  type              String   // Ride, VirtualRide, etc.
+  startDate         DateTime
+  timezone          String?
+  distance          Float    // meters
+  movingTime        Int      // seconds
+  elapsedTime       Int      // seconds
+  totalElevationGain Float?
+  averageSpeed      Float?
+  maxSpeed          Float?
+  averageHeartrate  Float?
+  maxHeartrate      Float?
+  averageCadence    Float?
+  averageWatts      Float?
+  maxWatts          Float?
+  sufferScore       Int?
+  kilojoules        Float?
+  averageTemp       Float?
+  elevHigh          Float?
+  elevLow           Float?
+  deviceName        String?
+  prCount           Int?
+  achievementCount  Int?
+  rawJson           String   // full Strava response for future hydration
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, stravaId])
+  @@index([userId, startDate])
+  @@index([userId, type, startDate])
+}
+
+// ─── Pre-computed Aggregates ──────────────────────────────────────────────────
+// Computed after each Strava sync so dashboards and cron scripts read a single
+// row instead of scanning the full activity table.
+
+model CyclingWeeklyAggregate {
+  id           String   @id @default(cuid())
+  userId       String
+  weekStart    String   // YYYY-MM-DD of the Monday in ART
+  totalRides   Int
+  totalKm      Float
+  totalHours   Float
+  totalKj      Float
+  totalKcal    Float
+  totalTSS     Float
+  totalElevation Float
+  avgHR        Float?
+  avgPower     Float?
+  avgCadence   Float?
+  avgTemp      Float?
+  maxHeartrate Float?
+  maxSpeed     Float?
+  maxWatts     Float?
+  avgIntensity Float?   // avgHR / maxHR ratio
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([userId, weekStart])
+  @@index([userId, weekStart])
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CyclingMonthlyAggregate {
+  id           String   @id @default(cuid())
+  userId       String
+  month        String   // YYYY-MM
+  totalRides   Int
+  totalKm      Float
+  totalHours   Float
+  totalKj      Float
+  totalKcal    Float
+  totalTSS     Float
+  totalElevation Float
+  avgHR        Float?
+  avgPower     Float?
+  avgCadence   Float?
+  avgTemp      Float?
+  maxHeartrate Float?
+  maxSpeed     Float?
+  maxWatts     Float?
+  avgIntensity Float?
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([userId, month])
+  @@index([userId, month])
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ─── Sync Tracker ─────────────────────────────────────────────────────────────
+// Tracks the last successful sync so we know whether data is stale.
+
+model StravaSyncState {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  lastSyncAt   DateTime
+  lastActivityStartDate DateTime?
+  totalCached  Int      @default(0)
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
 // NextAuth models
 model User {
   id            String    @id @default(cuid())
@@ -207,10 +329,14 @@ model User {
   // calculations (TSS normalization, CTL/ATL/TSB).
   ftp   Int?
 
-  accounts      Account[]
-  sessions      Session[]
-  routines      Routine[]
-  bodyWeights   BodyWeight[]
+  accounts                 Account[]
+  sessions                 Session[]
+  routines                 Routine[]
+  bodyWeights              BodyWeight[]
+  cachedActivities         CachedActivity[]
+  cyclingWeeklyAggregates  CyclingWeeklyAggregate[]
+  cyclingMonthlyAggregates CyclingMonthlyAggregate[]
+  stravaSyncState          StravaSyncState?
 }
 
 model Account {

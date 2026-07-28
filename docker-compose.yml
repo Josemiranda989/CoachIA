@@ -15,6 +15,12 @@ services:
       - NEXTAUTH_URL=https://coachia.jmlabs.app
       - TZ=America/Argentina/Tucuman
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
     networks:
       - inmich_net
 
