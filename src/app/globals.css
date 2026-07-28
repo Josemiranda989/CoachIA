@@ -150,6 +150,13 @@ body {
   padding: 32px 24px;
 }
 
+/* Tailwind 4's `container` utility caps the width per breakpoint but does NOT
+   center itself — pages using className="container" expect centered content. */
+.container {
+  margin-inline: auto;
+  padding-inline: 24px;
+}
+
 /* Glassmorphism Card */
 .card {
   background: var(--bg-card);
@@ -448,6 +455,10 @@ label:has(input[type="checkbox"]:focus-visible) span {
 @media (max-width: 480px) {
   .app-container {
     padding: 24px 16px;
+  }
+
+  .container {
+    padding-inline: 16px;
   }
 
   .title {
