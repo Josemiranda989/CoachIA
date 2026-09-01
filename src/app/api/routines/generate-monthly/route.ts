@@ -613,27 +613,44 @@ REGLAS ESTRICTAS:
         data: { status: "archived" },
       });
 
+      // El gymTemplate es fijo entre semanas (mismo template, el atleta progresa
+      // carga a mano) — el mesociclo NO deja que la IA le baje volumen a la
+      // semana de taper/carrera, así que se fuerza acá determinísticamente:
+      // mismo peso (targetReps intacto), menos series. Evidencia de taper:
+      // bajar VOLUMEN manteniendo INTENSIDAD es lo que preserva fitness.
+      const GYM_TAPER_PHASES: RacePhase[] = ["TAPER", "RACE"];
+      const TAPER_SET_MULTIPLIER = 0.7;
+      const MIN_TAPER_SETS = 2;
+
       const acc: { id: string; weekStart: string }[] = [];
       for (let weekIdx = 0; weekIdx < 4; weekIdx++) {
         const weekStart = mondays[weekIdx];
         const cyclingForWeek = cyclingByWeek[weekIdx] ?? [];
         const cyclingByDay: Record<string, any> = {};
         for (const c of cyclingForWeek) cyclingByDay[c.dayOfWeek] = c;
+        const isGymTaperWeek = GYM_TAPER_PHASES.includes(weekPhases[weekIdx]);
 
         const days = gymTemplate.map((d: any) => {
           const cycling = cyclingByDay[d.dayOfWeek];
           const blocksRaw: any[] = Array.isArray(cycling?.blocks) ? cycling.blocks : [];
+          const isGymDay = d.type === "Gym" || d.type === "Gym + Cycling";
+          const baseNotes = cycling?.notes ?? d.notes ?? null;
+          const notes = isGymDay && isGymTaperWeek
+            ? `${baseNotes ? `${baseNotes} — ` : ""}Semana de taper: mismo peso, menos series.`
+            : baseNotes;
 
           return {
             dayOfWeek: d.dayOfWeek,
             type: d.type,
-            notes: cycling?.notes ?? d.notes ?? null,
+            notes,
             targetDuration: cycling?.totalDuration ?? cycling?.targetDuration ?? null,
             targetPower: cycling?.totalPower ?? cycling?.targetPower ?? null,
             exercises: {
               create: (d.exercises ?? []).map((ex: any) => ({
                 name: ex.name,
-                targetSets: ex.targetSets,
+                targetSets: isGymTaperWeek
+                  ? Math.max(MIN_TAPER_SETS, Math.round(ex.targetSets * TAPER_SET_MULTIPLIER))
+                  : ex.targetSets,
                 targetReps: ex.targetReps ?? null,
                 hevyTemplateId: ex.hevy_template_id ?? null,
               })),

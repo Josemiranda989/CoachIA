@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentWeekStart } from "@/lib/week";
 import { getActiveRoutineLight } from "@/lib/queries/getActiveRoutine";
-import { getNextRace } from "@/lib/queries/getRaces";
+import { getNextRace, phaseForWeek } from "@/lib/queries/getRaces";
 import { DashboardCard, type DashboardCardProps } from "@/components/DashboardCard";
 import { WeekKPIs } from "@/components/WeekKPIs";
 import {
@@ -116,6 +116,7 @@ export default async function Home() {
   });
 
   const nextRace = await getNextRace(userId);
+  const weekPhase = nextRace ? phaseForWeek(weekStart, nextRace.date) : null;
 
   const weekDays = latestRoutine?.days ?? [];
   const totalTrainingDays = weekDays.filter((d) => !d.type.includes("Rest")).length;
@@ -168,6 +169,30 @@ export default async function Home() {
           </div>
         )}
       </header>
+
+      {/* ── Aviso de taper/carrera — solo cuando es accionable ── */}
+      {(weekPhase === "TAPER" || weekPhase === "RACE") && nextRace && (
+        <div
+          className="mb-6 p-4 rounded-2xl flex items-center gap-3 animate-fade-up"
+          style={{
+            background: "color-mix(in srgb, var(--accent-cycling) 10%, transparent)",
+            border: "1px solid color-mix(in srgb, var(--accent-cycling) 25%, transparent)",
+            animationDelay: "15ms",
+          }}
+        >
+          <span style={{ fontSize: 22 }} aria-hidden="true">{weekPhase === "RACE" ? "🏁" : "🪶"}</span>
+          <div>
+            <p className="text-sm font-bold" style={{ color: "var(--accent-cycling)" }}>
+              {weekPhase === "RACE" ? "Semana de tu carrera" : "Semana de taper"}
+            </p>
+            <p className="text-xs text-text-secondary">
+              {weekPhase === "RACE"
+                ? `${nextRace.name} esta semana. Volumen bajo, cero intervals nuevos — llegá descansado.`
+                : `Faltan ${nextRace.daysUntil} días para ${nextRace.name}. Menos volumen, misma intensidad — no pierdas fitness de golpe.`}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* ── KPIs de la semana — strip clickable a /metrics y /routine/week ── */}
       <WeekKPIs userId={userId} weekStart={weekStart} />
