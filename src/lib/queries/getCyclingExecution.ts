@@ -84,7 +84,14 @@ export const getCyclingExecutionReport = cache(
 
     const dayOffset = DAY_OFFSET[day.dayOfWeek] ?? 0;
     const targetYmd = addDays(day.routine.weekStart, dayOffset);
-    const activities = (await fetchActivities(ctx.token, 1, 30)) as RideActivity[];
+    let activities: RideActivity[];
+    try {
+      activities = (await fetchActivities(ctx.token, 1, 30)) as RideActivity[];
+    } catch {
+      // Ver comentario equivalente en getSaturdayDrill.ts — no crashear la
+      // página por un error transitorio/permanente de la API de Strava.
+      return { blocks: null, activity: null, reason: "no_activity" };
+    }
     const ride = pickMatchingRide(activities, targetYmd);
     if (!ride) return { blocks: null, activity: null, reason: "no_activity" };
 

@@ -13,7 +13,14 @@ export async function GymStravaCards({ userId }: { userId: string }) {
   const accessToken = await getValidAccessToken(userId);
   if (!accessToken) return null;
 
-  const activities = await fetchActivities(accessToken, 1, 50);
+  let activities: unknown[];
+  try {
+    activities = await fetchActivities(accessToken, 1, 50);
+  } catch {
+    // Strava puede devolver 403/429 con un token técnicamente válido (rate
+    // limit, scope insuficiente, etc). No crashear /metrics entera por esto.
+    return null;
+  }
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - 30);
 

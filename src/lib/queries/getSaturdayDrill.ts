@@ -88,7 +88,15 @@ export const getSaturdayDrillReport = cache(
     if (!ctx) return { drill, activity: null, detection: null, reason: "no_strava" };
 
     const saturdayYmd = addDays(day.routine.weekStart, DAY_OFFSET[day.dayOfWeek] ?? 5);
-    const activities = (await fetchActivities(ctx.token, 1, 30)) as RideActivity[];
+    let activities: RideActivity[];
+    try {
+      activities = (await fetchActivities(ctx.token, 1, 30)) as RideActivity[];
+    } catch {
+      // Strava puede devolver 403/429 (rate limit, token con scope insuficiente,
+      // etc). No crashear la página — degradar a "sin actividad", igual que
+      // cuando no hay ride que matchee.
+      return { drill, activity: null, detection: null, reason: "no_activity" };
+    }
     const ride = pickMatchingRide(activities, saturdayYmd);
     if (!ride) return { drill, activity: null, detection: null, reason: "no_activity" };
 
