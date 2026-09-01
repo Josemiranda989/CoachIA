@@ -18,9 +18,9 @@ interface Props {
 }
 
 const COLORS = {
-  ctl: "#3b82f6", // blue
-  atl: "#f97316", // orange
-  tsb: "#22c55e", // green
+  ctl: "var(--accent-cycling)", // fitness → teal
+  atl: "var(--accent-gym)",     // fatigue → amber  
+  tsb: "var(--accent-primary)", // balance → red (attention)
 };
 
 export function FitnessChartView({ data, current }: Props) {
@@ -65,6 +65,9 @@ export function FitnessChartView({ data, current }: Props) {
             }}
           >
             CTL {current.ctl}
+            <span style={{ fontSize: 11, fontWeight: 400, color: "var(--text-secondary)", marginLeft: 4 }}>
+              (Fitness · media 42 días)
+            </span>
           </span>
           <span
             style={{
@@ -74,16 +77,22 @@ export function FitnessChartView({ data, current }: Props) {
             }}
           >
             ATL {current.atl}
+            <span style={{ fontSize: 11, fontWeight: 400, color: "var(--text-secondary)", marginLeft: 4 }}>
+              (Fatiga · media 7 días)
+            </span>
           </span>
           <span
             style={{
-              color: current.tsb >= 0 ? "#22c55e" : "#ef4444",
+              color: current.tsb >= 0 ? "var(--accent-cycling)" : "var(--accent-primary)",
               fontWeight: 700,
               fontSize: 14,
             }}
           >
             TSB {current.tsb > 0 ? "+" : ""}
             {current.tsb}
+            <span style={{ fontSize: 11, fontWeight: 400, color: "var(--text-secondary)", marginLeft: 4 }}>
+              ({current.tsb >= 0 ? "Fresco" : "Fatigado"} · CTL−ATL)
+            </span>
           </span>
         </div>
       )}
@@ -125,7 +134,7 @@ export function FitnessChartView({ data, current }: Props) {
             stroke={COLORS.ctl}
             strokeWidth={2}
             dot={false}
-            name="ctl"
+            name="Fitness (CTL)"
           />
           <Line
             type="monotone"
@@ -133,7 +142,7 @@ export function FitnessChartView({ data, current }: Props) {
             stroke={COLORS.atl}
             strokeWidth={1.5}
             dot={false}
-            name="atl"
+            name="Fatiga (ATL)"
           />
           <Line
             type="monotone"
@@ -141,7 +150,7 @@ export function FitnessChartView({ data, current }: Props) {
             stroke={COLORS.tsb}
             strokeWidth={1.5}
             dot={false}
-            name="tsb"
+            name="Balance (TSB)"
           />
         </LineChart>
       </ResponsiveContainer>

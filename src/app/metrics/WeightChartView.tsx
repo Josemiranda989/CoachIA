@@ -29,9 +29,9 @@ export function WeightChartView({ data }: { data: ChartData[] }) {
       >
         <div className="flex items-center gap-3 mb-2">
           <div className="p-2 rounded-xl" style={{ background: "rgba(139,92,246,0.15)" }}>
-            <Scale size={20} style={{ color: "#8b5cf6" }} aria-hidden="true" />
+            <Scale size={20} style={{ color: "var(--accent-cycling)" }} aria-hidden="true" />
           </div>
-          <p className="font-bold text-lg" style={{ color: "#8b5cf6" }}>
+          <p className="font-bold text-lg" style={{ color: "var(--accent-cycling)" }}>
             Tendencia de Peso
           </p>
         </div>
@@ -46,7 +46,7 @@ export function WeightChartView({ data }: { data: ChartData[] }) {
   const first = data[0].weight;
   const delta = current - first;
   const TrendIcon = delta > 0.2 ? TrendingUp : delta < -0.2 ? TrendingDown : Minus;
-  const trendColor = delta > 0.2 ? "#ef4444" : delta < -0.2 ? "#10b981" : "#8b5cf6";
+  const trendColor = delta > 0.2 ? "var(--accent-primary)" : delta < -0.2 ? "var(--accent-cycling)" : "var(--accent-cycling)";
 
   const weights = data.map((d) => d.weight);
   const minW = Math.floor(Math.min(...weights) - 1);
@@ -70,10 +70,10 @@ export function WeightChartView({ data }: { data: ChartData[] }) {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-xl" style={{ background: "rgba(139,92,246,0.15)" }}>
-            <Scale size={20} style={{ color: "#8b5cf6" }} aria-hidden="true" />
+            <Scale size={20} style={{ color: "var(--accent-cycling)" }} aria-hidden="true" />
           </div>
           <div>
-            <p className="font-bold text-lg" style={{ color: "#8b5cf6" }}>
+            <p className="font-bold text-lg" style={{ color: "var(--accent-cycling)" }}>
               Tendencia de Peso
             </p>
             <p className="text-text-secondary text-xs">
@@ -82,7 +82,7 @@ export function WeightChartView({ data }: { data: ChartData[] }) {
           </div>
         </div>
         <div className="text-right">
-          <p className="font-bold text-2xl" style={{ color: "#8b5cf6" }}>
+          <p className="font-bold text-2xl" style={{ color: "var(--accent-cycling)" }}>
             {current} <span className="text-sm text-text-secondary font-normal">kg</span>
           </p>
           <div className="flex items-center gap-1 justify-end">
@@ -146,10 +146,10 @@ export function WeightChartView({ data }: { data: ChartData[] }) {
               type="monotone"
               dataKey="weight"
               name="Peso"
-              stroke="#8b5cf6"
+              stroke="var(--accent-cycling)"
               strokeWidth={2.5}
-              dot={{ r: 4, fill: "#8b5cf6", strokeWidth: 0 }}
-              activeDot={{ r: 6, fill: "#8b5cf6" }}
+              dot={{ r: 4, fill: "var(--accent-cycling)", strokeWidth: 0 }}
+              activeDot={{ r: 6, fill: "var(--accent-cycling)" }}
             />
             {hasFat && (
               <Line
@@ -171,11 +171,11 @@ export function WeightChartView({ data }: { data: ChartData[] }) {
                 type="monotone"
                 dataKey="muscle"
                 name="Músculo"
-                stroke="#10b981"
+                stroke="var(--accent-cycling)"
                 strokeWidth={2}
                 strokeDasharray="2 4"
-                dot={{ r: 3, fill: "#10b981", strokeWidth: 0 }}
-                activeDot={{ r: 5, fill: "#10b981" }}
+                dot={{ r: 3, fill: "var(--accent-cycling)", strokeWidth: 0 }}
+                activeDot={{ r: 5, fill: "var(--accent-cycling)" }}
                 connectNulls
               />
             )}

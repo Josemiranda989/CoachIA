@@ -18,7 +18,7 @@ const dashboardCards: Omit<DashboardCardProps, "delayMs">[] = [
     icon: Bot,
     iconBgClass: "bg-accent-primary-soft",
     iconColorClass: "text-accent-primary",
-    hoverBorderClass: "hover:border-blue-500/50",
+    hoverBorderClass: "hover:border-accent-primary-soft",
     title: "Generar con IA",
     description: "Describí tus objetivos y la IA genera tu rutina semanal completa.",
     badge: {
@@ -32,7 +32,7 @@ const dashboardCards: Omit<DashboardCardProps, "delayMs">[] = [
     icon: Calendar,
     iconBgClass: "bg-accent-gym-soft",
     iconColorClass: "text-accent-gym",
-    hoverBorderClass: "hover:border-amber-500/50",
+    hoverBorderClass: "hover:border-accent-gym-soft",
     title: "Toda la Semana",
     description: "Resumen completo de tu rutina planificada y objetivos semanales.",
   },
@@ -41,43 +41,43 @@ const dashboardCards: Omit<DashboardCardProps, "delayMs">[] = [
     icon: BarChart3,
     iconBgClass: "bg-accent-cycling-soft",
     iconColorClass: "text-accent-cycling",
-    hoverBorderClass: "hover:border-emerald-500/50",
+    hoverBorderClass: "hover:border-accent-cycling-soft",
     title: "Métricas",
     description: "Evolución de carga, fatiga en bici, récords personales y más.",
   },
   {
     href: "/routine/load",
     icon: Upload,
-    iconBgClass: "bg-violet-500/20 group-hover:bg-violet-500/30 transition-colors",
-    iconColorClass: "text-violet-400",
-    hoverBorderClass: "hover:border-violet-500/50",
+    iconBgClass: "bg-accent-primary-soft",
+    iconColorClass: "text-[var(--accent-primary)]",
+    hoverBorderClass: "hover:border-accent-primary-soft",
     title: "Cargar JSON",
     description: "Pegá manualmente un JSON de rutina generado por cualquier IA.",
   },
   {
     href: "/help",
     icon: HelpCircle,
-    iconBgClass: "bg-indigo-500/20 group-hover:bg-indigo-500/30 transition-colors",
-    iconColorClass: "text-indigo-400",
-    hoverBorderClass: "hover:border-indigo-500/50",
+    iconBgClass: "bg-accent-gym-soft",
+    iconColorClass: "text-[var(--accent-gym)]",
+    hoverBorderClass: "hover:border-accent-gym-soft",
     title: "Ayuda / FAQs",
     description: "Guías de uso, estructura JSON y preguntas frecuentes.",
   },
   {
     href: "/nutrition",
     icon: Apple,
-    iconBgClass: "bg-emerald-500/20 group-hover:bg-emerald-500/30 transition-colors",
-    iconColorClass: "text-emerald-400",
-    hoverBorderClass: "hover:border-emerald-500/50",
+    iconBgClass: "bg-accent-cycling-soft",
+    iconColorClass: "text-[var(--accent-cycling)]",
+    hoverBorderClass: "hover:border-accent-cycling-soft",
     title: "Nutrición Bici",
     description: "Guía de combustible: qué comer, cuánto y cuándo en tus salidas.",
   },
   {
     href: "/wiki",
     icon: BookOpen,
-    iconBgClass: "bg-sky-500/20 group-hover:bg-sky-500/30 transition-colors",
-    iconColorClass: "text-sky-400",
-    hoverBorderClass: "hover:border-sky-500/50",
+    iconBgClass: "bg-accent-cycling-soft",
+    iconColorClass: "text-[var(--accent-cycling)]",
+    hoverBorderClass: "hover:border-accent-cycling-soft",
     title: "Wiki de Ejercicios",
     description: "Referencia visual: descripción, ejecución y tips para cada ejercicio.",
   },
@@ -199,9 +199,9 @@ export default async function Home() {
       {/* ── Featured: Día de Hoy ── */}
       <Link
         href="/workout/today"
-        className="card group relative overflow-hidden mb-6 block hover:border-blue-500/50 animate-fade-up"
+        className="card group relative overflow-hidden mb-6 block hover:border-accent-primary-soft animate-fade-up"
         style={{
-          background: "linear-gradient(135deg, rgba(59,130,246,0.12) 0%, rgba(24,24,27,0.7) 60%)",
+          background: "linear-gradient(135deg, color-mix(in srgb, var(--accent-primary) 12%, transparent) 0%, rgba(24,24,27,0.7) 60%)",
           animationDelay: "60ms",
         }}
       >
