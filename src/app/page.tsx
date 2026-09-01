@@ -5,11 +5,12 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentWeekStart } from "@/lib/week";
 import { getActiveRoutineLight } from "@/lib/queries/getActiveRoutine";
+import { getNextRace } from "@/lib/queries/getRaces";
 import { DashboardCard, type DashboardCardProps } from "@/components/DashboardCard";
 import { WeekKPIs } from "@/components/WeekKPIs";
 import {
   Sparkles, Calendar, BarChart3, HelpCircle,
-  ArrowRight, Bot, Upload, Zap, Bell, Apple, BookOpen,
+  ArrowRight, Bot, Upload, Zap, Bell, Apple, BookOpen, Mountain, Trophy,
 } from "lucide-react";
 
 const dashboardCards: Omit<DashboardCardProps, "delayMs">[] = [
@@ -81,6 +82,15 @@ const dashboardCards: Omit<DashboardCardProps, "delayMs">[] = [
     title: "Wiki de Ejercicios",
     description: "Referencia visual: descripción, ejecución y tips para cada ejercicio.",
   },
+  {
+    href: "/races",
+    icon: Trophy,
+    iconBgClass: "bg-accent-cycling-soft",
+    iconColorClass: "text-[var(--accent-cycling)]",
+    hoverBorderClass: "hover:border-accent-cycling-soft",
+    title: "Carreras",
+    description: "Tus próximos objetivos, con cuenta regresiva.",
+  },
 ];
 
 export default async function Home() {
@@ -104,6 +114,8 @@ export default async function Home() {
   const pendingRoutine = await prisma.routine.findFirst({
     where: { userId, status: "pending_approval" },
   });
+
+  const nextRace = await getNextRace(userId);
 
   const weekDays = latestRoutine?.days ?? [];
   const totalTrainingDays = weekDays.filter((d) => !d.type.includes("Rest")).length;
@@ -227,6 +239,42 @@ export default async function Home() {
           />
         </div>
       </Link>
+
+      {/* ── Próxima carrera — ancla del objetivo largo plazo ── */}
+      {nextRace && (
+        <Link
+          href="/races"
+          className="card group relative overflow-hidden mb-6 block hover:border-accent-cycling-soft animate-fade-up"
+          style={{
+            background: "linear-gradient(135deg, color-mix(in srgb, var(--accent-cycling) 12%, transparent) 0%, rgba(24,24,27,0.7) 60%)",
+            animationDelay: "90ms",
+          }}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-4 bg-accent-cycling-soft rounded-2xl">
+                <Mountain aria-hidden="true" className="text-[var(--accent-cycling)]" size={32} />
+              </div>
+              <div>
+                <p className="text-[var(--accent-cycling)] text-xs font-bold uppercase tracking-widest mb-1">
+                  {nextRace.daysUntil === 0 ? "¡Es hoy!" : nextRace.daysUntil === 1 ? "Mañana" : `Faltan ${nextRace.daysUntil} días`}
+                </p>
+                <h2 className="text-2xl md:text-3xl font-bold">{nextRace.name}</h2>
+                <p className="text-text-secondary mt-1 text-sm md:text-base">
+                  {nextRace.location ? `${nextRace.location} — ` : ""}
+                  {nextRace.distanceKm ? `${nextRace.distanceKm}km` : ""}
+                  {nextRace.distanceKm && nextRace.elevationM ? ` · ${nextRace.elevationM}m D+` : ""}
+                </p>
+              </div>
+            </div>
+            <ArrowRight
+              aria-hidden="true"
+              className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-[var(--accent-cycling)] shrink-0 hidden md:block"
+              size={28}
+            />
+          </div>
+        </Link>
+      )}
 
       {/* ── Grid de accesos ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
