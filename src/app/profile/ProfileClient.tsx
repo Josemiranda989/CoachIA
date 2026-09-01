@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Lock, User, Mail, KeyRound, Eye, EyeOff, Save, Heart, Unlink, Link } from "lucide-react";
+import { Lock, User, Mail, KeyRound, Eye, EyeOff, Save, Heart, Unlink, Link, Zap } from "lucide-react";
 import toast from "react-hot-toast";
 
 type Props = {
@@ -9,6 +9,7 @@ type Props = {
     email: string;
     fcMax: number | null;
     lthr: number | null;
+    ftp: number | null;
     hasStrava: boolean;
   };
 };
@@ -23,6 +24,7 @@ export function ProfileClient({ user }: Props) {
 
   const [fcMax, setFcMax] = useState<string>(user.fcMax?.toString() ?? "");
   const [lthr, setLthr] = useState<string>(user.lthr?.toString() ?? "");
+  const [ftp, setFtp] = useState<string>(user.ftp?.toString() ?? "");
   const [savingHr, setSavingHr] = useState(false);
 
   const [stravaConnected, setStravaConnected] = useState(user.hasStrava);
@@ -38,13 +40,14 @@ export function ProfileClient({ user }: Props) {
         body: JSON.stringify({
           fcMax: fcMax === "" ? null : Number(fcMax),
           lthr: lthr === "" ? null : Number(lthr),
+          ftp: ftp === "" ? null : Number(ftp),
         }),
       });
       const data = await res.json();
       if (!res.ok) {
-        toast.error(data.error || "Error al guardar zonas FC");
+        toast.error(data.error || "Error al guardar datos del atleta");
       } else {
-        toast.success("Zonas FC actualizadas");
+        toast.success("Datos del atleta actualizados");
       }
     } catch {
       toast.error("Error de red. Intentá de nuevo.");
@@ -236,7 +239,7 @@ export function ProfileClient({ user }: Props) {
             </div>
             <div>
               <h2 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Datos del atleta</h2>
-              <p className="text-xs" style={{ color: "var(--text-secondary)" }}>Definí tus zonas de frecuencia cardíaca</p>
+              <p className="text-xs" style={{ color: "var(--text-secondary)" }}>Zonas de frecuencia cardíaca y potencia</p>
             </div>
           </div>
 
@@ -264,13 +267,25 @@ export function ProfileClient({ user }: Props) {
             helper={<>Test de Friel: 30 min warmup + 30 min TT. Promedio FC últimos 20 min. <span style={{ opacity: 0.6 }}>Opcional — gana sobre FCmax</span></> as any}
           />
 
+          <InputRow
+            icon={Zap}
+            label="FTP — Umbral de potencia (W)"
+            value={ftp}
+            onChange={(e: any) => setFtp(e.target.value)}
+            placeholder="ej. 230"
+            inputMode="numeric"
+            min={80}
+            max={500}
+            helper="Usado para calcular fitness (CTL/ATL/TSB) y la estrategia de pacing de tus carreras."
+          />
+
           <button
             type="submit"
             disabled={savingHr}
             className="flex items-center justify-center gap-2 w-full rounded-lg py-3 text-sm font-semibold text-white transition-all"
             style={{ background: "var(--accent-cycling)" }}
           >
-            {savingHr ? "Guardando…" : <><Save size={15} /> Guardar zonas FC</>}
+            {savingHr ? "Guardando…" : <><Save size={15} /> Guardar datos del atleta</>}
           </button>
         </form>
 

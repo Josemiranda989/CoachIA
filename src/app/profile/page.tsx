@@ -13,7 +13,7 @@ export default async function ProfilePage() {
 
   const athleteData = await prisma.user.findUnique({
     where: { id: session.user.id as string },
-    select: { fcMax: true, lthr: true, stravaAthleteId: true },
+    select: { fcMax: true, lthr: true, ftp: true, stravaAthleteId: true },
   });
 
   return (
@@ -23,6 +23,7 @@ export default async function ProfilePage() {
         email: session.user.email ?? "",
         fcMax: athleteData?.fcMax ?? null,
         lthr: athleteData?.lthr ?? null,
+        ftp: athleteData?.ftp ?? null,
         hasStrava: !!athleteData?.stravaAthleteId,
       }}
     />

@@ -1,8 +1,9 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import toast from "react-hot-toast";
-import { Trash2, Plus, MapPin, Mountain } from "lucide-react";
+import { Trash2, Plus, MapPin, Mountain, Gauge } from "lucide-react";
 import type { RaceWithCountdown } from "@/lib/queries/getRaces";
 
 const DISCIPLINE_LABEL: Record<string, string> = {
@@ -132,15 +133,26 @@ export function RacesClient({ initialRaces }: { initialRaces: RaceWithCountdown[
                   )}
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => handleDelete(race.id)}
-                disabled={deletingId === race.id}
-                aria-label={`Eliminar ${race.name}`}
-                style={{ color: "var(--text-secondary)", opacity: deletingId === race.id ? 0.4 : 1 }}
-              >
-                <Trash2 size={18} aria-hidden="true" />
-              </button>
+              <div className="flex items-center gap-3 shrink-0">
+                {race.distanceKm && (
+                  <Link
+                    href={`/races/${race.id}/pacing`}
+                    className="flex items-center gap-1 text-xs font-semibold"
+                    style={{ color: "var(--accent-cycling)" }}
+                  >
+                    <Gauge size={14} aria-hidden="true" /> Pacing
+                  </Link>
+                )}
+                <button
+                  type="button"
+                  onClick={() => handleDelete(race.id)}
+                  disabled={deletingId === race.id}
+                  aria-label={`Eliminar ${race.name}`}
+                  style={{ color: "var(--text-secondary)", opacity: deletingId === race.id ? 0.4 : 1 }}
+                >
+                  <Trash2 size={18} aria-hidden="true" />
+                </button>
+              </div>
             </div>
           </div>
         ))}
