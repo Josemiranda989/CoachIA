@@ -7,6 +7,34 @@ import { getValidAccessToken, fetchActivities, fetchStats } from "@/lib/strava";
 import hevyPool from "@/data/hevy-template-pool.json";
 import { openCodeMonthlyChat } from "@/lib/opencode";
 import { hrZonesSummary } from "@/lib/hr-zones";
+import { getNextRace, phaseForWeek, type RacePhase } from "@/lib/queries/getRaces";
+
+const DEFAULT_PHASES: RacePhase[] = ["BASE", "BUILD", "PEAK", "RECOVERY"];
+
+function racePeriodizationSection(
+  mondays: string[],
+  phases: RacePhase[],
+  race: { name: string; date: string; daysUntil: number } | null,
+): string {
+  if (!race) return "";
+
+  const weekLines = mondays
+    .map((m, i) => `- Semana ${i + 1} (desde ${m}): ${phases[i]}`)
+    .join("\n");
+
+  return `
+
+PERIODIZACIÓN ATADA A LA PRÓXIMA CARRERA (prioridad sobre la sección PROGRESIÓN MENSUAL genérica):
+El atleta tiene "${race.name}" el ${race.date} (faltan ${race.daysUntil} días). Las 4 semanas de este mesociclo NO siguen necesariamente la secuencia genérica BASE/BUILD/PEAK/RECOVERY en ese orden — cada semana tiene la fase real según cuenta regresiva a la carrera:
+${weekLines}
+
+Para cada semana, aplicá las reglas de la sección "PROGRESIÓN MENSUAL DE CICLISMO" correspondientes a esa FASE (no al número de semana): BASE ≈ "Semana 1 (BUILD base)" de esa sección, BUILD ≈ "Semana 2", PEAK ≈ "Semana 3", RECOVERY ≈ "Semana 4". Mismo criterio para los spin-up drills de cadencia (sección CADENCIA): usá la progresión Sem1→Sem4 de esa sección según la FASE, no el número.
+
+Para las fases que "PROGRESIÓN MENSUAL" no cubre:
+- TAPER (1-2 semanas antes): -40% volumen vs una semana BUILD normal. Mantené 1-2 toques cortos de intensidad (Z3-Z4, reps de 2-3min, muy pocas repeticiones) para no perder frescura neuromuscular, pero sin fatiga acumulada. Sábado corto y suave (60-90min, sin long ride). Sin leg day pesado. Sin spin-up drills.
+- RACE (la carrera cae en esta semana calendario): semana de descanso activo + puesta a punto, no de entrenamiento normal. Gym: 1-2 sesiones muy livianas de mantenimiento (mitad de sets, lejos del fallo), sin leg day. Cycling: corto y suave, cero intervals. En el día exacto de la carrera (${race.date}) no prescribas entrenamiento — marcalo en "notes" como día de evento. Sin spin-up drills.
+- RECOVERY post-carrera (la carrera ya pasó al empezar esta semana): más suave que la RECOVERY genérica de 4 semanas — el cuerpo viene de un esfuerzo de carrera, no de 3 semanas de training normal. Z1-Z2 exclusivo, sin intervals, sin leg day pesado. Sin spin-up drills.`;
+}
 
 const VALID_DAY_TYPES = ["Gym", "Cycling", "Rest", "Gym + Cycling"] as const;
 type DayType = (typeof VALID_DAY_TYPES)[number];
@@ -230,6 +258,11 @@ export async function POST(request: Request) {
     const { gymSection, stravaSection, hrSection, historySection } = await gatherAthleteData(auth.userId);
     const hevyLibraryBlock = buildHevyPoolBlock();
 
+    const nextRace = await getNextRace(auth.userId);
+    const weekPhases: RacePhase[] = nextRace
+      ? mondays.map((m) => phaseForWeek(m, nextRace.date))
+      : DEFAULT_PHASES;
+
     const systemPrompt = "Eres un entrenador personal experto en fuerza y ciclismo. Genera un MESOCICLO DE 4 SEMANAS en formato JSON. Devolves EXCLUSIVAMENTE el JSON pedido, sin texto adicional, sin markdown, sin comentarios.";
     const userPrompt = `Genera un MESOCICLO DE 4 SEMANAS: la rutina de gym es FIJA y se repite cada semana (el atleta progresa carga manualmente), y el ciclismo PROGRESA semana a semana (mesociclo build/build/build/recovery).
 
@@ -289,6 +322,7 @@ ${stravaSection}
 ${hrSection ? `\n${hrSection}` : ""}
 ${historySection}
 ${seasonSection(mondays[0])}
+${racePeriodizationSection(mondays, weekPhases, nextRace)}
 
 USA LOS DATOS REALES del atleta para:
 - Ajustar pesos y reps de gym basándote en sus PRs. Para el primer set sugerí ~70-80% del PR como punto de partida (el atleta progresa carga manualmente).
@@ -658,7 +692,7 @@ REGLAS ESTRICTAS:
             return `   • ${dayNames[c.dayOfWeek] ?? c.dayOfWeek}: ${total}min ${power}`;
           })
           .join("\n");
-        return `<b>Semana ${idx + 1}</b> (desde ${monday})\n${lines}`;
+        return `<b>Semana ${idx + 1} — ${weekPhases[idx]}</b> (desde ${monday})\n${lines}`;
       })
       .join("\n\n");
 

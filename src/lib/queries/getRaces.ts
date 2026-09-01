@@ -28,6 +28,30 @@ export function daysBetween(from: string, to: string): number {
   return Math.round((toUtc - fromUtc) / 86_400_000);
 }
 
+export type RacePhase = "BASE" | "BUILD" | "PEAK" | "TAPER" | "RACE" | "RECOVERY";
+
+function addDaysYmd(ymd: string, days: number): string {
+  const [y, m, d] = ymd.split("-").map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+// Fase de periodización de una semana (weekStart = lunes YYYY-MM-DD) respecto
+// a la fecha de una carrera. RACE es la semana calendario en la que cae la
+// carrera; RECOVERY es cualquier semana posterior; BASE/BUILD/PEAK/TAPER son
+// ventanas de cuenta regresiva antes de la carrera.
+export function phaseForWeek(weekStart: string, raceDate: string): RacePhase {
+  const sunday = addDaysYmd(weekStart, 6);
+  if (raceDate < weekStart) return "RECOVERY";
+  if (raceDate <= sunday) return "RACE";
+  const daysToMonday = daysBetween(weekStart, raceDate);
+  if (daysToMonday <= 13) return "TAPER";
+  if (daysToMonday <= 27) return "PEAK";
+  if (daysToMonday <= 55) return "BUILD";
+  return "BASE";
+}
+
 export type RaceWithCountdown = {
   id: string;
   name: string;
