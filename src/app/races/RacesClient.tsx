@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
-import { Trash2, Plus, MapPin, Mountain, Gauge } from "lucide-react";
+import { Trash2, Plus, MapPin, Mountain, LayoutDashboard, Pencil } from "lucide-react";
 import type { RaceWithCountdown } from "@/lib/queries/getRaces";
 
 const DISCIPLINE_LABEL: Record<string, string> = {
@@ -30,48 +30,86 @@ function countdownLabel(daysUntil: number): string {
   return `Faltan ${daysUntil} días`;
 }
 
+type FormState = {
+  name: string;
+  date: string;
+  startTime: string;
+  estimatedHours: string;
+  location: string;
+  distanceKm: string;
+  elevationM: string;
+  discipline: string;
+};
+
+const EMPTY_FORM: FormState = {
+  name: "", date: "", startTime: "", estimatedHours: "",
+  location: "", distanceKm: "", elevationM: "", discipline: "cycling",
+};
+
 export function RacesClient({ initialRaces }: { initialRaces: RaceWithCountdown[] }) {
   const router = useRouter();
   const [races, setRaces] = useState(initialRaces);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(initialRaces.length === 0);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [form, setForm] = useState<FormState>(EMPTY_FORM);
 
-  const [name, setName] = useState("");
-  const [date, setDate] = useState("");
-  const [location, setLocation] = useState("");
-  const [distanceKm, setDistanceKm] = useState("");
-  const [elevationM, setElevationM] = useState("");
-  const [discipline, setDiscipline] = useState("cycling");
+  const setField = (field: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+    setForm((f) => ({ ...f, [field]: e.target.value }));
 
-  const resetForm = () => {
-    setName(""); setDate(""); setLocation("");
-    setDistanceKm(""); setElevationM(""); setDiscipline("cycling");
+  const startCreate = () => {
+    setEditingId(null);
+    setForm(EMPTY_FORM);
+    setShowForm(true);
+  };
+
+  const startEdit = (race: RaceWithCountdown) => {
+    setEditingId(race.id);
+    setForm({
+      name: race.name,
+      date: race.date,
+      startTime: race.startTime ?? "",
+      estimatedHours: race.estimatedHours?.toString() ?? "",
+      location: race.location ?? "",
+      distanceKm: race.distanceKm?.toString() ?? "",
+      elevationM: race.elevationM?.toString() ?? "",
+      discipline: race.discipline,
+    });
+    setShowForm(true);
+  };
+
+  const cancelForm = () => {
+    setShowForm(false);
+    setEditingId(null);
+    setForm(EMPTY_FORM);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     try {
-      const res = await fetch("/api/races", {
-        method: "POST",
+      const payload = {
+        name: form.name,
+        date: form.date,
+        startTime: form.startTime || undefined,
+        estimatedHours: form.estimatedHours ? Number(form.estimatedHours) : undefined,
+        location: form.location || undefined,
+        distanceKm: form.distanceKm ? Number(form.distanceKm) : undefined,
+        elevationM: form.elevationM ? Number(form.elevationM) : undefined,
+        discipline: form.discipline,
+      };
+      const res = await fetch(editingId ? `/api/races/${editingId}` : "/api/races", {
+        method: editingId ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name,
-          date,
-          location: location || undefined,
-          distanceKm: distanceKm ? Number(distanceKm) : undefined,
-          elevationM: elevationM ? Number(elevationM) : undefined,
-          discipline,
-        }),
+        body: JSON.stringify(payload),
       });
       if (!res.ok) {
         const err = await res.json();
         throw new Error(err.error || "No se pudo guardar la carrera");
       }
-      toast.success("Carrera agregada");
-      resetForm();
-      setShowForm(false);
+      toast.success(editingId ? "Carrera actualizada" : "Carrera agregada");
+      cancelForm();
       router.refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Error al guardar");
@@ -116,7 +154,9 @@ export function RacesClient({ initialRaces }: { initialRaces: RaceWithCountdown[
                 <h2 className="text-xl font-bold mt-1 mb-1" style={{ color: "var(--text-primary)" }}>
                   {race.name}
                 </h2>
-                <p className="text-sm text-text-secondary mb-2">{formatDate(race.date)}</p>
+                <p className="text-sm text-text-secondary mb-2">
+                  {formatDate(race.date)}{race.startTime ? ` · ${race.startTime}` : ""}
+                </p>
                 <div className="flex flex-wrap gap-3 text-sm text-text-secondary">
                   {race.location && (
                     <span className="flex items-center gap-1">
@@ -134,15 +174,21 @@ export function RacesClient({ initialRaces }: { initialRaces: RaceWithCountdown[
                 </div>
               </div>
               <div className="flex items-center gap-3 shrink-0">
-                {race.distanceKm && (
-                  <Link
-                    href={`/races/${race.id}/pacing`}
-                    className="flex items-center gap-1 text-xs font-semibold"
-                    style={{ color: "var(--accent-cycling)" }}
-                  >
-                    <Gauge size={14} aria-hidden="true" /> Pacing
-                  </Link>
-                )}
+                <Link
+                  href={`/races/${race.id}`}
+                  className="flex items-center gap-1 text-xs font-semibold"
+                  style={{ color: "var(--accent-cycling)" }}
+                >
+                  <LayoutDashboard size={14} aria-hidden="true" /> Día de carrera
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => startEdit(race)}
+                  aria-label={`Editar ${race.name}`}
+                  style={{ color: "var(--text-secondary)" }}
+                >
+                  <Pencil size={16} aria-hidden="true" />
+                </button>
                 <button
                   type="button"
                   onClick={() => handleDelete(race.id)}
@@ -159,7 +205,7 @@ export function RacesClient({ initialRaces }: { initialRaces: RaceWithCountdown[
       </div>
 
       {!showForm && (
-        <button type="button" className="btn" onClick={() => setShowForm(true)}>
+        <button type="button" className="btn" onClick={startCreate}>
           <Plus size={18} aria-hidden="true" style={{ marginRight: 6 }} />
           Agregar carrera
         </button>
@@ -172,8 +218,8 @@ export function RacesClient({ initialRaces }: { initialRaces: RaceWithCountdown[
             <input
               id="race-name"
               className="input"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              value={form.name}
+              onChange={setField("name")}
               placeholder="Aguilares → Catamarca"
               required
             />
@@ -185,23 +231,47 @@ export function RacesClient({ initialRaces }: { initialRaces: RaceWithCountdown[
                 id="race-date"
                 type="date"
                 className="input"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
+                value={form.date}
+                onChange={setField("date")}
                 required
               />
             </div>
+            <div>
+              <label className="block text-sm font-semibold mb-1" htmlFor="race-time">Hora de salida</label>
+              <input
+                id="race-time"
+                type="time"
+                className="input"
+                value={form.startTime}
+                onChange={setField("startTime")}
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-semibold mb-1" htmlFor="race-discipline">Disciplina</label>
               <select
                 id="race-discipline"
                 className="input"
-                value={discipline}
-                onChange={(e) => setDiscipline(e.target.value)}
+                value={form.discipline}
+                onChange={setField("discipline")}
               >
                 <option value="cycling">Ciclismo</option>
                 <option value="running">Running</option>
                 <option value="trail">Trail</option>
               </select>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold mb-1" htmlFor="race-hours">Duración estimada (h)</label>
+              <input
+                id="race-hours"
+                type="number"
+                step="0.5"
+                className="input"
+                value={form.estimatedHours}
+                onChange={setField("estimatedHours")}
+                placeholder="ej. 6"
+              />
             </div>
           </div>
           <div>
@@ -209,8 +279,8 @@ export function RacesClient({ initialRaces }: { initialRaces: RaceWithCountdown[
             <input
               id="race-location"
               className="input"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
+              value={form.location}
+              onChange={setField("location")}
               placeholder="Catamarca"
             />
           </div>
@@ -222,8 +292,8 @@ export function RacesClient({ initialRaces }: { initialRaces: RaceWithCountdown[
                 type="number"
                 step="0.1"
                 className="input"
-                value={distanceKm}
-                onChange={(e) => setDistanceKm(e.target.value)}
+                value={form.distanceKm}
+                onChange={setField("distanceKm")}
                 placeholder="159"
               />
             </div>
@@ -233,21 +303,21 @@ export function RacesClient({ initialRaces }: { initialRaces: RaceWithCountdown[
                 id="race-elevation"
                 type="number"
                 className="input"
-                value={elevationM}
-                onChange={(e) => setElevationM(e.target.value)}
+                value={form.elevationM}
+                onChange={setField("elevationM")}
                 placeholder="1800"
               />
             </div>
           </div>
           <div className="flex gap-3">
             <button type="submit" disabled={saving} className="btn">
-              {saving ? "Guardando..." : "Guardar"}
+              {saving ? "Guardando..." : editingId ? "Guardar cambios" : "Guardar"}
             </button>
             <button
               type="button"
               className="btn"
               style={{ background: "transparent", color: "var(--text-secondary)" }}
-              onClick={() => { setShowForm(false); resetForm(); }}
+              onClick={cancelForm}
             >
               Cancelar
             </button>

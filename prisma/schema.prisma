@@ -28,6 +28,8 @@ model Race {
   name         String
   location     String?
   date         String   // YYYY-MM-DD en ART
+  startTime    String?  // HH:MM 24h en ART, opcional
+  estimatedHours Float? // duración total estimada, opcional (estimación propia del atleta)
   distanceKm   Float?
   elevationM   Int?
   discipline   String   @default("cycling") // "cycling" | "running" | "trail"

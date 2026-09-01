@@ -57,6 +57,8 @@ export type RaceWithCountdown = {
   name: string;
   location: string | null;
   date: string;
+  startTime: string | null;
+  estimatedHours: number | null;
   distanceKm: number | null;
   elevationM: number | null;
   discipline: string;
@@ -69,6 +71,8 @@ function withCountdown(race: {
   name: string;
   location: string | null;
   date: string;
+  startTime: string | null;
+  estimatedHours: number | null;
   distanceKm: number | null;
   elevationM: number | null;
   discipline: string;
@@ -96,4 +100,12 @@ export async function getNextRace(userId: string): Promise<RaceWithCountdown | n
     orderBy: { date: "asc" },
   });
   return race ? withCountdown(race, today) : null;
+}
+
+// Una carrera puntual por id, con countdown, validando ownership. Usado por
+// el dashboard de carrera (/races/[id]) y el detalle de pacing.
+export async function getRaceById(id: string, userId: string): Promise<RaceWithCountdown | null> {
+  const race = await prisma.race.findUnique({ where: { id } });
+  if (!race || race.userId !== userId) return null;
+  return withCountdown(race, todayArt());
 }
