@@ -3,13 +3,14 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { LogIn, Lock, Mail, Sparkles } from "lucide-react";
+import { LogIn, Lock, Mail, Sparkles, Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -44,7 +45,7 @@ export default function LoginPage() {
           <p className="subtitle">Bienvenido a CoachIA. Ingresa tus datos para continuar.</p>
         </header>
 
-        <form onSubmit={handleSubmit} className="card space-y-6" noValidate>
+        <form onSubmit={handleSubmit} className="card space-y-6">
           {error && (
             <div
               role="alert"
@@ -63,7 +64,7 @@ export default function LoginPage() {
             <input
               id="login-email"
               type="email"
-              placeholder="atleta@ejemplo.com"
+              placeholder="tu@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="input"
@@ -85,16 +86,26 @@ export default function LoginPage() {
                 ¿Olvidaste tu contraseña?
               </Link>
             </div>
-            <input
-              id="login-password"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="input"
-              autoComplete="current-password"
-              required
-            />
+            <div className="relative">
+              <input
+                id="login-password"
+                type={showPassword ? "text" : "password"}
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="input pr-12"
+                autoComplete="current-password"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary transition-colors"
+                aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
 
           <button type="submit" disabled={loading} className="btn w-full py-4 text-base mt-2 shadow-lg shadow-accent-primary/20">

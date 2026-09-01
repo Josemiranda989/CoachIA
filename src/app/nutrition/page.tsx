@@ -235,8 +235,8 @@ export default function NutritionPage() {
       {/* Hero */}
       <header className="mb-10 animate-fade-up">
         <div className="flex items-center gap-2 mb-3">
-          <Apple className="text-emerald-400" size={16} />
-          <span className="text-emerald-400 font-semibold uppercase tracking-widest text-xs">
+          <Apple className="text-[var(--accent-cycling)]" size={16} />
+          <span className="text-[var(--accent-cycling)] font-semibold uppercase tracking-widest text-xs">
             Guia de Nutricion
           </span>
         </div>
@@ -312,8 +312,8 @@ export default function NutritionPage() {
       {/* Fuel items grid */}
       <section id="llevar" className="mb-12 scroll-mt-20">
         <div className="flex items-center gap-3 mb-6 animate-fade-up" style={{ animationDelay: "120ms" }}>
-          <div className="p-2 bg-emerald-500/20 rounded-lg">
-            <Zap className="text-emerald-400" size={20} />
+          <div className="p-2 bg-accent-cycling-soft rounded-lg">
+            <Zap className="text-[var(--accent-cycling)]" size={20} />
           </div>
           <h2 className="text-2xl font-bold">Que llevar en la bici</h2>
         </div>
@@ -417,8 +417,8 @@ export default function NutritionPage() {
       {/* Fuel plans by duration */}
       <section id="planes" className="mb-12 scroll-mt-20">
         <div className="flex items-center gap-3 mb-6 animate-fade-up">
-          <div className="p-2 bg-blue-500/20 rounded-lg">
-            <Clock className="text-blue-400" size={20} />
+          <div className="p-2 bg-accent-cycling-soft rounded-lg">
+            <Clock className="text-[var(--accent-cycling)]" size={20} />
           </div>
           <h2 className="text-2xl font-bold">Plan segun duracion</h2>
         </div>
@@ -583,8 +583,8 @@ export default function NutritionPage() {
       {/* Pre-ride meal */}
       <section id="pre-salida" className="mb-8 scroll-mt-20">
         <div className="flex items-center gap-3 mb-6 animate-fade-up">
-          <div className="p-2 bg-violet-500/20 rounded-lg">
-            <Apple className="text-violet-400" size={20} />
+          <div className="p-2 bg-accent-gym-soft rounded-lg">
+            <Apple className="text-[var(--accent-gym)]" size={20} />
           </div>
           <h2 className="text-2xl font-bold">Comida pre-salida</h2>
         </div>
@@ -610,7 +610,7 @@ export default function NutritionPage() {
                     "Granola con leche + fruta",
                   ].map((item, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm text-text-secondary">
-                      <span className="text-emerald-400 shrink-0">+</span>
+                      <span className="text-[var(--accent-cycling)] shrink-0">+</span>
                       {item}
                     </li>
                   ))}

@@ -5,11 +5,12 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentWeekStart } from "@/lib/week";
 import { getActiveRoutineLight } from "@/lib/queries/getActiveRoutine";
+import { getNextRace, phaseForWeek } from "@/lib/queries/getRaces";
 import { DashboardCard, type DashboardCardProps } from "@/components/DashboardCard";
 import { WeekKPIs } from "@/components/WeekKPIs";
 import {
   Sparkles, Calendar, BarChart3, HelpCircle,
-  ArrowRight, Bot, Upload, Zap, Bell, Apple, BookOpen,
+  ArrowRight, Bot, Upload, Zap, Bell, Apple, BookOpen, Mountain, Trophy,
 } from "lucide-react";
 
 const dashboardCards: Omit<DashboardCardProps, "delayMs">[] = [
@@ -18,7 +19,7 @@ const dashboardCards: Omit<DashboardCardProps, "delayMs">[] = [
     icon: Bot,
     iconBgClass: "bg-accent-primary-soft",
     iconColorClass: "text-accent-primary",
-    hoverBorderClass: "hover:border-blue-500/50",
+    hoverBorderClass: "hover:border-accent-primary-soft",
     title: "Generar con IA",
     description: "Describí tus objetivos y la IA genera tu rutina semanal completa.",
     badge: {
@@ -32,7 +33,7 @@ const dashboardCards: Omit<DashboardCardProps, "delayMs">[] = [
     icon: Calendar,
     iconBgClass: "bg-accent-gym-soft",
     iconColorClass: "text-accent-gym",
-    hoverBorderClass: "hover:border-amber-500/50",
+    hoverBorderClass: "hover:border-accent-gym-soft",
     title: "Toda la Semana",
     description: "Resumen completo de tu rutina planificada y objetivos semanales.",
   },
@@ -41,45 +42,54 @@ const dashboardCards: Omit<DashboardCardProps, "delayMs">[] = [
     icon: BarChart3,
     iconBgClass: "bg-accent-cycling-soft",
     iconColorClass: "text-accent-cycling",
-    hoverBorderClass: "hover:border-emerald-500/50",
+    hoverBorderClass: "hover:border-accent-cycling-soft",
     title: "Métricas",
     description: "Evolución de carga, fatiga en bici, récords personales y más.",
   },
   {
     href: "/routine/load",
     icon: Upload,
-    iconBgClass: "bg-violet-500/20 group-hover:bg-violet-500/30 transition-colors",
-    iconColorClass: "text-violet-400",
-    hoverBorderClass: "hover:border-violet-500/50",
+    iconBgClass: "bg-accent-primary-soft",
+    iconColorClass: "text-[var(--accent-primary)]",
+    hoverBorderClass: "hover:border-accent-primary-soft",
     title: "Cargar JSON",
     description: "Pegá manualmente un JSON de rutina generado por cualquier IA.",
   },
   {
     href: "/help",
     icon: HelpCircle,
-    iconBgClass: "bg-indigo-500/20 group-hover:bg-indigo-500/30 transition-colors",
-    iconColorClass: "text-indigo-400",
-    hoverBorderClass: "hover:border-indigo-500/50",
+    iconBgClass: "bg-accent-gym-soft",
+    iconColorClass: "text-[var(--accent-gym)]",
+    hoverBorderClass: "hover:border-accent-gym-soft",
     title: "Ayuda / FAQs",
     description: "Guías de uso, estructura JSON y preguntas frecuentes.",
   },
   {
     href: "/nutrition",
     icon: Apple,
-    iconBgClass: "bg-emerald-500/20 group-hover:bg-emerald-500/30 transition-colors",
-    iconColorClass: "text-emerald-400",
-    hoverBorderClass: "hover:border-emerald-500/50",
+    iconBgClass: "bg-accent-cycling-soft",
+    iconColorClass: "text-[var(--accent-cycling)]",
+    hoverBorderClass: "hover:border-accent-cycling-soft",
     title: "Nutrición Bici",
     description: "Guía de combustible: qué comer, cuánto y cuándo en tus salidas.",
   },
   {
     href: "/wiki",
     icon: BookOpen,
-    iconBgClass: "bg-sky-500/20 group-hover:bg-sky-500/30 transition-colors",
-    iconColorClass: "text-sky-400",
-    hoverBorderClass: "hover:border-sky-500/50",
+    iconBgClass: "bg-accent-cycling-soft",
+    iconColorClass: "text-[var(--accent-cycling)]",
+    hoverBorderClass: "hover:border-accent-cycling-soft",
     title: "Wiki de Ejercicios",
     description: "Referencia visual: descripción, ejecución y tips para cada ejercicio.",
+  },
+  {
+    href: "/races",
+    icon: Trophy,
+    iconBgClass: "bg-accent-cycling-soft",
+    iconColorClass: "text-[var(--accent-cycling)]",
+    hoverBorderClass: "hover:border-accent-cycling-soft",
+    title: "Carreras",
+    description: "Tus próximos objetivos, con cuenta regresiva.",
   },
 ];
 
@@ -104,6 +114,9 @@ export default async function Home() {
   const pendingRoutine = await prisma.routine.findFirst({
     where: { userId, status: "pending_approval" },
   });
+
+  const nextRace = await getNextRace(userId);
+  const weekPhase = nextRace ? phaseForWeek(weekStart, nextRace.date) : null;
 
   const weekDays = latestRoutine?.days ?? [];
   const totalTrainingDays = weekDays.filter((d) => !d.type.includes("Rest")).length;
@@ -157,6 +170,30 @@ export default async function Home() {
         )}
       </header>
 
+      {/* ── Aviso de taper/carrera — solo cuando es accionable ── */}
+      {(weekPhase === "TAPER" || weekPhase === "RACE") && nextRace && (
+        <div
+          className="mb-6 p-4 rounded-2xl flex items-center gap-3 animate-fade-up"
+          style={{
+            background: "color-mix(in srgb, var(--accent-cycling) 10%, transparent)",
+            border: "1px solid color-mix(in srgb, var(--accent-cycling) 25%, transparent)",
+            animationDelay: "15ms",
+          }}
+        >
+          <span style={{ fontSize: 22 }} aria-hidden="true">{weekPhase === "RACE" ? "🏁" : "🪶"}</span>
+          <div>
+            <p className="text-sm font-bold" style={{ color: "var(--accent-cycling)" }}>
+              {weekPhase === "RACE" ? "Semana de tu carrera" : "Semana de taper"}
+            </p>
+            <p className="text-xs text-text-secondary">
+              {weekPhase === "RACE"
+                ? `${nextRace.name} esta semana. Volumen bajo, cero intervals nuevos — llegá descansado.`
+                : `Faltan ${nextRace.daysUntil} días para ${nextRace.name}. Menos volumen, misma intensidad — no pierdas fitness de golpe.`}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* ── KPIs de la semana — strip clickable a /metrics y /routine/week ── */}
       <WeekKPIs userId={userId} weekStart={weekStart} />
 
@@ -199,9 +236,9 @@ export default async function Home() {
       {/* ── Featured: Día de Hoy ── */}
       <Link
         href="/workout/today"
-        className="card group relative overflow-hidden mb-6 block hover:border-blue-500/50 animate-fade-up"
+        className="card group relative overflow-hidden mb-6 block hover:border-accent-primary-soft animate-fade-up"
         style={{
-          background: "linear-gradient(135deg, rgba(59,130,246,0.12) 0%, rgba(24,24,27,0.7) 60%)",
+          background: "linear-gradient(135deg, color-mix(in srgb, var(--accent-primary) 12%, transparent) 0%, rgba(24,24,27,0.7) 60%)",
           animationDelay: "60ms",
         }}
       >
@@ -227,6 +264,42 @@ export default async function Home() {
           />
         </div>
       </Link>
+
+      {/* ── Próxima carrera — ancla del objetivo largo plazo ── */}
+      {nextRace && (
+        <Link
+          href="/races"
+          className="card group relative overflow-hidden mb-6 block hover:border-accent-cycling-soft animate-fade-up"
+          style={{
+            background: "linear-gradient(135deg, color-mix(in srgb, var(--accent-cycling) 12%, transparent) 0%, rgba(24,24,27,0.7) 60%)",
+            animationDelay: "90ms",
+          }}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-4 bg-accent-cycling-soft rounded-2xl">
+                <Mountain aria-hidden="true" className="text-[var(--accent-cycling)]" size={32} />
+              </div>
+              <div>
+                <p className="text-[var(--accent-cycling)] text-xs font-bold uppercase tracking-widest mb-1">
+                  {nextRace.daysUntil === 0 ? "¡Es hoy!" : nextRace.daysUntil === 1 ? "Mañana" : `Faltan ${nextRace.daysUntil} días`}
+                </p>
+                <h2 className="text-2xl md:text-3xl font-bold">{nextRace.name}</h2>
+                <p className="text-text-secondary mt-1 text-sm md:text-base">
+                  {nextRace.location ? `${nextRace.location} — ` : ""}
+                  {nextRace.distanceKm ? `${nextRace.distanceKm}km` : ""}
+                  {nextRace.distanceKm && nextRace.elevationM ? ` · ${nextRace.elevationM}m D+` : ""}
+                </p>
+              </div>
+            </div>
+            <ArrowRight
+              aria-hidden="true"
+              className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-[var(--accent-cycling)] shrink-0 hidden md:block"
+              size={28}
+            />
+          </div>
+        </Link>
+      )}
 
       {/* ── Grid de accesos ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">

@@ -295,7 +295,7 @@ export default async function MetricsPage() {
       {stravaTokenInvalid && stravaAuthUrl && (
         <div
           role="alert"
-          className="card flex items-center gap-4"
+          className="rounded-2xl p-5 flex items-center gap-4"
           style={{
             background: "color-mix(in srgb, var(--accent-gym) 8%, transparent)",
             borderColor: "color-mix(in srgb, var(--accent-gym) 40%, transparent)",
@@ -342,8 +342,8 @@ export default async function MetricsPage() {
           {gymMetrics.map(({ label, value, displayFallback, unit, description, icon: Icon, decimals }) => (
             <div
               key={label}
-              className="card"
-              style={{ cursor: "default", background: gymColor.bg, borderColor: gymColor.border }}
+              className="rounded-2xl p-5 md:p-7"
+              style={{ cursor: "default", background: "var(--bg-card)", border: "1px solid var(--glass-border)" }}
             >
               <div className="flex items-start justify-between mb-3">
                 <div

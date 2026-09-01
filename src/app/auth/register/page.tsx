@@ -52,7 +52,7 @@ export default function RegisterPage() {
           <p className="subtitle">Únete a la comunidad de CoachIA y optimiza tus entrenamientos.</p>
         </header>
 
-        <form onSubmit={handleSubmit} className="card space-y-5" noValidate>
+        <form onSubmit={handleSubmit} className="card space-y-5">
           {error && (
             <div
               role="alert"
@@ -88,7 +88,7 @@ export default function RegisterPage() {
             <input
               id="register-email"
               type="email"
-              placeholder="atleta@ejemplo.com"
+              placeholder="tu@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="input"

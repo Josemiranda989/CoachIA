@@ -18,6 +18,30 @@ model Routine {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+// Objetivo de carrera del usuario — ancla del módulo Race Prep (calendario,
+// countdown, taper, pacing). `date` sigue la convención de `Routine.weekStart`:
+// String YYYY-MM-DD en ART, no DateTime (evita el bug de filtros Prisma+SQLite
+// documentado en lib/week.ts).
+model Race {
+  id           String   @id @default(cuid())
+  userId       String
+  name         String
+  location     String?
+  date         String   // YYYY-MM-DD en ART
+  startTime    String?  // HH:MM 24h en ART, opcional
+  estimatedHours Float? // duración total estimada, opcional (estimación propia del atleta)
+  distanceKm   Float?
+  elevationM   Int?
+  discipline   String   @default("cycling") // "cycling" | "running" | "trail"
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+}
+
 model BodyWeight {
   id        String   @id @default(cuid())
   userId    String
@@ -332,6 +356,7 @@ model User {
   accounts                 Account[]
   sessions                 Session[]
   routines                 Routine[]
+  races                    Race[]
   bodyWeights              BodyWeight[]
   cachedActivities         CachedActivity[]
   cyclingWeeklyAggregates  CyclingWeeklyAggregate[]
